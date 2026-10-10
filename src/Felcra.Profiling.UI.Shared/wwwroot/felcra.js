@@ -16,4 +16,8 @@ window.felcra = {
     print() {
         window.print();
     },
+
+    back() {
+        history.back();
+    },
 };

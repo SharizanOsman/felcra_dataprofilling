@@ -84,6 +84,16 @@ dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \
 > **Note:** the service worker only caches assets in published builds. To test offline behaviour,
 > run `dotnet publish` (or the Docker image) rather than `dotnet run`.
 
+### Trying the field app on a phone
+
+Browsers only allow camera access (QR scanning, photos) on **HTTPS** pages or `localhost`. Opening
+`http://<laptop-ip>:5237/field/` from a phone therefore loads the app but the scanner cannot start. To test on a
+real phone before the staging server exists (Step 9), expose the local API through an HTTPS tunnel such as
+`cloudflared tunnel --url http://localhost:5237` and open the tunnel URL + `/field/` on the phone.
+The **Find by tag number** screen works without a camera.
+
+Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in development (`Storage:Path`).
+
 ## Configuration
 
 | Key | Purpose |
@@ -95,6 +105,7 @@ dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \
 | `Seed:AdminEmail` / `Seed:AdminPassword` | First HQ admin, created only when no users exist |
 | `Seed:DevelopmentData` | Adds the Pagoh farm and sample manager / officer accounts |
 | `RateLimiting:LoginPermitsPerMinute` | Login/refresh attempts per IP per minute (default 10) |
+| `Storage:Path` | Folder for uploaded photos (default `App_Data/uploads`, relative to the API); mount as a volume in Docker |
 
 ## Key design decisions
 

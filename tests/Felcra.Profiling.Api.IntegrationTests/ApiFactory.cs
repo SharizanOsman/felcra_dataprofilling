@@ -28,6 +28,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseStaticWebAssets();
         builder.UseSetting("ConnectionStrings:Default", _db.GetConnectionString());
         builder.UseSetting("RateLimiting:LoginPermitsPerMinute", "1000");
+        builder.UseSetting("Storage:Path", Path.Combine(Path.GetTempPath(), $"felcra-tests-{Guid.NewGuid():N}"));
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-0123456789abcdef");
         builder.UseSetting("Database:MigrateOnStartup", "true");
         builder.UseSetting("Database:SeedOnStartup", "true");

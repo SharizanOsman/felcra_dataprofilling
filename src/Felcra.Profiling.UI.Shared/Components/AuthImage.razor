@@ -1,0 +1,46 @@
+@using Felcra.Profiling.UI.Shared.Api
+@inject ApiClient Api
+
+@* Images behind the API need the bearer token, which a plain <img src> cannot send. *@
+@if (_src is not null)
+{
+    <img src="@_src" alt="@Alt" class="@Class" style="@Style" @onclick="OnClick" />
+}
+else if (_failed)
+{
+    <MudIcon Icon="@Icons.Material.Filled.BrokenImage" Color="Color.Default" />
+}
+else
+{
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="@Width" Height="@Height" />
+}
+
+@code {
+    [Parameter, EditorRequired] public string Url { get; set; } = "";
+    [Parameter] public string ContentType { get; set; } = "image/jpeg";
+    [Parameter] public string? Alt { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string Width { get; set; } = "96px";
+    [Parameter] public string Height { get; set; } = "96px";
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private string? _src;
+    private bool _failed;
+    private string? _loadedUrl;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Url == _loadedUrl) return;
+        _loadedUrl = Url;
+        try
+        {
+            var bytes = await Api.GetBytesAsync(Url);
+            _src = $"data:{ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (HttpRequestException)
+        {
+            _failed = true;
+        }
+    }
+}

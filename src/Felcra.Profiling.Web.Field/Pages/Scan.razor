@@ -1,0 +1,64 @@
+@page "/scan"
+@attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Scan — FELCRA Field</PageTitle>
+
+<MudText Typo="Typo.h6" Class="mb-2">Scan the QR label on the ear tag</MudText>
+
+<div id="qr-reader" style="width:100%;min-height:280px;border-radius:8px;overflow:hidden;background:#000"></div>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-3">@_error</MudAlert>
+}
+<MudText Typo="Typo.caption" Class="mt-2" Style="display:block">
+    No label, or the camera does not work? <MudLink Href="find">Find the animal by tag number</MudLink>.
+</MudText>
+
+@code {
+    private DotNetObjectReference<Scan>? _self;
+    private string? _error;
+    private bool _handled;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _self = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("felcraScanner.start", "qr-reader", _self);
+        }
+        catch (JSException)
+        {
+            _error = "Cannot open the camera. Allow camera access for this app in your browser settings (the app must be opened over HTTPS).";
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnScanned(string text)
+    {
+        if (_handled) return;
+        _handled = true;
+        await JS.InvokeVoidAsync("felcraScanner.stop");
+
+        // Our labels open the animal directly; any other code is treated as a printed tag number.
+        Navigation.NavigateTo(ScanTarget.AnimalId(text) is { } id ? $"a/{id}" : $"find?q={Uri.EscapeDataString(text.Trim())}");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("felcraScanner.stop");
+        }
+        catch (JSDisconnectedException)
+        {
+            // page is closing
+        }
+        _self?.Dispose();
+    }
+}

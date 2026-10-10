@@ -1,17 +1,36 @@
 @page "/"
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@inject RecentAnimals Recent
 
-<PageTitle>Home — FELCRA Field</PageTitle>
+<PageTitle>FELCRA Field</PageTitle>
 
 <AuthorizeView>
-    <MudText Typo="Typo.h5" GutterBottom="true">Hello, @context.User.FindFirst(AppClaimTypes.FullName)?.Value</MudText>
+    <MudText Typo="Typo.h6" Class="mb-3">Hello, @context.User.FindFirst(AppClaimTypes.FullName)?.Value</MudText>
 </AuthorizeView>
 
 <MudStack Spacing="3">
-    @* Enabled in Step 4 (QR scan & recording). *@
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
-               StartIcon="@Icons.Material.Filled.QrCodeScanner" Disabled="true">Scan ear tag</MudButton>
-    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true"
-               StartIcon="@Icons.Material.Filled.Search" Disabled="true">Find animal</MudButton>
-    <MudText Typo="Typo.caption" Align="Align.Center">Recording features arrive in the next release.</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" Href="scan"
+               StartIcon="@Icons.Material.Filled.QrCodeScanner" Style="height:72px;font-size:1.1rem">Scan ear tag</MudButton>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" Href="find"
+               StartIcon="@Icons.Material.Filled.Search" Style="height:56px">Find by tag number</MudButton>
 </MudStack>
+
+@if (_recent.Count > 0)
+{
+    <MudText Typo="Typo.subtitle1" Class="mt-6 mb-1">Recently opened</MudText>
+    <MudList T="string" Dense="false">
+        @foreach (var a in _recent)
+        {
+            <MudListItem T="string" Href="@($"a/{a.Id}")" Icon="@Icons.Material.Filled.Pets">
+                <strong>@(a.TagNumber is null ? "No tag" : $"Tag {a.TagNumber}")</strong>
+                <MudText Typo="Typo.caption" Style="display:block">@a.AnimalNo · @a.Category</MudText>
+            </MudListItem>
+        }
+    </MudList>
+}
+
+@code {
+    private List<RecentAnimal> _recent = [];
+
+    protected override async Task OnInitializedAsync() => _recent = await Recent.GetAsync();
+}

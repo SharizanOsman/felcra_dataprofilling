@@ -1,0 +1,18 @@
+@* Large touch target for a recording action: icon, label and the last recorded value, stacked. *@
+<MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Href="@Href" Style="height:88px;text-transform:none">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">
+        <MudIcon Icon="@Icon" />
+        <span style="font-weight:500">@Text</span>
+        @if (Detail is not null)
+        {
+            <span style="font-size:0.75rem;opacity:0.8">@Detail</span>
+        }
+    </div>
+</MudButton>
+
+@code {
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter, EditorRequired] public string Icon { get; set; } = "";
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+    [Parameter] public string? Detail { get; set; }
+}

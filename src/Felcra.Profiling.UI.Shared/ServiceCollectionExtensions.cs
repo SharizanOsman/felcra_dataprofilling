@@ -1,6 +1,7 @@
 using Felcra.Profiling.UI.Shared.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 
 namespace Felcra.Profiling.UI.Shared;
@@ -14,9 +15,17 @@ public static class ServiceCollectionExtensions
     /// Inject <see cref="HttpClient"/> for authenticated API calls.
     /// </summary>
     public static IServiceCollection AddFelcraClient(
-        this IServiceCollection services, Uri apiBaseAddress, ClientAuthOptions authOptions)
+        this IServiceCollection services, Uri apiBaseAddress, ClientAuthOptions authOptions, bool mobile = false)
     {
-        services.AddMudServices();
+        services.AddMudServices(config =>
+        {
+            if (!mobile) return;
+            // On phones, keep confirmations short and away from the animal header at the top.
+            config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomCenter;
+            config.SnackbarConfiguration.VisibleStateDuration = 2500;
+            config.SnackbarConfiguration.MaxDisplayedSnackbars = 2;
+            config.SnackbarConfiguration.PreventDuplicates = true;
+        });
 
         services.AddSingleton(authOptions);
         services.AddSingleton(TimeProvider.System);

@@ -1,0 +1,92 @@
+@page "/a/{Id:guid}/measure/{Kind}"
+@attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@inherits RecordPageBase
+
+<PageTitle>@Title — FELCRA Field</PageTitle>
+
+@if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Error">@LoadError</MudAlert>
+}
+else if (Animal is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <AnimalHeader Animal="Animal" />
+    <MudText Typo="Typo.h6" Class="mb-2">@Title</MudText>
+
+    <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
+        <MudStack Spacing="3">
+            <MudNumericField T="decimal?" @bind-Value="_model.Value" For="@(() => _model.Value)" Label="@ValueLabel"
+                             Variant="Variant.Outlined" InputMode="@(InputMode.@decimal)" Step="@(_model.Type == MeasurementType.BodyCondition ? 0.5m : 1m)"
+                             HideSpinButtons="true" AutoFocus="true" Style="font-size:1.6rem" HelperText="@ValueHelp" />
+            @if (_model.Type == MeasurementType.Weight)
+            {
+                <MudSelect T="WeighingMethod?" @bind-Value="_model.Method" Label="Method" Variant="Variant.Outlined"
+                           ToStringFunc="@(m => m is null ? "" : EnumText.Humanize(m.Value))">
+                    @foreach (var m in Enum.GetValues<WeighingMethod>())
+                    {
+                        <MudSelectItem T="WeighingMethod?" Value="m">@EnumText.Humanize(m)</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            <DateField Value="_model.MeasuredOn" ValueChanged="@(d => _model.MeasuredOn = d ?? _model.MeasuredOn)" Label="Date"
+                       Clearable="false" Max="DateOnly.FromDateTime(DateTime.Today)" />
+            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="Notes (optional)" Variant="Variant.Outlined" />
+
+            @if (SaveError is not null) { <MudAlert Severity="Severity.Error" Dense="true">@SaveError</MudAlert> }
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="SubmitAsync"
+                       Disabled="@(Saving || Animal.Status != AnimalStatus.Active)" Style="height:56px">
+                @(Saving ? "Saving…" : "Save")
+            </MudButton>
+        </MudStack>
+    </MudForm>
+}
+
+@code {
+    [Parameter] public string Kind { get; set; } = "weight";
+
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new MeasurementRequestValidator());
+    private MudForm _form = null!;
+    private MeasurementRequest _model = new();
+
+    private string Title => _model.Type switch
+    {
+        MeasurementType.BodyCondition => "Body condition score",
+        MeasurementType.MilkYield => "Milk yield",
+        _ => "Weight",
+    };
+
+    private string ValueLabel => _model.Type switch
+    {
+        MeasurementType.BodyCondition => "BCS",
+        MeasurementType.MilkYield => "Litres today",
+        _ => "Weight (kg)",
+    };
+
+    // FELCRA has not yet confirmed the BCS scale (URS open question 1).
+    private string? ValueHelp => _model.Type == MeasurementType.BodyCondition ? "Score in half steps, e.g. 3 or 3.5" : null;
+
+    protected override Task OnAnimalLoadedAsync()
+    {
+        var type = Kind.ToLowerInvariant() switch
+        {
+            "bcs" => MeasurementType.BodyCondition,
+            "milk" => MeasurementType.MilkYield,
+            _ => MeasurementType.Weight,
+        };
+        if (_model.Type != type || _model.Value is null)
+            _model = new MeasurementRequest { Type = type, Method = type == MeasurementType.Weight ? WeighingMethod.Scale : null };
+        return Task.CompletedTask;
+    }
+
+    private async Task SubmitAsync()
+    {
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+        await SaveAsync<MeasurementDto>("measurements", _model, $"{Title} saved.");
+    }
+}

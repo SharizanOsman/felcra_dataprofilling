@@ -123,6 +123,7 @@ app.MapUserEndpoints();
 app.MapAuditLogEndpoints();
 app.MapAnimalEndpoints();
 app.MapCensusEndpoints();
+app.MapRecordEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();

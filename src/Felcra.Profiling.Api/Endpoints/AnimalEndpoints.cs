@@ -3,6 +3,7 @@ using Felcra.Profiling.Application.Abstractions;
 using Felcra.Profiling.Contracts.Animals;
 using Felcra.Profiling.Contracts.Common;
 using Felcra.Profiling.Domain.Animals;
+using Felcra.Profiling.Domain.Records;
 using Felcra.Profiling.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +33,8 @@ internal static class AnimalEndpoints
     private sealed record AnimalRow(
         Guid Id, int AnimalNo, string? TagNumber, bool HasDuplicateTag, Sex Sex, AnimalCategory Category, string? BreedName,
         DateOnly? BirthDate, AgeEstimationMethod? BirthDateMethod, Guid FarmId, string FarmCode, string? ProjectCode,
-        string? HerdGroupName, AnimalStatus Status, decimal? LatestWeightKg, DateOnly? LatestWeighedOn);
+        string? HerdGroupName, AnimalStatus Status, decimal? WeightKg, DateOnly? WeighedOn,
+        decimal? CensusWeightKg, DateOnly? CensusWeighedOn);
 
     private static async Task<Ok<PagedResult<AnimalListItemDto>>> ListAnimals(
         AppDbContext db,
@@ -109,7 +111,11 @@ internal static class AnimalEndpoints
                 db.Projects.Where(p => p.Id == a.ProjectId).Select(p => p.Code).FirstOrDefault(),
                 db.HerdGroups.Where(g => g.Id == a.HerdGroupId).Select(g => g.Name).FirstOrDefault(),
                 a.Status,
-                // Latest weight from census entries (Step 4 adds individual weighings).
+                db.Measurements.Where(m => m.AnimalId == a.Id && m.Type == MeasurementType.Weight)
+                    .OrderByDescending(m => m.MeasuredOn).ThenByDescending(m => m.CreatedAt).Select(m => (decimal?)m.Value).FirstOrDefault(),
+                db.Measurements.Where(m => m.AnimalId == a.Id && m.Type == MeasurementType.Weight)
+                    .OrderByDescending(m => m.MeasuredOn).Select(m => (DateOnly?)m.MeasuredOn).FirstOrDefault(),
+                // Weight recorded during a census.
                 (from e in db.CensusEntries
                  join s in db.CensusSessions on e.CensusSessionId equals s.Id
                  where e.AnimalId == a.Id && e.WeightKg != null
@@ -122,10 +128,17 @@ internal static class AnimalEndpoints
                  select (DateOnly?)s.StartDate).FirstOrDefault()))
             .ToListAsync(ct);
 
-        var items = rows.Select(r => new AnimalListItemDto(
-            r.Id, Animal.FormatAnimalNo(r.AnimalNo), r.TagNumber, r.HasDuplicateTag, r.Sex, r.Category, r.BreedName,
-            r.BirthDate, r.BirthDateMethod, r.FarmId, r.FarmCode, r.ProjectCode, r.HerdGroupName, r.Status,
-            r.LatestWeightKg, r.LatestWeighedOn)).ToList();
+        var items = rows.Select(r =>
+        {
+            // Newest of a weighing at the pen and a census weight.
+            var (weight, weighedOn) = r.WeighedOn >= r.CensusWeighedOn || r.CensusWeighedOn is null
+                ? (r.WeightKg, r.WeighedOn)
+                : (r.CensusWeightKg, r.CensusWeighedOn);
+            return new AnimalListItemDto(
+                r.Id, Animal.FormatAnimalNo(r.AnimalNo), r.TagNumber, r.HasDuplicateTag, r.Sex, r.Category, r.BreedName,
+                r.BirthDate, r.BirthDateMethod, r.FarmId, r.FarmCode, r.ProjectCode, r.HerdGroupName, r.Status,
+                weight, weighedOn);
+        }).ToList();
 
         return TypedResults.Ok(new PagedResult<AnimalListItemDto>(items, total));
     }

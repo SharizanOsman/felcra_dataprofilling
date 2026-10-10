@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @inject AuthClient Auth
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <MudThemeProvider Theme="FelcraTheme.Theme" />
 <MudPopoverProvider />
@@ -9,20 +10,31 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Dense="true">
-        <MudText Typo="Typo.h6">FELCRA Field</MudText>
+        @if (!IsHome)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" OnClick="BackAsync" aria-label="Back" />
+        }
+        <MudLink Href="" Color="Color.Inherit" Underline="Underline.None"><MudText Typo="Typo.h6">FELCRA Field</MudText></MudLink>
         <MudSpacer />
         <AuthorizeView>
+            <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" Color="Color.Inherit" Href="scan" aria-label="Scan" />
             <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="LogoutAsync" aria-label="Sign out" />
         </AuthorizeView>
     </MudAppBar>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Small" Class="py-4">
+        <MudContainer MaxWidth="MaxWidth.Small" Class="py-3 px-3">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
+    private bool IsHome => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0] is "" or "/";
+
+    protected override void OnInitialized() => Navigation.LocationChanged += (_, _) => InvokeAsync(StateHasChanged);
+
+    private async Task BackAsync() => await JS.InvokeVoidAsync("felcra.back");
+
     private async Task LogoutAsync()
     {
         await Auth.LogoutAsync();

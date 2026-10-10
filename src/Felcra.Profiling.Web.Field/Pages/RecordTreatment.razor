@@ -1,0 +1,104 @@
+@page "/a/{Id:guid}/treatment"
+@attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@inherits RecordPageBase
+
+<PageTitle>Treatment — FELCRA Field</PageTitle>
+
+@if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Error">@LoadError</MudAlert>
+}
+else if (Animal is null || _products is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <AnimalHeader Animal="Animal" />
+    <MudText Typo="Typo.h6" Class="mb-2">Treatment / vaccination</MudText>
+
+    <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
+        <MudStack Spacing="3">
+            <MudSelect T="Guid" Value="_model.TreatmentProductId" ValueChanged="OnProductChanged" For="@(() => _model.TreatmentProductId)"
+                       Label="Treatment" Variant="Variant.Outlined" ToStringFunc="@(id => _products.FirstOrDefault(p => p.Id == id)?.Name ?? "")">
+                @foreach (var p in _products.OrderBy(p => p.Category).ThenBy(p => p.Name))
+                {
+                    <MudSelectItem Value="p.Id">@p.Name <MudText Typo="Typo.caption" Inline="true">· @EnumText.Humanize(p.Category)</MudText></MudSelectItem>
+                }
+            </MudSelect>
+            <MudStack Row="true">
+                <MudNumericField T="decimal?" @bind-Value="_model.Dose" For="@(() => _model.Dose)" Label="Dose" Variant="Variant.Outlined"
+                                 InputMode="@(InputMode.@decimal)" HideSpinButtons="true" />
+                <MudTextField @bind-Value="_model.DoseUnit" For="@(() => _model.DoseUnit)" Label="Unit" Variant="Variant.Outlined" Style="max-width:110px" />
+            </MudStack>
+            <MudSelect T="AdministrationRoute?" @bind-Value="_model.Route" Label="Route" Variant="Variant.Outlined" Clearable="true"
+                       ToStringFunc="@(r => r is null ? "" : EnumText.Humanize(r.Value))">
+                @foreach (var r in Enum.GetValues<AdministrationRoute>())
+                {
+                    <MudSelectItem T="AdministrationRoute?" Value="r">@EnumText.Humanize(r)</MudSelectItem>
+                }
+            </MudSelect>
+            <DateField Value="_model.GivenOn" ValueChanged="@(d => _model.GivenOn = d ?? _model.GivenOn)" Label="Date given" Clearable="false"
+                       Max="DateOnly.FromDateTime(DateTime.Today)" />
+            <MudTextField @bind-Value="_model.BatchNumber" For="@(() => _model.BatchNumber)" Label="Batch / lot number" Variant="Variant.Outlined" />
+            <DateField Value="_model.NextDueOn" ValueChanged="@(d => _model.NextDueOn = d)" Label="Next dose due (optional)" />
+            @if (_sessions.Count > 0)
+            {
+                <MudSelect T="Guid?" @bind-Value="_model.CensusSessionId" Label="Part of programme (optional)" Variant="Variant.Outlined" Clearable="true"
+                           ToStringFunc="@(id => _sessions.FirstOrDefault(s => s.Id == id)?.Title ?? "")">
+                    @foreach (var s in _sessions)
+                    {
+                        <MudSelectItem T="Guid?" Value="s.Id">@s.Title</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="Notes (optional)" Variant="Variant.Outlined" />
+
+            @if (_withdrawal is not null)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">Meat withdrawal: no slaughter before @_withdrawal.</MudAlert>
+            }
+            @if (SaveError is not null) { <MudAlert Severity="Severity.Error" Dense="true">@SaveError</MudAlert> }
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="SubmitAsync"
+                       Disabled="@(Saving || Animal.Status != AnimalStatus.Active)" Style="height:56px">
+                @(Saving ? "Saving…" : "Save")
+            </MudButton>
+        </MudStack>
+    </MudForm>
+}
+
+@code {
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new TreatmentRecordRequestValidator());
+    private MudForm _form = null!;
+    private readonly TreatmentRecordRequest _model = new();
+    private List<TreatmentProductDto>? _products;
+    private List<CensusSessionDto> _sessions = [];
+
+    private string? _withdrawal =>
+        _products?.FirstOrDefault(p => p.Id == _model.TreatmentProductId)?.WithdrawalDays is > 0 and var days
+            ? _model.GivenOn.AddDays(days).ToString("dd MMM yyyy")
+            : null;
+
+    protected override async Task OnAnimalLoadedAsync()
+    {
+        _products = (await Api.GetAsync<List<TreatmentProductDto>>("api/treatment-products")).Where(p => p.IsActive).ToList();
+        // Open programmes on this farm, so treatments given during a census can be linked to it.
+        _sessions = (await Api.GetAsync<List<CensusSessionDto>>($"api/census-sessions?farmId={Animal!.FarmId}")).Where(s => !s.IsClosed).ToList();
+    }
+
+    private void OnProductChanged(Guid productId)
+    {
+        _model.TreatmentProductId = productId;
+        var product = _products!.First(p => p.Id == productId);
+        _model.Dose = product.DefaultDose;
+        _model.DoseUnit = product.Unit;
+    }
+
+    private async Task SubmitAsync()
+    {
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+        await SaveAsync<TreatmentRecordDto>("treatments", _model, "Treatment saved.");
+    }
+}

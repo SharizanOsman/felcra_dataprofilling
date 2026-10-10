@@ -1,7 +1,11 @@
 using Felcra.Profiling.Application.Auth;
 using Felcra.Profiling.Application.Census;
 using Felcra.Profiling.Application.Users;
+using Felcra.Profiling.Application.Abstractions;
 using Felcra.Profiling.Infrastructure.Census;
+using Felcra.Profiling.Infrastructure.Storage;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Felcra.Profiling.Infrastructure.Identity;
 using Felcra.Profiling.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -50,6 +54,16 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
         services.AddScoped<ICensusImportService, CensusImportService>();
+
+        services.AddOptions<FileStoreOptions>().Bind(config.GetSection(FileStoreOptions.SectionName));
+        services.AddSingleton<IFileStore>(sp =>
+        {
+            var path = sp.GetRequiredService<IOptions<FileStoreOptions>>().Value.Path;
+            var root = System.IO.Path.IsPathRooted(path)
+                ? path
+                : System.IO.Path.Combine(sp.GetRequiredService<IHostEnvironment>().ContentRootPath, path);
+            return new LocalFileStore(root, sp.GetRequiredService<TimeProvider>());
+        });
         services.AddScoped<DbSeeder>();
 
         return services;

@@ -76,6 +76,76 @@
             </MudPaper>
         </MudItem>
 
+        @if (_records is not null)
+        {
+            <MudItem xs="12">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">Field records</MudText>
+                    <MudTabs Elevation="0" Rounded="true" TabPanelsClass="pt-2">
+                        <MudTabPanel Text="@($"Measurements ({_records.Measurements.Count})")">
+                            <MudSimpleTable Dense="true" Elevation="0">
+                                <thead><tr><th>Date</th><th>Measurement</th><th>Method</th><th>Notes</th><th>Recorded by</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var m in _records.Measurements)
+                                    {
+                                        <tr>
+                                            <td>@m.MeasuredOn.ToString("dd MMM yyyy")</td>
+                                            <td>@MeasurementText(m)</td>
+                                            <td>@(m.Method is null ? "" : EnumText.Humanize(m.Method.Value))</td>
+                                            <td>@m.Notes</td>
+                                            <td>@m.RecordedBy</td>
+                                            <td style="text-align:right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                OnClick="@(() => DeleteRecordAsync($"api/measurements/{m.Id}", MeasurementText(m)))" aria-label="Delete" /></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@($"Treatments ({_records.Treatments.Count})")">
+                            <MudSimpleTable Dense="true" Elevation="0">
+                                <thead><tr><th>Date</th><th>Treatment</th><th>Dose</th><th>Batch</th><th>Next due</th><th>Withdrawal until</th><th>Recorded by</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var t in _records.Treatments)
+                                    {
+                                        <tr>
+                                            <td>@t.GivenOn.ToString("dd MMM yyyy")</td>
+                                            <td>@t.ProductName</td>
+                                            <td>@(t.Dose is null ? "" : $"{t.Dose:0.###} {t.DoseUnit}") @(t.Route is null ? "" : $"({EnumText.Humanize(t.Route.Value)})")</td>
+                                            <td>@t.BatchNumber</td>
+                                            <td>@t.NextDueOn?.ToString("dd MMM yyyy")</td>
+                                            <td>@t.WithdrawalUntil?.ToString("dd MMM yyyy")</td>
+                                            <td>@t.RecordedBy</td>
+                                            <td style="text-align:right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                OnClick="@(() => DeleteRecordAsync($"api/treatment-records/{t.Id}", t.ProductName))" aria-label="Delete" /></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@($"Observations ({_records.Observations.Count})")">
+                            @foreach (var o in _records.Observations)
+                            {
+                                <MudStack Row="true" AlignItems="AlignItems.Start" Class="py-2" Style="border-bottom:1px solid var(--mud-palette-lines-default)">
+                                    <div style="flex:1">
+                                        <MudText Typo="Typo.subtitle2">@EnumText.Humanize(o.Category) · @o.ObservedOn.ToString("dd MMM yyyy") · @o.RecordedBy</MudText>
+                                        <MudText Typo="Typo.body2">@o.Notes</MudText>
+                                        <MudStack Row="true" Spacing="1" Class="mt-1">
+                                            @foreach (var photo in o.PhotoIds)
+                                            {
+                                                <AuthImage Url="@($"api/photos/{photo}")" Style="width:120px;height:120px;object-fit:cover;border-radius:4px" Width="120px" Height="120px" />
+                                            }
+                                        </MudStack>
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                   OnClick="@(() => DeleteRecordAsync($"api/observations/{o.Id}", "this observation"))" aria-label="Delete" />
+                                </MudStack>
+                            }
+                        </MudTabPanel>
+                    </MudTabs>
+                </MudPaper>
+            </MudItem>
+        }
+
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4" Elevation="1">
                 <MudText Typo="Typo.h6" GutterBottom="true">Census history</MudText>
@@ -120,7 +190,22 @@
     [Parameter] public Guid Id { get; set; }
 
     private AnimalDto? _animal;
+    private AnimalRecordsDto? _records;
     private Lookups? _lookups;
+
+    private static string MeasurementText(MeasurementDto m) => m.Type switch
+    {
+        MeasurementType.Weight => $"Weight {m.Value:0.#} kg",
+        MeasurementType.BodyCondition => $"BCS {m.Value:0.#}",
+        MeasurementType.MilkYield => $"Milk {m.Value:0.#} L",
+        _ => m.Value.ToString(),
+    };
+
+    private async Task DeleteRecordAsync(string url, string what)
+    {
+        if (await Dialogs.ConfirmDeleteAsync(what))
+            await NotifyAsync(await Api.DeleteAsync(url), "Record deleted.");
+    }
     private List<BreadcrumbItem> _breadcrumbs = [new("Animals", "animals")];
     private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
 
@@ -132,7 +217,8 @@
     {
         _lookups ??= await Lookups.LoadAsync(Api, includeGroups: true);
         _animal = await Api.GetAsync<AnimalDto>($"api/animals/{Id}");
-        _breadcrumbs = [new("Animals", "animals"), new(_animal.AnimalNo, null, disabled: true)];
+        _records = await Api.GetAsync<AnimalRecordsDto>($"api/animals/{Id}/records");
+        _breadcrumbs =[new("Animals", "animals"), new(_animal.AnimalNo, null, disabled: true)];
     }
 
     private async Task EditAsync() =>

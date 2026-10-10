@@ -6,6 +6,7 @@ using Felcra.Profiling.Domain.Census;
 using Felcra.Profiling.Domain.Common;
 using Felcra.Profiling.Domain.Farms;
 using Felcra.Profiling.Domain.MasterData;
+using Felcra.Profiling.Domain.Records;
 using Felcra.Profiling.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -34,6 +35,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser? 
     public DbSet<CensusSession> CensusSessions => Set<CensusSession>();
     public DbSet<CensusSessionTreatment> CensusSessionTreatments => Set<CensusSessionTreatment>();
     public DbSet<CensusEntry> CensusEntries => Set<CensusEntry>();
+    public DbSet<Measurement> Measurements => Set<Measurement>();
+    public DbSet<TreatmentRecord> TreatmentRecords => Set<TreatmentRecord>();
+    public DbSet<Observation> Observations => Set<Observation>();
+    public DbSet<Photo> Photos => Set<Photo>();
     public DbSet<UserFarm> UserFarms => Set<UserFarm>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
