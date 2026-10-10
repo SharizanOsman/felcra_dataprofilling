@@ -1,0 +1,58 @@
+@inject AuthClient Auth
+@inject NavigationManager Navigation
+
+<MudCard Elevation="3" Class="pa-4" Style="width: 100%; max-width: 420px;">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h5">@Title</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync">
+            <DataAnnotationsValidator />
+            <MudTextField @bind-Value="_model.Email" Label="Email" InputType="InputType.Email"
+                          Variant="Variant.Outlined" Required="true" autocomplete="username" Class="mb-3" />
+            <MudTextField @bind-Value="_model.Password" Label="Password" InputType="InputType.Password"
+                          Variant="Variant.Outlined" Required="true" autocomplete="current-password" Class="mb-3" />
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@_error</MudAlert>
+            }
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                       FullWidth="true" Size="Size.Large" Disabled="_busy">
+                @(_busy ? "Signing in…" : "Sign in")
+            </MudButton>
+        </EditForm>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>App-relative URL to go to after signing in.</summary>
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    private readonly LoginRequest _model = new();
+    private string? _error;
+    private bool _busy;
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _error = null;
+        var result = await Auth.LoginAsync(_model);
+        _busy = false;
+
+        if (!result.Succeeded)
+        {
+            _error = result.Error;
+            return;
+        }
+
+        // Only allow app-relative return URLs to avoid open redirects.
+        var target = ReturnUrl is { Length: > 0 } url && !url.Contains("//") && !url.Contains(':') ? url : "";
+        Navigation.NavigateTo(target);
+    }
+}

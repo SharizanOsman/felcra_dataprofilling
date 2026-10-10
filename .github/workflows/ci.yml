@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Felcra.Profiling.slnx
+
+      - name: Build
+        run: dotnet build Felcra.Profiling.slnx -c Release --no-restore
+
+      # Integration tests start PostgreSQL via Testcontainers (Docker is available on ubuntu runners).
+      - name: Test
+        run: dotnet test Felcra.Profiling.slnx -c Release --no-build --logger "trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t felcra-profiling:${{ github.sha }} .

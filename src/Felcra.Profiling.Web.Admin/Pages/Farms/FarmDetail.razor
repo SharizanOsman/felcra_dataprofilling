@@ -1,0 +1,101 @@
+@page "/farms/{Id:guid}"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="px-0 pt-0" />
+
+<PageHeader Title="@(_farm?.Name ?? "Farm")" Subtitle="@_farm?.Code" Error="@LoadError" />
+
+@if (_farm is not null)
+{
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">Details</MudText>
+                <MudSimpleTable Dense="true" Elevation="0">
+                    <tbody>
+                        <tr><td>Address</td><td>@_farm.Address</td></tr>
+                        <tr><td>State</td><td>@_farm.State</td></tr>
+                        <tr><td>Area</td><td>@_farm.AreaHectares?.ToString("N1") ha</td></tr>
+                        <tr><td>Capacity</td><td>@_farm.Capacity head</td></tr>
+                        <tr><td>Projects</td><td>@string.Join(", ", _farm.ProjectIds.Select(id => _projects.FirstOrDefault(p => p.Id == id)?.Code))</td></tr>
+                        <tr><td>Status</td><td><StatusChip Active="_farm.IsActive" /></td></tr>
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                    <MudText Typo="Typo.h6">Herd groups / pens</MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddGroupAsync">Add group</MudButton>
+                </MudStack>
+                <MudTable Items="_groups" Dense="true" Hover="true" Elevation="0" Loading="IsLoading">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Description</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Description">@context.Description</MudTd>
+                        <MudTd DataLabel="Status"><StatusChip Active="context.IsActive" /></MudTd>
+                        <MudTd Style="text-align:right">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditGroupAsync(context)" aria-label="Edit" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteGroupAsync(context)" aria-label="Delete" />
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent><MudText>No groups yet.</MudText></NoRecordsContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private FarmDto? _farm;
+    private List<ProjectDto> _projects = [];
+    private List<HerdGroupDto> _groups = [];
+    private List<BreadcrumbItem> _breadcrumbs = [];
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new HerdGroupRequestValidator());
+
+    private string GroupsUrl => $"api/farms/{Id}/groups";
+
+    protected override async Task LoadAsync()
+    {
+        _farm = await Api.GetAsync<FarmDto>($"api/farms/{Id}");
+        _projects = await Api.GetAsync<List<ProjectDto>>("api/projects");
+        _groups = await Api.GetAsync<List<HerdGroupDto>>(GroupsUrl);
+        _breadcrumbs = [new("Farms", "farms"), new(_farm.Name, null, disabled: true)];
+    }
+
+    private async Task AddGroupAsync() =>
+        await AfterSaveAsync(
+            await Dialogs.EditAsync("Add group", new HerdGroupRequest(), GroupFields,
+                m => Api.PostAsync<HerdGroupDto>(GroupsUrl, m), Validate),
+            "Group added.");
+
+    private async Task EditGroupAsync(HerdGroupDto group) =>
+        await AfterSaveAsync(
+            await Dialogs.EditAsync($"Edit {group.Name}", HerdGroupRequest.From(group), GroupFields,
+                m => Api.PutAsync<HerdGroupDto>($"{GroupsUrl}/{group.Id}", m), Validate),
+            "Group updated.");
+
+    private async Task DeleteGroupAsync(HerdGroupDto group)
+    {
+        if (await Dialogs.ConfirmDeleteAsync($"group {group.Name}"))
+            await NotifyAsync(await Api.DeleteAsync($"{GroupsUrl}/{group.Id}"), "Group deleted.");
+    }
+
+    private RenderFragment<HerdGroupRequest> GroupFields => m =>
+        @<MudStack Spacing="2">
+            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" HelperText="e.g. Pen A, Breeding herd, Weaners" />
+            <MudTextField @bind-Value="m.Description" For="@(() => m.Description)" Label="Description" Lines="2" />
+            <MudSwitch @bind-Value="m.IsActive" Label="Active" Color="Color.Primary" />
+        </MudStack>;
+}

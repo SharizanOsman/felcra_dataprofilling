@@ -1,0 +1,34 @@
+# Local development stack.
+#   docker compose up -d db          -> PostgreSQL only (run the API with `dotnet run`)
+#   docker compose --profile app up  -> PostgreSQL + the API container on http://localhost:8080
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: felcra_profiling
+      POSTGRES_USER: felcra
+      POSTGRES_PASSWORD: felcra_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U felcra -d felcra_profiling"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    profiles: ["app"]
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=db;Port=5432;Database=felcra_profiling;Username=felcra;Password=felcra_dev
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Felcra.Profiling.Domain\Felcra.Profiling.Domain.csproj" />
+    <ProjectReference Include="..\Felcra.Profiling.Contracts\Felcra.Profiling.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

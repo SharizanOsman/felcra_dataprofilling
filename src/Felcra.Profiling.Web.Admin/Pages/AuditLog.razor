@@ -1,0 +1,105 @@
+@page "/audit-log"
+@attribute [Authorize(Roles = Roles.HqAdmin)]
+@inherits AdminPageBase
+
+<PageHeader Title="Audit log" Subtitle="Every change to farms, master data and users" Error="@LoadError" />
+
+<MudTable @ref="_table" T="AuditLogDto" ServerData="LoadPageAsync" Dense="true" Hover="true" Elevation="1"
+          Breakpoint="Breakpoint.Sm" RowsPerPage="50">
+    <ToolBarContent>
+        <MudStack Row="true" Spacing="3" Style="width:100%" Wrap="Wrap.Wrap">
+            <MudSelect T="string" Value="_entityType" ValueChanged="OnEntityTypeChanged" Label="Record type" Clearable="true" Style="min-width:200px">
+                @foreach (var type in EntityTypes)
+                {
+                    <MudSelectItem Value="type">@type</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField T="string" Value="_userName" ValueChanged="OnUserChanged" Label="User" Clearable="true"
+                          DebounceInterval="400" Style="min-width:200px" />
+        </MudStack>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>When</MudTh>
+        <MudTh>User</MudTh>
+        <MudTh>Action</MudTh>
+        <MudTh>Record</MudTh>
+        <MudTh>Changes</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="When">@context.Timestamp.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudTd>
+        <MudTd DataLabel="User">@(context.UserName ?? "system")</MudTd>
+        <MudTd DataLabel="Action">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ActionColor(context.Action)">@context.Action</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Record">@context.EntityType <MudText Typo="Typo.caption" Color="Color.Secondary">@context.EntityId.ToString()[..8]</MudText></MudTd>
+        <MudTd DataLabel="Changes" Style="max-width:520px">
+            @foreach (var (field, change) in ParseChanges(context.Changes))
+            {
+                <div><strong>@field</strong>: @change</div>
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent><MudText>No changes recorded.</MudText></NoRecordsContent>
+    <PagerContent><MudTablePager PageSizeOptions="[25, 50, 100]" /></PagerContent>
+</MudTable>
+
+@code {
+    private static readonly string[] EntityTypes = ["Farm", "HerdGroup", "Project", "Breed", "TreatmentProduct", "FeedIngredient", "User"];
+
+    private MudTable<AuditLogDto> _table = null!;
+    private string? _entityType;
+    private string? _userName;
+
+    // The table loads its own data via ServerData.
+    protected override Task LoadAsync() => Task.CompletedTask;
+
+    private async Task<TableData<AuditLogDto>> LoadPageAsync(TableState state, CancellationToken ct)
+    {
+        var url = $"api/audit-logs?page={state.Page + 1}&pageSize={state.PageSize}";
+        if (_entityType is not null) url += $"&entityType={Uri.EscapeDataString(_entityType)}";
+        if (!string.IsNullOrWhiteSpace(_userName)) url += $"&userName={Uri.EscapeDataString(_userName)}";
+
+        var page = await Api.GetAsync<PagedResult<AuditLogDto>>(url);
+        return new TableData<AuditLogDto> { Items = page.Items, TotalItems = page.TotalCount };
+    }
+
+    private async Task OnEntityTypeChanged(string? value)
+    {
+        _entityType = value;
+        await _table.ReloadServerData();
+    }
+
+    private async Task OnUserChanged(string? value)
+    {
+        _userName = value;
+        await _table.ReloadServerData();
+    }
+
+    private static Color ActionColor(string action) => action switch
+    {
+        "Created" => Color.Success,
+        "Deleted" => Color.Error,
+        _ => Color.Info,
+    };
+
+    /// <summary>Turns { "Name": { "old": "a", "new": "b" } } into ("Name", "a → b").</summary>
+    private static IEnumerable<(string Field, string Change)> ParseChanges(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) yield break;
+
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        foreach (var property in doc.RootElement.EnumerateObject())
+        {
+            var hasOld = property.Value.TryGetProperty("old", out var oldValue);
+            property.Value.TryGetProperty("new", out var newValue);
+            yield return (property.Name, hasOld ? $"{Show(oldValue)} → {Show(newValue)}" : Show(newValue));
+        }
+    }
+
+    private static string Show(System.Text.Json.JsonElement value) => value.ValueKind switch
+    {
+        System.Text.Json.JsonValueKind.Null or System.Text.Json.JsonValueKind.Undefined => "(empty)",
+        System.Text.Json.JsonValueKind.String => value.GetString() ?? "",
+        _ => value.GetRawText(),
+    };
+}

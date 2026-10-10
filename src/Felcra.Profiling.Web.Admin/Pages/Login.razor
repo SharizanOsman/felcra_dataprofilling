@@ -1,0 +1,11 @@
+@page "/login"
+@layout LoginLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Sign in — FELCRA Admin</PageTitle>
+
+<LoginForm Title="FELCRA Cattle Profiling" Subtitle="Administrator portal" ReturnUrl="@ReturnUrl" />
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+}

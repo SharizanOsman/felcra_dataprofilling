@@ -1,0 +1,26 @@
+@* Page title row with optional action buttons and load-error display. *@
+<PageTitle>@Title — FELCRA Admin</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Wrap="Wrap.Wrap">
+    <div>
+        <MudText Typo="Typo.h4">@Title</MudText>
+        @if (Subtitle is not null)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
+        }
+    </div>
+    <MudSpacer />
+    @Actions
+</MudStack>
+
+@if (Error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@Error</MudAlert>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public string? Error { get; set; }
+}

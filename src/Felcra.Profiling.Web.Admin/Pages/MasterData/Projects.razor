@@ -1,0 +1,69 @@
+﻿@page "/master-data/projects"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+
+<PageHeader Title="Projects & schemes" Subtitle="Funding projects such as EPP5 and RP4" Error="@LoadError">
+    <Actions>
+        @if (IsHq)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">Add project</MudButton>
+        }
+    </Actions>
+</PageHeader>
+
+<MudTable Items="_items" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Code</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Plan</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Plan">@context.PlanReference</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Status"><StatusChip Active="context.IsActive" /></MudTd>
+        <MudTd Style="text-align:right">
+            @if (IsHq)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="Edit" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="Delete" />
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent><MudText>No projects yet.</MudText></NoRecordsContent>
+</MudTable>
+
+@code {
+    private const string Url = "api/projects";
+    private List<ProjectDto> _items = [];
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new ProjectRequestValidator());
+
+    protected override async Task LoadAsync() => _items = await Api.GetAsync<List<ProjectDto>>(Url);
+
+    private async Task AddAsync() =>
+        await AfterSaveAsync(await Dialogs.EditAsync("Add project", new ProjectRequest(), Fields,
+            m => Api.PostAsync<ProjectDto>(Url, m), Validate), "Project added.");
+
+    private async Task EditAsync(ProjectDto item) =>
+        await AfterSaveAsync(await Dialogs.EditAsync($"Edit {item.Code}", ProjectRequest.From(item), Fields,
+            m => Api.PutAsync<ProjectDto>($"{Url}/{item.Id}", m), Validate), "Project updated.");
+
+    private async Task DeleteAsync(ProjectDto item)
+    {
+        if (await Dialogs.ConfirmDeleteAsync($"project {item.Code}"))
+            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), "Project deleted.");
+    }
+
+    private RenderFragment<ProjectRequest> Fields => m =>
+        @<MudStack Spacing="2">
+            <MudTextField @bind-Value="m.Code" For="@(() => m.Code)" Label="Code" HelperText="e.g. EPP5" />
+            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" />
+            <MudTextField @bind-Value="m.PlanReference" For="@(() => m.PlanReference)" Label="Plan reference" HelperText="e.g. RMK-11" />
+            <MudTextField @bind-Value="m.Description" For="@(() => m.Description)" Label="Description" Lines="3" />
+            <MudSwitch @bind-Value="m.IsActive" Label="Active" Color="Color.Primary" />
+        </MudStack>;
+}

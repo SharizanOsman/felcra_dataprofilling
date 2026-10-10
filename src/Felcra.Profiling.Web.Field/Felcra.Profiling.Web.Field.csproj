@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <!-- Classic index.html (no build-time placeholders): the hosted index.html must be a plain static web asset. -->
+    <WasmFingerprintAssets>false</WasmFingerprintAssets>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+    <!-- Served by the API host under /field. -->
+    <StaticWebAssetBasePath>field</StaticWebAssetBasePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Felcra.Profiling.UI.Shared\Felcra.Profiling.UI.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>felcra-profiling-api</UserSecretsId>
+    <!-- Both Blazor clients have a wwwroot/index.html; their real assets are published under /admin and /field via static web assets. -->
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Serilog.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Felcra.Profiling.Infrastructure\Felcra.Profiling.Infrastructure.csproj" />
+    <ProjectReference Include="..\Felcra.Profiling.Analytics\Felcra.Profiling.Analytics.csproj" />
+    <ProjectReference Include="..\Felcra.Profiling.Web.Admin\Felcra.Profiling.Web.Admin.csproj" />
+    <ProjectReference Include="..\Felcra.Profiling.Web.Field\Felcra.Profiling.Web.Field.csproj" />
+  </ItemGroup>
+
+  <!-- Drop the clients' raw wwwroot/index.html copies; the real pages are published under wwwroot/admin and wwwroot/field. -->
+  <Target Name="RemoveClientRootIndexHtml" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.RelativePath)' == 'wwwroot\index.html'" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Felcra.Profiling.Api.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

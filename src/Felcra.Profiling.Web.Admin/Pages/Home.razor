@@ -1,0 +1,29 @@
+@page "/"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inject HttpClient Http
+
+<PageTitle>Dashboard — FELCRA Admin</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Dashboard</MudText>
+
+@if (_user is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudText Typo="Typo.h6">Welcome, @_user.FullName</MudText>
+        <MudText Typo="Typo.body2">Roles: @string.Join(", ", _user.Roles)</MudText>
+        <MudText Typo="Typo.body2">
+            Farms: @(_user.Roles.Contains(Roles.HqAdmin) ? "All farms (HQ)" : _user.FarmIds.Count.ToString())
+        </MudText>
+    </MudPaper>
+}
+
+@code {
+    private CurrentUserDto? _user;
+
+    protected override async Task OnInitializedAsync() =>
+        _user = await Http.GetFromJsonAsync<CurrentUserDto>("api/auth/me");
+}

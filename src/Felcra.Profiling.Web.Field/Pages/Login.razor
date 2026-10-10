@@ -1,0 +1,11 @@
+@page "/login"
+@layout LoginLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Sign in — FELCRA Field</PageTitle>
+
+<LoginForm Title="FELCRA Field" Subtitle="Field officer app" ReturnUrl="@ReturnUrl" />
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+}

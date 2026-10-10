@@ -1,0 +1,95 @@
+@page "/farms"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+
+<PageHeader Title="Farms" Subtitle="Farms and premises in the breeding programme" Error="@LoadError">
+    <Actions>
+        @if (IsHq)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">Add farm</MudButton>
+        }
+    </Actions>
+</PageHeader>
+
+<MudTable Items="_farms" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Code</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>State</MudTh>
+        <MudTh Style="text-align:right">Area (ha)</MudTh>
+        <MudTh Style="text-align:right">Capacity</MudTh>
+        <MudTh>Projects</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Name"><MudLink Href="@($"farms/{context.Id}")">@context.Name</MudLink></MudTd>
+        <MudTd DataLabel="State">@context.State</MudTd>
+        <MudTd DataLabel="Area (ha)" Style="text-align:right">@context.AreaHectares?.ToString("N1")</MudTd>
+        <MudTd DataLabel="Capacity" Style="text-align:right">@context.Capacity</MudTd>
+        <MudTd DataLabel="Projects">@string.Join(", ", context.ProjectIds.Select(ProjectCode))</MudTd>
+        <MudTd DataLabel="Status"><StatusChip Active="context.IsActive" /></MudTd>
+        <MudTd Style="text-align:right">
+            @if (IsHq)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="Edit" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="Delete" />
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent><MudText>No farms yet.</MudText></NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<FarmDto> _farms = [];
+    private List<ProjectDto> _projects = [];
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new FarmRequestValidator());
+
+    protected override async Task LoadAsync()
+    {
+        _projects = await Api.GetAsync<List<ProjectDto>>("api/projects");
+        _farms = await Api.GetAsync<List<FarmDto>>("api/farms");
+    }
+
+    private string ProjectCode(Guid id) => _projects.FirstOrDefault(p => p.Id == id)?.Code ?? "?";
+
+    private async Task AddAsync() =>
+        await AfterSaveAsync(
+            await Dialogs.EditAsync("Add farm", new FarmRequest(), FarmFields,
+                m => Api.PostAsync<FarmDto>("api/farms", m), Validate),
+            "Farm added.");
+
+    private async Task EditAsync(FarmDto farm) =>
+        await AfterSaveAsync(
+            await Dialogs.EditAsync($"Edit {farm.Name}", FarmRequest.From(farm), FarmFields,
+                m => Api.PutAsync<FarmDto>($"api/farms/{farm.Id}", m), Validate),
+            "Farm updated.");
+
+    private async Task DeleteAsync(FarmDto farm)
+    {
+        if (await Dialogs.ConfirmDeleteAsync($"farm {farm.Name}"))
+            await NotifyAsync(await Api.DeleteAsync($"api/farms/{farm.Id}"), "Farm deleted.");
+    }
+
+    private RenderFragment<FarmRequest> FarmFields => m =>
+        @<MudStack Spacing="2">
+            <MudTextField @bind-Value="m.Code" For="@(() => m.Code)" Label="Code" HelperText="Short unique code, e.g. PAGOH" />
+            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" />
+            <MudTextField @bind-Value="m.Address" For="@(() => m.Address)" Label="Address" Lines="2" />
+            <MudTextField @bind-Value="m.State" For="@(() => m.State)" Label="State" />
+            <MudStack Row="true">
+                <MudNumericField @bind-Value="m.AreaHectares" For="@(() => m.AreaHectares)" Label="Area (ha)" />
+                <MudNumericField @bind-Value="m.Capacity" For="@(() => m.Capacity)" Label="Capacity (head)" />
+            </MudStack>
+            <MudSelect T="Guid" Label="Projects / schemes" MultiSelection="true"
+                       SelectedValues="m.ProjectIds" SelectedValuesChanged="@(v => m.ProjectIds = v.ToList())"
+                       ToStringFunc="ProjectCode">
+                @foreach (var p in _projects.Where(p => p.IsActive || m.ProjectIds.Contains(p.Id)))
+                {
+                    <MudSelectItem Value="p.Id">@p.Code — @p.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSwitch @bind-Value="m.IsActive" Label="Active" Color="Color.Primary" />
+        </MudStack>;
+}

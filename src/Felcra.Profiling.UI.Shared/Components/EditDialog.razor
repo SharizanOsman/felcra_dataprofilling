@@ -1,0 +1,54 @@
+@typeparam TModel where TModel : class
+@using Felcra.Profiling.UI.Shared.Api
+
+@* Generic add/edit dialog: the caller supplies the fields, client-side validation and the save call. *@
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Model="Model" Validation="Validation" ValidationDelay="0">
+            @Fields(Model)
+        </MudForm>
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="_saving">
+            @(_saving ? "Saving…" : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = null!;
+
+    [Parameter, EditorRequired] public TModel Model { get; set; } = null!;
+    [Parameter, EditorRequired] public RenderFragment<TModel> Fields { get; set; } = null!;
+
+    /// <summary>Per-field client validation, typically <c>FormValidation.For(validator)</c>.</summary>
+    [Parameter] public Func<object, string, Task<IEnumerable<string>>>? Validation { get; set; }
+
+    /// <summary>Saves the model; the dialog closes with the returned value on success.</summary>
+    [Parameter, EditorRequired] public Func<TModel, Task<ApiResult<object>>> Save { get; set; } = null!;
+
+    private MudForm _form = null!;
+    private string? _error;
+    private bool _saving;
+
+    private void Cancel() => Dialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        await _form.ValidateAsync();
+        if (!_form.IsValid) return;
+
+        _saving = true;
+        _error = null;
+        var result = await Save(Model);
+        _saving = false;
+
+        if (result.Succeeded) Dialog.Close(DialogResult.Ok(result.Value));
+        else _error = result.FullError;
+    }
+}

@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Felcra.Profiling.Analytics/Felcra.Profiling.Analytics.csproj" />
+    <Project Path="src/Felcra.Profiling.Api/Felcra.Profiling.Api.csproj" />
+    <Project Path="src/Felcra.Profiling.Application/Felcra.Profiling.Application.csproj" />
+    <Project Path="src/Felcra.Profiling.Contracts/Felcra.Profiling.Contracts.csproj" />
+    <Project Path="src/Felcra.Profiling.Domain/Felcra.Profiling.Domain.csproj" />
+    <Project Path="src/Felcra.Profiling.Infrastructure/Felcra.Profiling.Infrastructure.csproj" />
+    <Project Path="src/Felcra.Profiling.UI.Shared/Felcra.Profiling.UI.Shared.csproj" />
+    <Project Path="src/Felcra.Profiling.Web.Admin/Felcra.Profiling.Web.Admin.csproj" />
+    <Project Path="src/Felcra.Profiling.Web.Field/Felcra.Profiling.Web.Field.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Felcra.Profiling.Analytics.Tests/Felcra.Profiling.Analytics.Tests.csproj" />
+    <Project Path="tests/Felcra.Profiling.Api.IntegrationTests/Felcra.Profiling.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Felcra.Profiling.Domain.Tests/Felcra.Profiling.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

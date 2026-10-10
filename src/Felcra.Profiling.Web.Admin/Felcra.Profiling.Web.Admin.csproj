@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <!-- Classic index.html (no build-time placeholders): the hosted index.html must be a plain static web asset. -->
+    <WasmFingerprintAssets>false</WasmFingerprintAssets>
+    <!-- Served by the API host under /admin. -->
+    <StaticWebAssetBasePath>admin</StaticWebAssetBasePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Felcra.Profiling.UI.Shared\Felcra.Profiling.UI.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

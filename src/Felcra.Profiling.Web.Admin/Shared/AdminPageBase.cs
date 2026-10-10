@@ -1,0 +1,72 @@
+using Felcra.Profiling.Contracts.Auth;
+using Felcra.Profiling.UI.Shared.Api;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using MudBlazor;
+
+namespace Felcra.Profiling.Web.Admin.Shared;
+
+/// <summary>Common plumbing for admin pages: current role, data loading with error capture, and save notifications.</summary>
+public abstract class AdminPageBase : ComponentBase
+{
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = null!;
+
+    [Inject] protected ApiClient Api { get; set; } = null!;
+    [Inject] protected IDialogService Dialogs { get; set; } = null!;
+    [Inject] protected ISnackbar Snackbar { get; set; } = null!;
+
+    protected bool IsHq { get; private set; }
+    protected bool IsLoading { get; private set; } = true;
+    protected string? LoadError { get; private set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState;
+        IsHq = state.User.IsInRole(Roles.HqAdmin);
+        await ReloadAsync();
+    }
+
+    /// <summary>Loads the page's data; failures are shown via <see cref="LoadError"/>.</summary>
+    protected abstract Task LoadAsync();
+
+    protected async Task ReloadAsync()
+    {
+        IsLoading = true;
+        LoadError = null;
+        try
+        {
+            await LoadAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            LoadError = ex.StatusCode is System.Net.HttpStatusCode.NotFound
+                ? "This record was not found or you do not have access to it."
+                : "Could not load data from the server. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>Shows a snackbar for a delete (or other non-dialog) call and reloads on success.</summary>
+    protected async Task NotifyAsync<T>(ApiResult<T> result, string successMessage)
+    {
+        if (result.Succeeded)
+        {
+            Snackbar.Add(successMessage, Severity.Success);
+            await ReloadAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.FullError ?? "Something went wrong.", Severity.Error);
+        }
+    }
+
+    protected async Task AfterSaveAsync(bool saved, string successMessage)
+    {
+        if (!saved) return;
+        Snackbar.Add(successMessage, Severity.Success);
+        await ReloadAsync();
+    }
+}

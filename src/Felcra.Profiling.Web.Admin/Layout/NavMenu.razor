@@ -1,0 +1,17 @@
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    <MudNavLink Href="farms" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Agriculture">Farms</MudNavLink>
+    @* Step 3+: Animals, Census, Breeding, Reports *@
+    <MudNavGroup Title="Master data" Icon="@Icons.Material.Filled.Tune" Expanded="true">
+        <MudNavLink Href="master-data/projects" Icon="@Icons.Material.Filled.Folder">Projects &amp; schemes</MudNavLink>
+        <MudNavLink Href="master-data/breeds" Icon="@Icons.Material.Filled.Pets">Breeds</MudNavLink>
+        <MudNavLink Href="master-data/treatments" Icon="@Icons.Material.Filled.Vaccines">Treatments &amp; vaccines</MudNavLink>
+        <MudNavLink Href="master-data/feeds" Icon="@Icons.Material.Filled.Grass">Feed ingredients</MudNavLink>
+    </MudNavGroup>
+    <AuthorizeView Roles="@Roles.HqAdmin">
+        <MudNavGroup Title="Administration" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true">
+            <MudNavLink Href="users" Icon="@Icons.Material.Filled.People">Users</MudNavLink>
+            <MudNavLink Href="audit-log" Icon="@Icons.Material.Filled.History">Audit log</MudNavLink>
+        </MudNavGroup>
+    </AuthorizeView>
+</MudNavMenu>
