@@ -1,0 +1,223 @@
+@page "/census/{Id:guid}"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@inject NavigationManager Navigation
+
+<MudBreadcrumbs Items="_breadcrumbs" Class="px-0 pt-0" />
+
+<PageHeader Title="@(_session?.Title ?? "Census session")"
+            Subtitle="@(_session is null ? null : $"{_session.FarmCode} · {_session.StartDate:dd MMM yyyy} – {_session.EndDate:dd MMM yyyy}{(_session.IsClosed ? " · Closed" : "")}")"
+            Error="@LoadError">
+    <Actions>
+        @if (_session is not null)
+        {
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditSessionAsync">Edit session</MudButton>
+            @if (!_session.IsClosed)
+            {
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddEntryAsync">Add animal</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="ImportAsync">Import sheet</MudButton>
+            }
+        }
+    </Actions>
+</PageHeader>
+
+@if (_session is not null && _lookups is not null)
+{
+    <MudGrid Class="mb-2">
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">Population</MudText>
+                <MudSimpleTable Dense="true" Elevation="0">
+                    <thead><tr><th></th><th style="text-align:right">Bulls (P)</th><th style="text-align:right">Dams (I)</th><th style="text-align:right">Male calves (AJ)</th><th style="text-align:right">Female calves (AB)</th><th style="text-align:right">Total</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>On record</td>
+                            <td style="text-align:right">@_session.RecordedBulls</td>
+                            <td style="text-align:right">@_session.RecordedDams</td>
+                            <td style="text-align:right">@_session.RecordedMaleCalves</td>
+                            <td style="text-align:right">@_session.RecordedFemaleCalves</td>
+                            <td style="text-align:right">@Census.RecordedTotal(_session)</td>
+                        </tr>
+                        <tr>
+                            <td>Counted</td>
+                            <td style="text-align:right">@Diff(_session.Counted.Bulls, _session.RecordedBulls)</td>
+                            <td style="text-align:right">@Diff(_session.Counted.Dams, _session.RecordedDams)</td>
+                            <td style="text-align:right">@Diff(_session.Counted.MaleCalves, _session.RecordedMaleCalves)</td>
+                            <td style="text-align:right">@Diff(_session.Counted.FemaleCalves, _session.RecordedFemaleCalves)</td>
+                            <td style="text-align:right"><strong>@_session.Counted.Total</strong></td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+                <MudText Typo="Typo.body2" Class="mt-2">Selected: <strong>@_session.SelectedCount</strong></MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">Programme</MudText>
+                <MudText Typo="Typo.body2">PIC: @_session.PicName @(_session.PicPosition is null ? "" : $"({_session.PicPosition})") @_session.PicPhone</MudText>
+                <MudText Typo="Typo.body2" Class="mt-1">Treatments:</MudText>
+                <ul style="margin:0 0 0 1.2em">
+                    @foreach (var t in _session.TreatmentProductIds)
+                    {
+                        <li><MudText Typo="Typo.body2">@_lookups.Treatments.FirstOrDefault(x => x.Id == t)?.Name</MudText></li>
+                    }
+                </ul>
+                @if (_session.Notes is not null) { <MudText Typo="Typo.body2" Class="mt-1">@_session.Notes</MudText> }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudTable Items="_entries" Hover="true" Dense="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm" Filter="Matches">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Animals counted (@_entries.Count)</MudText>
+            <MudSpacer />
+            <MudSwitch T="bool" @bind-Value="_selectedOnly" Label="Selected only" Color="Color.Primary" />
+            <MudTextField @bind-Value="_search" Placeholder="Tag or animal no." Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Style="max-width:220px" Class="mt-0" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Bil</MudTh>
+            <MudTh>Animal</MudTh>
+            <MudTh>Tag</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>Age</MudTh>
+            <MudTh Style="text-align:right">Weight</MudTh>
+            <MudTh>BCS</MudTh>
+            <MudTh>Project</MudTh>
+            <MudTh>Selected</MudTh>
+            <MudTh>Remarks</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Bil">@context.LineNo</MudTd>
+            <MudTd DataLabel="Animal"><MudLink Href="@($"animals/{context.AnimalId}")">@context.AnimalNo</MudLink></MudTd>
+            <MudTd DataLabel="Tag"><TagLabel Tag="@context.TagNumber" Duplicate="context.HasDuplicateTag" /></MudTd>
+            <MudTd DataLabel="Category">@AnimalText.Category(context.Category)</MudTd>
+            <MudTd DataLabel="Age">@AnimalText.Months(context.EstimatedAgeMonths)</MudTd>
+            <MudTd DataLabel="Weight" Style="text-align:right">@AnimalText.Weight(context.WeightKg)</MudTd>
+            <MudTd DataLabel="BCS">@context.BodyConditionScore</MudTd>
+            <MudTd DataLabel="Project">@context.ProjectCode</MudTd>
+            <MudTd DataLabel="Selected">
+                <MudCheckBox T="bool" Value="context.Selected" ValueChanged="@(v => ToggleSelectedAsync(context, v))"
+                             Disabled="_session.IsClosed" Color="Color.Primary" Size="Size.Small" />
+            </MudTd>
+            <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+            <MudTd Style="text-align:right;white-space:nowrap">
+                @if (!_session.IsClosed)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditEntryAsync(context)" aria-label="Edit" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteEntryAsync(context)" aria-label="Remove" />
+                }
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent><MudText>No animals counted yet. Import the census sheet or add animals one by one.</MudText></NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private CensusSessionDto? _session;
+    private List<CensusEntryDto> _entries = [];
+    private Lookups? _lookups;
+    private List<BreadcrumbItem> _breadcrumbs = [new("Census", "census")];
+    private string? _search;
+    private bool _selectedOnly;
+
+    private static readonly Func<object, string, Task<IEnumerable<string>>> ValidateSession = FormValidation.For(new CensusSessionRequestValidator());
+    private static readonly Func<object, string, Task<IEnumerable<string>>> ValidateEntry = FormValidation.For(new CensusEntryRequestValidator());
+
+    private string EntriesUrl => $"api/census-sessions/{Id}/entries";
+
+    protected override async Task LoadAsync()
+    {
+        _lookups ??= await Lookups.LoadAsync(Api);
+        _session = await Api.GetAsync<CensusSessionDto>($"api/census-sessions/{Id}");
+        _entries = await Api.GetAsync<List<CensusEntryDto>>(EntriesUrl);
+        _breadcrumbs = [new("Census", "census"), new(_session.Title, null, disabled: true)];
+    }
+
+    private bool Matches(CensusEntryDto e) =>
+        (!_selectedOnly || e.Selected)
+        && (string.IsNullOrWhiteSpace(_search)
+            || (e.TagNumber?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || e.AnimalNo.Contains(_search, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Counted value, with the difference from the recorded population when it differs.</summary>
+    private static RenderFragment Diff(int counted, int? recorded) => __builder =>
+    {
+        if (recorded is null || recorded == counted)
+        {
+            <span>@counted</span>
+        }
+        else
+        {
+            <span>@counted <MudText Typo="Typo.caption" Color="Color.Error" Style="display:inline">(@((counted - recorded.Value).ToString("+0;-0")))</MudText></span>
+        }
+    };
+
+    private async Task EditSessionAsync() =>
+        await AfterSaveAsync(await Dialogs.EditAsync("Edit census session", CensusSessionRequest.From(_session!),
+            m => @<CensusSessionFields Model="m" Lookups="_lookups!" />,
+            m => Api.PutAsync<CensusSessionDto>($"api/census-sessions/{Id}", m), ValidateSession), "Session updated.");
+
+    private async Task ImportAsync()
+    {
+        var dialog = await Dialogs.ShowAsync<ImportDialog>("Import census sheet",
+            new DialogParameters<ImportDialog> { { d => d.SessionId, Id } },
+            new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: ImportResultDto r })
+        {
+            Snackbar.Add($"Imported: {r.AnimalsCreated} new animal(s), {r.AnimalsMatched} matched, {r.EntriesCreated + r.EntriesUpdated} census entries.", Severity.Success);
+            await ReloadAsync();
+        }
+    }
+
+    private async Task AddEntryAsync()
+    {
+        AnimalListItemDto? chosen = null;
+        var model = new CensusEntryRequest();
+        await AfterSaveAsync(await Dialogs.EditAsync("Add animal to census", model,
+            m => @<MudStack Spacing="2">
+                <MudAutocomplete T="AnimalListItemDto" Label="Animal (tag or animal no.)" SearchFunc="SearchAnimalsAsync"
+                                 ToStringFunc="@(a => a is null ? "" : $"{a.AnimalNo} · {a.TagNumber ?? "no tag"} · {AnimalText.Category(a.Category)}")"
+                                 ValueChanged="@(a => { chosen = a; m.AnimalId = a?.Id ?? Guid.Empty; if (a is not null) m.Category = a.Category; })"
+                                 MinCharacters="1" DebounceInterval="300" />
+                <EntryFields Model="m" />
+            </MudStack>,
+            m => Api.PostAsync<CensusEntryDto>(EntriesUrl, m), ValidateEntry), "Animal added to the census.");
+    }
+
+    private async Task<IEnumerable<AnimalListItemDto>> SearchAnimalsAsync(string text, CancellationToken ct)
+    {
+        var page = await Api.GetAsync<PagedResult<AnimalListItemDto>>(
+            $"api/animals?farmId={_session!.FarmId}&search={Uri.EscapeDataString(text ?? "")}&pageSize=20");
+        return page.Items;
+    }
+
+    private async Task EditEntryAsync(CensusEntryDto entry) =>
+        await AfterSaveAsync(await Dialogs.EditAsync($"{entry.AnimalNo} · {entry.TagNumber ?? "no tag"}", CensusEntryRequest.From(entry),
+            m => @<EntryFields Model="m" />,
+            m => Api.PutAsync<CensusEntryDto>($"{EntriesUrl}/{entry.Id}", m), ValidateEntry), "Entry updated.");
+
+    private async Task ToggleSelectedAsync(CensusEntryDto entry, bool selected)
+    {
+        var request = CensusEntryRequest.From(entry);
+        request.Selected = selected;
+        var result = await Api.PutAsync<CensusEntryDto>($"{EntriesUrl}/{entry.Id}", request);
+        if (!result.Succeeded)
+        {
+            Snackbar.Add(result.FullError ?? "Could not update.", Severity.Error);
+            return;
+        }
+        _entries[_entries.IndexOf(entry)] = result.Value!;
+        _session = await Api.GetAsync<CensusSessionDto>($"api/census-sessions/{Id}");
+    }
+
+    private async Task DeleteEntryAsync(CensusEntryDto entry)
+    {
+        if (await Dialogs.ConfirmDeleteAsync($"{entry.AnimalNo} from this census (the animal itself is kept)"))
+            await NotifyAsync(await Api.DeleteAsync($"{EntriesUrl}/{entry.Id}"), "Removed from census.");
+    }
+}

@@ -90,6 +90,17 @@ public class AuthTests(ApiFactory factory)
     }
 
     [Theory]
+    [InlineData("/favicon.ico")]
+    [InlineData("/no-such-page")]
+    [InlineData("/api/no-such-endpoint")]
+    public async Task Unknown_paths_are_404_not_401(string url)
+    {
+        var response = await factory.CreateClient().GetAsync(url);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Theory]
     [InlineData("/admin/")]
     [InlineData("/field/")]
     [InlineData("/field/manifest.webmanifest")]

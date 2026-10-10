@@ -1,0 +1,20 @@
+@* Census entry fields: what is assessed for each animal during the programme. *@
+<MudStack Spacing="2">
+    <MudSelect T="AnimalCategory" @bind-Value="Model.Category" For="@(() => Model.Category)" Label="Category at census">
+        @foreach (var c in Enum.GetValues<AnimalCategory>())
+        {
+            <MudSelectItem Value="c">@AnimalText.Category(c)</MudSelectItem>
+        }
+    </MudSelect>
+    <MudStack Row="true">
+        <MudNumericField @bind-Value="Model.WeightKg" For="@(() => Model.WeightKg)" Label="Weight (kg)" />
+        <MudNumericField @bind-Value="Model.EstimatedAgeMonths" For="@(() => Model.EstimatedAgeMonths)" Label="Estimated age (months)" />
+        <MudNumericField @bind-Value="Model.BodyConditionScore" For="@(() => Model.BodyConditionScore)" Label="BCS" Step="0.5m" />
+    </MudStack>
+    <MudTextField @bind-Value="Model.Remarks" For="@(() => Model.Remarks)" Label="Remarks" />
+    <MudSwitch @bind-Value="Model.Selected" Label="Selected for the programme" Color="Color.Primary" />
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public CensusEntryRequest Model { get; set; } = null!;
+}

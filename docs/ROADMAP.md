@@ -7,7 +7,7 @@ Delivery is split into steps; each is demoable and deployable to staging. Milest
 | 0 | URS & data dictionary | Draft — [URS.md](URS.md), awaiting FELCRA review |
 | 1 | Foundation (solution, PostgreSQL, auth, audit, CI) | Done |
 | 2 | Master data, farm & user management | Done — model parameters & reminder settings moved to Steps 7 & 6, where they are used |
-| 3 | Animal registry, census & import | Not started |
+| 3 | Animal registry, census & import | Done — Pagoh census (140 head) imports cleanly; dam/sire pickers come with breeding in Step 6 |
 | 4 | Field PWA (online) | Not started |
 | 5 | Offline-first & sync | Not started |
 | 6 | Fertility, breeding & reminders | Not started |

@@ -1,0 +1,163 @@
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2">
+                Upload the census sheet as Excel (.xlsx) or CSV. The FFISB paper-form layout (BIL, NO. TAG, P / I / AJ / AB, UMUR, BERAT, CATATAN) is accepted as-is.
+                <MudLink OnClick="DownloadTemplateAsync" Class="ml-1">Download template</MudLink>
+            </MudText>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                <MudFileUpload T="IBrowserFile" FilesChanged="OnFileSelected" Accept=".xlsx,.csv" MaxFileSize="@MaxBytes">
+                    <CustomContent>
+                        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="@context.OpenFilePickerAsync">
+                            Choose file
+                        </MudButton>
+                    </CustomContent>
+                </MudFileUpload>
+                <MudText>@(_fileName ?? "No file chosen")</MudText>
+                <MudSpacer />
+                <MudSwitch T="bool" Value="_matchExisting" ValueChanged="OnMatchChanged" Color="Color.Primary"
+                           Label="Match existing animals by tag" />
+            </MudStack>
+            <MudText Typo="Typo.caption">
+                Turn matching off for a first registration (every row becomes a new animal). Turn it on to re-count animals already in the system.
+            </MudText>
+
+            @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+            @if (_error is not null) { <MudAlert Severity="Severity.Error" Dense="true">@_error</MudAlert> }
+
+            @if (_preview is not null)
+            {
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">New animals: @_preview.AnimalsToCreate</MudChip>
+                    <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">Matched: @_preview.AnimalsToMatch</MudChip>
+                    <MudChip T="string" Color="Color.Error" Variant="Variant.Outlined">Errors: @_preview.RowsWithErrors</MudChip>
+                    <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined">Warnings: @_preview.RowsWithWarnings</MudChip>
+                    <MudChip T="string" Variant="Variant.Text">
+                        P @_preview.Counts.Bulls · I @_preview.Counts.Dams · AJ @_preview.Counts.MaleCalves · AB @_preview.Counts.FemaleCalves = @_preview.Counts.Total
+                    </MudChip>
+                </MudStack>
+                <MudSwitch T="bool" @bind-Value="_problemsOnly" Label="Show only rows with errors or warnings" Color="Color.Primary" />
+                <MudTable Items="VisibleRows" Dense="true" Hover="true" Elevation="0" Height="420px" FixedHeader="true" Breakpoint="Breakpoint.None">
+                    <HeaderContent>
+                        <MudTh>Row</MudTh>
+                        <MudTh>Bil</MudTh>
+                        <MudTh>Tag</MudTh>
+                        <MudTh>Category</MudTh>
+                        <MudTh>Age</MudTh>
+                        <MudTh Style="text-align:right">Weight</MudTh>
+                        <MudTh>Project</MudTh>
+                        <MudTh>Sel.</MudTh>
+                        <MudTh>Action</MudTh>
+                        <MudTh>Messages</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.RowNumber</MudTd>
+                        <MudTd>@context.LineNo</MudTd>
+                        <MudTd>@(context.TagNumber ?? "—")</MudTd>
+                        <MudTd>@(context.Category is { } c ? AnimalText.Category(c) : "")</MudTd>
+                        <MudTd>@context.AgeText</MudTd>
+                        <MudTd Style="text-align:right">@AnimalText.Weight(context.WeightKg)</MudTd>
+                        <MudTd>@context.ProjectCode</MudTd>
+                        <MudTd>@(context.Selected ? "✓" : "")</MudTd>
+                        <MudTd>
+                            @switch (context.Action)
+                            {
+                                case ImportRowAction.CreateAnimal:
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">New</MudChip>
+                                    break;
+                                case ImportRowAction.MatchExisting:
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@context.MatchedAnimalNo</MudChip>
+                                    break;
+                                default:
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">Error</MudChip>
+                                    break;
+                            }
+                        </MudTd>
+                        <MudTd Style="max-width:360px">
+                            @foreach (var e in context.Errors) { <MudText Typo="Typo.caption" Color="Color.Error" Style="display:block">@e</MudText> }
+                            @foreach (var w in context.Warnings) { <MudText Typo="Typo.caption" Color="Color.Warning" Style="display:block">@w</MudText> }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog.Cancel())" Disabled="_busy">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ImportAsync" Disabled="@(_busy || _preview is not { CanImport: true })">
+            Import @(_preview?.Rows.Count) rows
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private const long MaxBytes = 5 * 1024 * 1024;
+
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = null!;
+    [Parameter, EditorRequired] public Guid SessionId { get; set; }
+
+    private byte[]? _content;
+    private string? _fileName;
+    private string? _contentType;
+    private bool _matchExisting = true;
+    private bool _problemsOnly;
+    private bool _busy;
+    private string? _error;
+    private ImportPreviewDto? _preview;
+
+    private IEnumerable<ImportRowDto> VisibleRows =>
+        _preview!.Rows.Where(r => !_problemsOnly || r.Errors.Count > 0 || r.Warnings.Count > 0);
+
+    private string Query => $"api/census-sessions/{SessionId}/import{{0}}?matchExisting={_matchExisting.ToString().ToLowerInvariant()}";
+
+    private async Task OnFileSelected(IBrowserFile? file)
+    {
+        if (file is null) return;
+        _error = null;
+        _preview = null;
+        if (file.Size > MaxBytes)
+        {
+            _error = "The file is larger than 5 MB.";
+            return;
+        }
+
+        using var stream = new MemoryStream();
+        await file.OpenReadStream(MaxBytes).CopyToAsync(stream);
+        (_content, _fileName, _contentType) = (stream.ToArray(), file.Name, file.ContentType);
+        await PreviewAsync();
+    }
+
+    private async Task OnMatchChanged(bool value)
+    {
+        _matchExisting = value;
+        if (_content is not null) await PreviewAsync();
+    }
+
+    private async Task PreviewAsync()
+    {
+        _busy = true;
+        var result = await Api.PostFileAsync<ImportPreviewDto>(string.Format(Query, "/preview"), new MemoryStream(_content!), _fileName!, _contentType);
+        _busy = false;
+        (_preview, _error) = (result.Value, result.FullError);
+    }
+
+    private async Task ImportAsync()
+    {
+        _busy = true;
+        var result = await Api.PostFileAsync<ImportResultDto>(string.Format(Query, ""), new MemoryStream(_content!), _fileName!, _contentType);
+        _busy = false;
+        if (result.Succeeded) Dialog.Close(DialogResult.Ok(result.Value));
+        else _error = result.FullError;
+    }
+
+    private async Task DownloadTemplateAsync()
+    {
+        var bytes = await Api.GetBytesAsync("api/census-sessions/import-template");
+        await JS.InvokeVoidAsync("felcra.downloadFile", "census-template.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Convert.ToBase64String(bytes));
+    }
+}

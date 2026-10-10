@@ -1,0 +1,57 @@
+@page "/animals/labels"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="no-print">
+    <PageHeader Title="QR labels" Subtitle="@($"{_animals.Count} label(s). Print on A4; each label links to the animal in the field app.")" Error="@LoadError">
+        <Actions>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack" Href="animals">Back</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print" OnClick="PrintAsync"
+                       Disabled="_animals.Count == 0">Print</MudButton>
+        </Actions>
+    </PageHeader>
+    @if (_truncated)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">Only the first @MaxLabels labels are shown. Narrow the filters to print the rest.</MudAlert>
+    }
+</div>
+
+@if (IsLoading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+
+<div class="label-sheet">
+    @foreach (var a in _animals)
+    {
+        <div class="label">
+            <AnimalQrCode AnimalId="a.Id" Size="110" />
+            <div class="label-text">
+                <div class="label-no">@a.AnimalNo</div>
+                <div>@(a.TagNumber is null ? "No tag" : $"Tag {a.TagNumber}")</div>
+                <div>@a.FarmCode @(a.ProjectCode is null ? "" : $"· {a.ProjectCode}")</div>
+                <div>@AnimalText.Category(a.Category)</div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private const int MaxLabels = 500;
+    private List<AnimalListItemDto> _animals = [];
+    private bool _truncated;
+
+    protected override async Task LoadAsync()
+    {
+        // Same filters as the animal list, or explicit ids (e.g. one animal's "Print label").
+        var query = new Uri(Navigation.Uri).Query.TrimStart('?');
+        if (query.Contains("ids=") && !query.Contains("status=")) query += "&status=all";
+        var page = await Api.GetAsync<PagedResult<AnimalListItemDto>>($"api/animals?{query}&pageSize={MaxLabels}");
+        _animals = [.. page.Items];
+        _truncated = page.TotalCount > MaxLabels;
+    }
+
+    private async Task PrintAsync() => await JS.InvokeVoidAsync("felcra.print");
+}

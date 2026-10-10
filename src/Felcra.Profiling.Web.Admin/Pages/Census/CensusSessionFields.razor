@@ -1,0 +1,49 @@
+@* Form fields for a census session, following the header of the FFISB census form. *@
+<MudStack Spacing="2">
+    @if (IsNew)
+    {
+        <MudSelect T="Guid" @bind-Value="Model.FarmId" For="@(() => Model.FarmId)" Label="Farm">
+            @foreach (var farm in Lookups.Farms.Where(f => f.IsActive))
+            {
+                <MudSelectItem Value="farm.Id">@farm.Code — @farm.Name</MudSelectItem>
+            }
+        </MudSelect>
+    }
+    <MudTextField @bind-Value="Model.Title" For="@(() => Model.Title)" Label="Title" HelperText="e.g. Headcount & health programme, July 2026" />
+    <MudStack Row="true">
+        <DateField Value="Model.StartDate" ValueChanged="@(d => Model.StartDate = d ?? Model.StartDate)" Label="Start date" Clearable="false" />
+        <DateField Value="Model.EndDate" ValueChanged="@(d => Model.EndDate = d ?? Model.EndDate)" Label="End date" Clearable="false" />
+    </MudStack>
+    <MudText Typo="Typo.subtitle2" Class="mt-2">Person in charge</MudText>
+    <MudTextField @bind-Value="Model.PicName" For="@(() => Model.PicName)" Label="Name" />
+    <MudStack Row="true">
+        <MudTextField @bind-Value="Model.PicPosition" For="@(() => Model.PicPosition)" Label="Position" />
+        <MudTextField @bind-Value="Model.PicPhone" For="@(() => Model.PicPhone)" Label="Phone" />
+    </MudStack>
+    <MudText Typo="Typo.subtitle2" Class="mt-2">Population on record (before the count)</MudText>
+    <MudStack Row="true">
+        <MudNumericField @bind-Value="Model.RecordedBulls" For="@(() => Model.RecordedBulls)" Label="Bulls (P)" />
+        <MudNumericField @bind-Value="Model.RecordedDams" For="@(() => Model.RecordedDams)" Label="Dams (I)" />
+        <MudNumericField @bind-Value="Model.RecordedMaleCalves" For="@(() => Model.RecordedMaleCalves)" Label="Male calves (AJ)" />
+        <MudNumericField @bind-Value="Model.RecordedFemaleCalves" For="@(() => Model.RecordedFemaleCalves)" Label="Female calves (AB)" />
+    </MudStack>
+    <MudSelect T="Guid" Label="Programme treatments" MultiSelection="true" SelectedValues="Model.TreatmentProductIds"
+               SelectedValuesChanged="@(v => Model.TreatmentProductIds = v.ToList())"
+               ToStringFunc="@(id => Lookups.Treatments.FirstOrDefault(t => t.Id == id)?.Name ?? "")">
+        @foreach (var t in Lookups.Treatments.Where(t => t.IsActive || Model.TreatmentProductIds.Contains(t.Id)))
+        {
+            <MudSelectItem Value="t.Id">@t.Name</MudSelectItem>
+        }
+    </MudSelect>
+    <MudTextField @bind-Value="Model.Notes" For="@(() => Model.Notes)" Label="Notes" Lines="2" />
+    @if (!IsNew)
+    {
+        <MudSwitch @bind-Value="Model.IsClosed" Label="Closed (no further changes)" Color="Color.Primary" />
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public CensusSessionRequest Model { get; set; } = null!;
+    [Parameter, EditorRequired] public Lookups Lookups { get; set; } = null!;
+    [Parameter] public bool IsNew { get; set; }
+}

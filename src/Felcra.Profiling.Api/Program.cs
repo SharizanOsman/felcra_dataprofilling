@@ -64,6 +64,8 @@ builder.Services.AddRateLimiter(options =>
         _ => new FixedWindowRateLimiterOptions { PermitLimit = loginPermitLimit, Window = TimeSpan.FromMinutes(1) }));
 });
 
+// Malformed query/route values are the caller's fault: always answer 400, never 500 (Development throws by default).
+builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = false);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DbExceptionHandler>();
 builder.Services.AddOpenApi();
@@ -97,6 +99,18 @@ app.UseBlazorFrameworkFiles("/admin");
 app.UseBlazorFrameworkFiles("/field");
 app.UseStaticFiles();
 
+// Nothing (no static file, no endpoint) matched: answer 404 here, otherwise the authenticated-by-default
+// fallback policy below would answer 401 and make e.g. a missing /favicon.ico look like an auth failure.
+app.Use(async (context, next) =>
+{
+    if (context.GetEndpoint() is null)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -107,6 +121,8 @@ app.MapFarmEndpoints();
 app.MapReferenceDataEndpoints();
 app.MapUserEndpoints();
 app.MapAuditLogEndpoints();
+app.MapAnimalEndpoints();
+app.MapCensusEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();

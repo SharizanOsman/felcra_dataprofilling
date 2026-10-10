@@ -26,6 +26,18 @@ public sealed class ApiClient(HttpClient http)
 
     public async Task<ApiResult<T>> PutAsync<T>(string url, object body) => await SendAsync<T>(() => http.PutAsJsonAsync(url, body));
 
+    /// <summary>Uploads a file as multipart/form-data field "file".</summary>
+    public async Task<ApiResult<T>> PostFileAsync<T>(string url, Stream content, string fileName, string? contentType)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new StreamContent(content);
+        if (contentType is { Length: > 0 }) file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        form.Add(file, "file", fileName);
+        return await SendAsync<T>(() => http.PostAsync(url, form));
+    }
+
+    public Task<byte[]> GetBytesAsync(string url) => http.GetByteArrayAsync(url);
+
     public async Task<ApiResult<bool>> DeleteAsync(string url)
     {
         var result = await SendAsync<object>(() => http.DeleteAsync(url));

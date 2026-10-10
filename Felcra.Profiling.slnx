@@ -13,6 +13,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Felcra.Profiling.Analytics.Tests/Felcra.Profiling.Analytics.Tests.csproj" />
     <Project Path="tests/Felcra.Profiling.Api.IntegrationTests/Felcra.Profiling.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Felcra.Profiling.Application.Tests/Felcra.Profiling.Application.Tests.csproj" />
     <Project Path="tests/Felcra.Profiling.Domain.Tests/Felcra.Profiling.Domain.Tests.csproj" />
   </Folder>
 </Solution>

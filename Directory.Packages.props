@@ -24,6 +24,8 @@
   <ItemGroup Label="Cross-cutting">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
+    <PackageVersion Include="QRCoder" Version="1.8.0" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />

@@ -21,6 +21,12 @@ jobs:
       - name: Build
         run: dotnet build Felcra.Profiling.slnx -c Release --no-restore
 
+      - name: Check migrations are up to date
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --no-build --configuration Release \
+            --project src/Felcra.Profiling.Infrastructure --startup-project src/Felcra.Profiling.Api
+
       # Integration tests start PostgreSQL via Testcontainers (Docker is available on ubuntu runners).
       - name: Test
         run: dotnet test Felcra.Profiling.slnx -c Release --no-build --logger "trx" --results-directory TestResults

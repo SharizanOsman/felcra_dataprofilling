@@ -61,6 +61,13 @@ Development accounts (password `Felcra@2026`):
 
 HQ admins use the admin portal; field officers use the field app; farm managers can use both.
 
+### Loading the Pagoh census
+
+`Document/pagoh-census-2026-07.csv` (not in git — client data) holds the 140 animals from the July 2026 Pagoh report
+in the FFISB form layout. In the admin portal: **Census → New session** (farm PAGOH), then **Import sheet**, turn
+**Match existing animals by tag** off for this first registration, check the preview and import. A blank template is
+available from the same dialog.
+
 To run the whole stack in containers instead: `docker compose --profile app up --build`, then browse to http://localhost:8080/admin/.
 
 ## Common tasks

@@ -1,0 +1,65 @@
+@page "/a/{Id:guid}"
+@attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@inject ApiClient Api
+
+@* Target of the QR code on ear-tag labels. Recording (weight, BCS, treatments) arrives in Step 4. *@
+<PageTitle>Animal — FELCRA Field</PageTitle>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (_animal is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">@_animal.AnimalNo</MudText>
+                <MudText Typo="Typo.subtitle1">@(_animal.TagNumber is null ? "No ear tag" : $"Tag {_animal.TagNumber}")</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (_animal.DuplicateTagAnimalIds.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">Another animal on this farm has the same tag.</MudAlert>
+            }
+            <MudSimpleTable Dense="true" Elevation="0">
+                <tbody>
+                    <tr><td>Category</td><td>@AnimalText.Category(_animal.Category)</td></tr>
+                    <tr><td>Age</td><td>@AnimalText.Age(_animal.BirthDate, _animal.BirthDateMethod, DateOnly.FromDateTime(DateTime.Today))</td></tr>
+                    <tr><td>Farm</td><td>@_animal.FarmCode</td></tr>
+                    <tr><td>Status</td><td>@AnimalText.Status(_animal.Status)</td></tr>
+                    @if (_animal.CensusHistory.FirstOrDefault() is { } last)
+                    {
+                        <tr><td>Last weight</td><td>@AnimalText.Weight(last.WeightKg) (@last.SessionStartDate.ToString("dd MMM yyyy"))</td></tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudCardContent>
+    </MudCard>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AnimalDto? _animal;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            _animal = await Api.GetAsync<AnimalDto>($"api/animals/{Id}");
+        }
+        catch (HttpRequestException ex)
+        {
+            _error = ex.StatusCode == System.Net.HttpStatusCode.NotFound
+                ? "This animal is not on any of your farms."
+                : "Could not load the animal. Check your connection.";
+        }
+    }
+}

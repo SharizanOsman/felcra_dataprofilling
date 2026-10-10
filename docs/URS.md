@@ -276,6 +276,11 @@ Census mode (fast sequential entry) · Ration view · Sync status.
 6. Initial number of users and farms (server sizing).
 7. Is a Bahasa Melayu UI needed for field officers at launch?
 8. Audit/record retention period required by FELCRA policy.
+9. The Pagoh report's summary table (P 11 / I 61 / AJ 28 / AB 40) does not match its own animal list, which adds up to
+   P 13 / I 60 / AJ 31 / AB 36. Which is correct? (The system counts from the animal list.)
+10. Line 17 (tag 175) is recorded as a male calf (AJ) aged 3 years — should it be a bull?
+11. Tags 107, 08478, 135 and 136 are each used by two animals, and 8 animals are untagged. Re-tagging them before the
+    next census lets the system match animals automatically.
 
 ## 11. Approval
 

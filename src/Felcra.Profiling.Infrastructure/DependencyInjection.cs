@@ -1,5 +1,7 @@
 using Felcra.Profiling.Application.Auth;
+using Felcra.Profiling.Application.Census;
 using Felcra.Profiling.Application.Users;
+using Felcra.Profiling.Infrastructure.Census;
 using Felcra.Profiling.Infrastructure.Identity;
 using Felcra.Profiling.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -47,6 +49,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
+        services.AddScoped<ICensusImportService, CensusImportService>();
         services.AddScoped<DbSeeder>();
 
         return services;

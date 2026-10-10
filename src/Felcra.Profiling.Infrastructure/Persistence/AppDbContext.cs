@@ -1,6 +1,8 @@
 using System.Reflection;
 using Felcra.Profiling.Application.Abstractions;
+using Felcra.Profiling.Domain.Animals;
 using Felcra.Profiling.Domain.Auditing;
+using Felcra.Profiling.Domain.Census;
 using Felcra.Profiling.Domain.Common;
 using Felcra.Profiling.Domain.Farms;
 using Felcra.Profiling.Domain.MasterData;
@@ -27,6 +29,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser? 
     public DbSet<Breed> Breeds => Set<Breed>();
     public DbSet<TreatmentProduct> TreatmentProducts => Set<TreatmentProduct>();
     public DbSet<FeedIngredient> FeedIngredients => Set<FeedIngredient>();
+    public DbSet<Animal> Animals => Set<Animal>();
+    public DbSet<AnimalTag> AnimalTags => Set<AnimalTag>();
+    public DbSet<CensusSession> CensusSessions => Set<CensusSession>();
+    public DbSet<CensusSessionTreatment> CensusSessionTreatments => Set<CensusSessionTreatment>();
+    public DbSet<CensusEntry> CensusEntries => Set<CensusEntry>();
     public DbSet<UserFarm> UserFarms => Set<UserFarm>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -55,6 +62,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser? 
 
         foreach (var clrType in builder.Model.GetEntityTypes().Select(t => t.ClrType).ToList())
         {
+            // IDs are generated in code (UUIDv7, possibly offline on a device). Without this, EF treats a
+            // new child added to a tracked parent (e.g. a tag-history row) as existing and issues an UPDATE.
+            if (typeof(Entity).IsAssignableFrom(clrType))
+                builder.Entity(clrType).Property(nameof(Entity.Id)).ValueGeneratedNever();
+
             // Npgsql maps a uint row version to PostgreSQL's system column xmin.
             if (typeof(AuditableEntity).IsAssignableFrom(clrType))
                 builder.Entity(clrType).Property(nameof(AuditableEntity.Version)).IsRowVersion();

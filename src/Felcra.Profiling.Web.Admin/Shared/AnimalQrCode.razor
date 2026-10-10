@@ -1,0 +1,23 @@
+@using QRCoder
+@inject NavigationManager Navigation
+
+@* QR code for an ear-tag label. It encodes a link to the animal in the field app, so any phone
+   camera opens the right record; the field app's own scanner reads the same link. *@
+<div class="animal-qr" style="width:@(Size)px;height:@(Size)px">@((MarkupString)_svg)</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid AnimalId { get; set; }
+    [Parameter] public int Size { get; set; } = 128;
+
+    private string _svg = "";
+
+    public static string LinkFor(NavigationManager navigation, Guid animalId) =>
+        new Uri(new Uri(navigation.BaseUri), $"/field/a/{animalId:N}").ToString();
+
+    protected override void OnParametersSet()
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(LinkFor(Navigation, AnimalId), QRCodeGenerator.ECCLevel.M);
+        _svg = new SvgQRCode(data).GetGraphic(new System.Drawing.Size(Size, Size), drawQuietZones: false);
+    }
+}

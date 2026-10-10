@@ -22,6 +22,192 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Felcra.Profiling.Domain.Animals.Animal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AnimalNo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("animal_no");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("AnimalNo"));
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
+
+                    b.Property<string>("BirthDateMethod")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("birth_date_method");
+
+                    b.Property<Guid?>("BreedId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("breed_id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid?>("DamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("dam_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid>("FarmId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("farm_id");
+
+                    b.Property<Guid?>("HerdGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("herd_group_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("remarks");
+
+                    b.Property<string>("Sex")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("sex");
+
+                    b.Property<Guid?>("SireId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sire_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly?>("StatusDate")
+                        .HasColumnType("date")
+                        .HasColumnName("status_date");
+
+                    b.Property<string>("StatusReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("status_reason");
+
+                    b.Property<string>("TagNumber")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("tag_number");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_animals");
+
+                    b.HasIndex("AnimalNo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_animals_animal_no");
+
+                    b.HasIndex("BreedId")
+                        .HasDatabaseName("ix_animals_breed_id");
+
+                    b.HasIndex("DamId")
+                        .HasDatabaseName("ix_animals_dam_id");
+
+                    b.HasIndex("HerdGroupId")
+                        .HasDatabaseName("ix_animals_herd_group_id");
+
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("ix_animals_project_id");
+
+                    b.HasIndex("SireId")
+                        .HasDatabaseName("ix_animals_sire_id");
+
+                    b.HasIndex("FarmId", "TagNumber")
+                        .HasDatabaseName("ix_animals_farm_id_tag_number");
+
+                    b.ToTable("animals", (string)null);
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Animals.AnimalTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AnimalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("animal_id");
+
+                    b.Property<DateOnly>("AssignedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("assigned_on");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateOnly?>("RemovedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("removed_on");
+
+                    b.Property<string>("TagNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("tag_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_animal_tags");
+
+                    b.HasIndex("AnimalId")
+                        .HasDatabaseName("ix_animal_tags_animal_id");
+
+                    b.HasIndex("TagNumber")
+                        .HasDatabaseName("ix_animal_tags_tag_number");
+
+                    b.ToTable("animal_tags", (string)null);
+                });
+
             modelBuilder.Entity("Felcra.Profiling.Domain.Auditing.AuditLog", b =>
                 {
                     b.Property<long>("Id")
@@ -76,10 +262,234 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_logs", (string)null);
                 });
 
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AnimalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("animal_id");
+
+                    b.Property<decimal?>("BodyConditionScore")
+                        .HasPrecision(3, 1)
+                        .HasColumnType("numeric(3,1)")
+                        .HasColumnName("body_condition_score");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("category");
+
+                    b.Property<Guid>("CensusSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("census_session_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<int?>("EstimatedAgeMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_age_months");
+
+                    b.Property<Guid>("FarmId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("farm_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<int?>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("remarks");
+
+                    b.Property<bool>("Selected")
+                        .HasColumnType("boolean")
+                        .HasColumnName("selected");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("numeric(7,2)")
+                        .HasColumnName("weight_kg");
+
+                    b.HasKey("Id")
+                        .HasName("pk_census_entries");
+
+                    b.HasIndex("AnimalId")
+                        .HasDatabaseName("ix_census_entries_animal_id");
+
+                    b.HasIndex("CensusSessionId", "AnimalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_census_entries_census_session_id_animal_id")
+                        .HasFilter("is_deleted = false");
+
+                    b.ToTable("census_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<Guid>("FarmId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("farm_id");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_closed");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PicName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("pic_name");
+
+                    b.Property<string>("PicPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("pic_phone");
+
+                    b.Property<string>("PicPosition")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("pic_position");
+
+                    b.Property<int?>("RecordedBulls")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_bulls");
+
+                    b.Property<int?>("RecordedDams")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_dams");
+
+                    b.Property<int?>("RecordedFemaleCalves")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_female_calves");
+
+                    b.Property<int?>("RecordedMaleCalves")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_male_calves");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_census_sessions");
+
+                    b.HasIndex("FarmId", "StartDate")
+                        .HasDatabaseName("ix_census_sessions_farm_id_start_date");
+
+                    b.ToTable("census_sessions", (string)null);
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusSessionTreatment", b =>
+                {
+                    b.Property<Guid>("CensusSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("census_session_id");
+
+                    b.Property<Guid>("TreatmentProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("treatment_product_id");
+
+                    b.HasKey("CensusSessionId", "TreatmentProductId")
+                        .HasName("pk_census_session_treatments");
+
+                    b.HasIndex("TreatmentProductId")
+                        .HasDatabaseName("ix_census_session_treatments_treatment_product_id");
+
+                    b.ToTable("census_session_treatments", (string)null);
+                });
+
             modelBuilder.Entity("Felcra.Profiling.Domain.Farms.Farm", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -185,7 +595,6 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Felcra.Profiling.Domain.Farms.HerdGroup", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -256,7 +665,6 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Felcra.Profiling.Domain.MasterData.Breed", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -329,7 +737,6 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Felcra.Profiling.Domain.MasterData.FeedIngredient", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -432,7 +839,6 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Felcra.Profiling.Domain.MasterData.Project", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -510,7 +916,6 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Felcra.Profiling.Domain.MasterData.TreatmentProduct", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
@@ -917,6 +1322,100 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                     b.ToTable("user_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("Felcra.Profiling.Domain.Animals.Animal", b =>
+                {
+                    b.HasOne("Felcra.Profiling.Domain.MasterData.Breed", null)
+                        .WithMany()
+                        .HasForeignKey("BreedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_animals_breeds_breed_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.Animals.Animal", null)
+                        .WithMany()
+                        .HasForeignKey("DamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_animals_animals_dam_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.Farms.Farm", null)
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_animals_farms_farm_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.Farms.HerdGroup", null)
+                        .WithMany()
+                        .HasForeignKey("HerdGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_animals_herd_groups_herd_group_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.MasterData.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_animals_projects_project_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.Animals.Animal", null)
+                        .WithMany()
+                        .HasForeignKey("SireId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_animals_animals_sire_id");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Animals.AnimalTag", b =>
+                {
+                    b.HasOne("Felcra.Profiling.Domain.Animals.Animal", null)
+                        .WithMany("TagHistory")
+                        .HasForeignKey("AnimalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_animal_tags_animals_animal_id");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusEntry", b =>
+                {
+                    b.HasOne("Felcra.Profiling.Domain.Animals.Animal", null)
+                        .WithMany()
+                        .HasForeignKey("AnimalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_census_entries_animals_animal_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.Census.CensusSession", null)
+                        .WithMany()
+                        .HasForeignKey("CensusSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_census_entries_census_sessions_census_session_id");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusSession", b =>
+                {
+                    b.HasOne("Felcra.Profiling.Domain.Farms.Farm", null)
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_census_sessions_farms_farm_id");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusSessionTreatment", b =>
+                {
+                    b.HasOne("Felcra.Profiling.Domain.Census.CensusSession", null)
+                        .WithMany("Treatments")
+                        .HasForeignKey("CensusSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_census_session_treatments_census_sessions_census_session_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.MasterData.TreatmentProduct", null)
+                        .WithMany()
+                        .HasForeignKey("TreatmentProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_census_session_treatments_treatment_products_treatment_prod");
+                });
+
             modelBuilder.Entity("Felcra.Profiling.Domain.Farms.FarmProject", b =>
                 {
                     b.HasOne("Felcra.Profiling.Domain.Farms.Farm", null)
@@ -1030,6 +1529,16 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_tokens_users_user_id");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Animals.Animal", b =>
+                {
+                    b.Navigation("TagHistory");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusSession", b =>
+                {
+                    b.Navigation("Treatments");
                 });
 
             modelBuilder.Entity("Felcra.Profiling.Domain.Farms.Farm", b =>

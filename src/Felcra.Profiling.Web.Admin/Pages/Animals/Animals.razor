@@ -1,0 +1,131 @@
+@page "/animals"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@inject NavigationManager Navigation
+
+<PageHeader Title="Animals" Subtitle="Animal register for all assigned farms" Error="@LoadError">
+    <Actions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCode2" OnClick="PrintLabels">Print QR labels</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="_lookups is null">Register animal</MudButton>
+    </Actions>
+</PageHeader>
+
+<MudTable @ref="_table" T="AnimalListItemDto" ServerData="LoadPageAsync" Hover="true" Dense="true" Elevation="1"
+          Breakpoint="Breakpoint.Sm" RowsPerPage="50" OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.Id}"))" RowStyle="cursor:pointer">
+    <ToolBarContent>
+        <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Style="width:100%">
+            <MudTextField T="string" Value="_search" ValueChanged="OnSearch" Placeholder="Tag or animal no." DebounceInterval="350"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Style="max-width:220px" />
+            @if (_lookups is { Farms.Count: > 1 })
+            {
+                <MudSelect T="Guid?" Value="_farmId" ValueChanged="OnFarm" Label="Farm" Clearable="true" Style="max-width:180px"
+                           ToStringFunc="@(id => id is null ? "" : _lookups.FarmCode(id.Value))">
+                    @foreach (var f in _lookups.Farms)
+                    {
+                        <MudSelectItem T="Guid?" Value="f.Id">@f.Code</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            <MudSelect T="AnimalCategory?" Value="_category" ValueChanged="OnCategory" Label="Category" Clearable="true" Style="max-width:190px"
+                       ToStringFunc="@(c => c is null ? "" : AnimalText.Category(c.Value))">
+                @foreach (var c in Enum.GetValues<AnimalCategory>())
+                {
+                    <MudSelectItem T="AnimalCategory?" Value="c">@AnimalText.Category(c)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="AnimalStatus?" Value="_status" ValueChanged="OnStatus" Label="Status" Clearable="true" Style="max-width:150px"
+                       ToStringFunc="@(s => s is null ? "All" : AnimalText.Status(s.Value))">
+                @foreach (var s in Enum.GetValues<AnimalStatus>())
+                {
+                    <MudSelectItem T="AnimalStatus?" Value="s">@AnimalText.Status(s)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSwitch T="bool" Value="_untaggedOnly" ValueChanged="OnUntagged" Label="Untagged" Color="Color.Warning" />
+            <MudSwitch T="bool" Value="_duplicatesOnly" ValueChanged="OnDuplicates" Label="Duplicate tags" Color="Color.Error" />
+        </MudStack>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Animal no.</MudTh>
+        <MudTh>Tag</MudTh>
+        <MudTh>Category</MudTh>
+        <MudTh>Age</MudTh>
+        <MudTh>Breed</MudTh>
+        <MudTh>Farm</MudTh>
+        <MudTh>Project</MudTh>
+        <MudTh>Group</MudTh>
+        <MudTh Style="text-align:right">Latest weight</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Animal no.">@context.AnimalNo</MudTd>
+        <MudTd DataLabel="Tag"><TagLabel Tag="@context.TagNumber" Duplicate="context.HasDuplicateTag" /></MudTd>
+        <MudTd DataLabel="Category">@AnimalText.Category(context.Category)</MudTd>
+        <MudTd DataLabel="Age">@AnimalText.Age(context.BirthDate, context.BirthDateMethod, _today)</MudTd>
+        <MudTd DataLabel="Breed">@context.BreedName</MudTd>
+        <MudTd DataLabel="Farm">@context.FarmCode</MudTd>
+        <MudTd DataLabel="Project">@context.ProjectCode</MudTd>
+        <MudTd DataLabel="Group">@context.HerdGroupName</MudTd>
+        <MudTd DataLabel="Latest weight" Style="text-align:right">@AnimalText.Weight(context.LatestWeightKg)</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@AnimalText.StatusColor(context.Status)">@AnimalText.Status(context.Status)</MudChip>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent><MudText>No animals match the filters.</MudText></NoRecordsContent>
+    <PagerContent><MudTablePager PageSizeOptions="[25, 50, 100, 200]" /></PagerContent>
+</MudTable>
+
+@code {
+    private MudTable<AnimalListItemDto> _table = null!;
+    private Lookups? _lookups;
+    private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new AnimalRequestValidator());
+
+    private string? _search;
+    private Guid? _farmId;
+    private AnimalCategory? _category;
+    private AnimalStatus? _status = AnimalStatus.Active;
+    private bool _untaggedOnly;
+    private bool _duplicatesOnly;
+
+    protected override async Task LoadAsync() => _lookups = await Lookups.LoadAsync(Api, includeGroups: true);
+
+    private string FilterQuery()
+    {
+        var q = new List<string>();
+        if (_farmId is not null) q.Add($"farmId={_farmId}");
+        if (_category is not null) q.Add($"category={_category}");
+        q.Add($"status={_status?.ToString() ?? "all"}");
+        if (_untaggedOnly) q.Add("untaggedOnly=true");
+        if (_duplicatesOnly) q.Add("duplicatesOnly=true");
+        if (!string.IsNullOrWhiteSpace(_search)) q.Add($"search={Uri.EscapeDataString(_search)}");
+        return string.Join('&', q);
+    }
+
+    private async Task<TableData<AnimalListItemDto>> LoadPageAsync(TableState state, CancellationToken ct)
+    {
+        var page = await Api.GetAsync<PagedResult<AnimalListItemDto>>($"api/animals?{FilterQuery()}&page={state.Page + 1}&pageSize={state.PageSize}");
+        return new TableData<AnimalListItemDto> { Items = page.Items, TotalItems = page.TotalCount };
+    }
+
+    private Task OnSearch(string? v) { _search = v; return _table.ReloadServerData(); }
+    private Task OnFarm(Guid? v) { _farmId = v; return _table.ReloadServerData(); }
+    private Task OnCategory(AnimalCategory? v) { _category = v; return _table.ReloadServerData(); }
+    private Task OnStatus(AnimalStatus? v) { _status = v; return _table.ReloadServerData(); }
+    private Task OnUntagged(bool v) { _untaggedOnly = v; return _table.ReloadServerData(); }
+    private Task OnDuplicates(bool v) { _duplicatesOnly = v; return _table.ReloadServerData(); }
+
+    private void PrintLabels() => Navigation.NavigateTo($"animals/labels?{FilterQuery()}");
+
+    private async Task AddAsync()
+    {
+        var model = new AnimalRequest { FarmId = _farmId ?? _lookups!.Farms.FirstOrDefault(f => f.IsActive)?.Id ?? Guid.Empty };
+        var saved = await Dialogs.EditAsync("Register animal", model,
+            m => @<AnimalFields Model="m" Lookups="_lookups!" IsNew="true" />,
+            m => Api.PostAsync<AnimalDto>("api/animals", m), Validate);
+        if (saved)
+        {
+            Snackbar.Add("Animal registered.", Severity.Success);
+            await _table.ReloadServerData();
+        }
+    }
+}
