@@ -489,3 +489,7 @@ deploy/app/*.env
 deploy/app/rclone.conf
 deploy/app/backups*/
 deploy/proxy/sites/*.caddy
+
+# Browser tests
+tests/e2e/node_modules/
+tests/e2e/out/

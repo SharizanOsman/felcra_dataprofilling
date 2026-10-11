@@ -62,7 +62,8 @@ public sealed class AuditingInterceptor(ICurrentUser currentUser, TimeProvider c
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = now;
                     entry.Entity.UpdatedBy = userId;
-                    action = AuditAction.Updated;
+                    var deleted = entry.Property(e => e.IsDeleted);
+                    action = deleted.IsModified && deleted.OriginalValue && !entry.Entity.IsDeleted ? AuditAction.Restored : AuditAction.Updated;
                     break;
                 case EntityState.Deleted:
                     // Soft delete: update only the delete columns. Marking the whole entity Modified would also
@@ -88,7 +89,7 @@ public sealed class AuditingInterceptor(ICurrentUser currentUser, TimeProvider c
                 Action = action,
                 EntityType = entry.Metadata.ClrType.Name,
                 EntityId = entry.Entity.Id,
-                Changes = action == AuditAction.Deleted ? null : SerializeChanges(entry, action),
+                Changes = action is AuditAction.Deleted or AuditAction.Restored ? null : SerializeChanges(entry, action),
             });
         }
 

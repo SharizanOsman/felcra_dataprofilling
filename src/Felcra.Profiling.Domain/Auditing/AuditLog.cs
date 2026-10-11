@@ -5,6 +5,9 @@ public enum AuditAction
     Created = 1,
     Updated = 2,
     Deleted = 3,
+
+    /// <summary>A soft-deleted record was brought back by HQ.</summary>
+    Restored = 4,
 }
 
 /// <summary>An immutable record of a change to an auditable entity.</summary>

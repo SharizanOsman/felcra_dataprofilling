@@ -1,0 +1,9 @@
+{
+  "name": "felcra-profiling-e2e",
+  "private": true,
+  "description": "Browser end-to-end tests for FELCRA Cattle Profiling (see README.md).",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.64.0"
+  }
+}

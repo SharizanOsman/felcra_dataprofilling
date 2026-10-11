@@ -312,6 +312,7 @@ internal static class PdfReports
         KeyValue(k, "Active animals", h.Capacity is > 0 ? $"{h.ActiveAnimals} ({100.0 * h.ActiveAnimals / h.Capacity.Value:0}% of capacity {h.Capacity})" : h.ActiveAnimals.ToString());
         KeyValue(k, "Pregnancy rate (breeding females)", h.PregnancyRatePercent is { } p ? $"{p:0.#}%" : "– (no breeding records yet)");
         KeyValue(k, "Calves born in the last 12 months", h.CalvesLast12Months.ToString());
+        KeyValue(k, "Deaths in the last 12 months", h.MortalityPercent is { } mortality && h.DeathsLast12Months > 0 ? $"{h.DeathsLast12Months} ({mortality:0.#}% mortality)" : h.DeathsLast12Months.ToString());
         KeyValue(k, "Breeding tasks due in 14 days", h.TasksOverdue > 0 ? $"{h.TasksDue} ({h.TasksOverdue} overdue)" : h.TasksDue.ToString());
         KeyValue(k, "Culling candidates", d.CullingCandidates.ToString());
 

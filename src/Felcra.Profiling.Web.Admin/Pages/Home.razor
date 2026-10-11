@@ -41,7 +41,9 @@ else
                      DetailWarning="@(d.ActiveAnimals > 0 && d.WeighedLast90Days < d.ActiveAnimals / 2)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Calves born (12 months)" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Secondary" />
+            <KpiCard Label="Calves born (12 months)" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Secondary"
+                     Detail="@($"Deaths: {d.DeathsLast12Months}" + (d.MortalityPercent is { } m && d.DeathsLast12Months > 0 ? $" ({m:0.#}% mortality)" : ""))"
+                     DetailWarning="@(d.MortalityPercent > 3)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Treatments (30 days)" Value="@d.TreatmentsLast30Days.ToString()" Icon="@Icons.Material.Filled.Vaccines" Href="animals" Color="Color.Info" />
