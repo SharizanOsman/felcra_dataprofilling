@@ -1,0 +1,33 @@
+# nginx site for FELCRA Cattle Profiling, for a server that already uses nginx (see docs/DEPLOYMENT.md §10).
+# Copy to /etc/nginx/sites-available/felcra, set the domain and certificate paths, then:
+#   sudo ln -s /etc/nginx/sites-available/felcra /etc/nginx/sites-enabled/ && sudo nginx -t && sudo systemctl reload nginx
+# Certificates: sudo certbot --nginx -d profiling.example.com
+server {
+    listen 80;
+    listen [::]:80;
+    server_name profiling.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name profiling.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/profiling.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/profiling.example.com/privkey.pem;
+
+    # Photo uploads and census sheets.
+    client_max_body_size 25m;
+
+    location / {
+        # The app container, published on 127.0.0.1:8080 by deploy/app/nginx.override.yml.
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
+}

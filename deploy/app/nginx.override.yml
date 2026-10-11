@@ -1,0 +1,8 @@
+# For a server that already runs nginx (instead of the Caddy proxy in deploy/proxy).
+# Copy to compose.override.yml in this folder; docker compose (and ../deploy.sh) then picks it up by itself:
+#   cp nginx.override.yml compose.override.yml
+# The app is published on the server's loopback only (127.0.0.1), so it is reachable by nginx but not from outside.
+services:
+  app:
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
