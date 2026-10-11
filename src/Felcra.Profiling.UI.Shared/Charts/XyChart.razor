@@ -1,0 +1,94 @@
+@* Line / scatter chart drawn as SVG: works offline and needs no chart library. *@
+@using static ChartColors
+
+<div class="felcra-chart" style="@Style">
+    <svg viewBox="0 0 @Width @Height" role="img" aria-label="@AriaLabel" style="width:100%;height:auto;display:block">
+        @foreach (var tick in _y.Ticks())
+        {
+            <line x1="@Svg(Left)" x2="@Svg(Width - Right)" y1="@Svg(Py(tick))" y2="@Svg(Py(tick))" stroke="#e0e0e0" stroke-width="1" />
+            <g><text x="@Svg(Left - 6)" y="@Svg(Py(tick) + 4)" text-anchor="end" font-size="11" fill="#616161">@AxisScale.Format(tick)</text></g>
+        }
+        @foreach (var tick in _x.Ticks())
+        {
+            <line x1="@Svg(Px(tick))" x2="@Svg(Px(tick))" y1="@Svg(Top)" y2="@Svg(Height - Bottom)" stroke="#f0f0f0" stroke-width="1" />
+            <g><text x="@Svg(Px(tick))" y="@Svg(Height - Bottom + 16)" text-anchor="middle" font-size="11" fill="#616161">@AxisScale.Format(tick)</text></g>
+        }
+        <line x1="@Svg(Left)" x2="@Svg(Width - Right)" y1="@Svg(Height - Bottom)" y2="@Svg(Height - Bottom)" stroke="#9e9e9e" />
+        <line x1="@Svg(Left)" x2="@Svg(Left)" y1="@Svg(Top)" y2="@Svg(Height - Bottom)" stroke="#9e9e9e" />
+        @if (XLabel is not null)
+        {
+            <g><text x="@Svg(Left + (Width - Left - Right) / 2)" y="@Svg(Height - 4)" text-anchor="middle" font-size="12" fill="#424242">@XLabel</text></g>
+        }
+        @if (YLabel is not null)
+        {
+            <g><text transform="translate(14 @Svg(Top + (Height - Top - Bottom) / 2)) rotate(-90)" text-anchor="middle" font-size="12" fill="#424242">@YLabel</text></g>
+        }
+
+        @foreach (var series in Series)
+        {
+            if (series.Kind == SeriesKind.Line && series.Points.Count > 1)
+            {
+                <polyline fill="none" stroke="@series.Color" stroke-width="2.5" stroke-linejoin="round"
+                          points="@string.Join(" ", series.Points.Select(p => $"{Svg(Px(p.X))},{Svg(Py(p.Y))}"))" />
+            }
+            else
+            {
+                foreach (var p in series.Points)
+                {
+                    <circle cx="@Svg(Px(p.X))" cy="@Svg(Py(p.Y))" r="4" fill="@series.Color" fill-opacity="0.75" stroke="#fff" stroke-width="1">
+                        @if (p.Label is not null) { <title>@p.Label</title> }
+                    </circle>
+                }
+            }
+        }
+    </svg>
+    @if (Series.Count > 1)
+    {
+        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;font-size:0.8rem;margin-top:4px">
+            @foreach (var series in Series)
+            {
+                <span style="display:inline-flex;align-items:center;gap:4px">
+                    @if (series.Kind == SeriesKind.Line)
+                    {
+                        <span style="width:16px;height:3px;background:@series.Color;display:inline-block"></span>
+                    }
+                    else
+                    {
+                        <span style="width:9px;height:9px;border-radius:50%;background:@series.Color;display:inline-block"></span>
+                    }
+                    @series.Name
+                </span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private const double Width = 640, Height = 320, Left = 52, Right = 16, Top = 12, Bottom = 40;
+
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Series { get; set; } = [];
+    [Parameter] public string? XLabel { get; set; }
+    [Parameter] public string? YLabel { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = "Chart";
+    /// <summary>Start the Y axis at zero (weights, yields).</summary>
+    [Parameter] public bool YFromZero { get; set; } = true;
+    [Parameter] public bool XFromZero { get; set; } = true;
+
+    private AxisScale _x = AxisScale.For(0, 1), _y = AxisScale.For(0, 1);
+
+    protected override void OnParametersSet()
+    {
+        var points = Series.SelectMany(s => s.Points).ToList();
+        if (points.Count == 0)
+        {
+            (_x, _y) = (AxisScale.For(0, 1), AxisScale.For(0, 1));
+            return;
+        }
+        _x = AxisScale.For(XFromZero ? Math.Min(0, points.Min(p => p.X)) : points.Min(p => p.X), points.Max(p => p.X), 8);
+        _y = AxisScale.For(YFromZero ? Math.Min(0, points.Min(p => p.Y)) : points.Min(p => p.Y), points.Max(p => p.Y));
+    }
+
+    private double Px(double x) => Left + (x - _x.Min) / (_x.Max - _x.Min) * (Width - Left - Right);
+    private double Py(double y) => Height - Bottom - (y - _y.Min) / (_y.Max - _y.Min) * (Height - Top - Bottom);
+}

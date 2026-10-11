@@ -1,0 +1,22 @@
+@page "/analytics/ration"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@using Felcra.Profiling.UI.Shared.Ration
+
+<PageHeader Title="Ration planner" Subtitle="Least-cost daily ration from the feed ingredients in Master data" Error="@LoadError" />
+
+@if (IsLoading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <RationPlanner Feeds="_feeds" />
+}
+
+@code {
+    private List<FeedIngredientDto> _feeds = [];
+
+    protected override async Task LoadAsync() =>
+        _feeds = (await Api.GetAsync<List<FeedIngredientDto>>("api/feed-ingredients")).Where(f => f.IsActive).ToList();
+}

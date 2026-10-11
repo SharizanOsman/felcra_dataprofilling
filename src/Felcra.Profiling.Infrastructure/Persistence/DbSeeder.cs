@@ -100,6 +100,21 @@ public sealed class DbSeeder(
                 new TreatmentProduct { Name = "Ear tagging", Category = TreatmentCategory.Procedure });
         }
 
+        // Indicative values for common Malaysian feeds (DM basis), so the ration planner can be tried.
+        // Not authoritative: FELCRA should replace them with analysed values and current prices.
+        if (!await db.FeedIngredients.AnyAsync(ct))
+        {
+            db.FeedIngredients.AddRange(
+                Feed("Napier grass (fresh)", FeedCategory.Forage, 20, 9, 55, 0.45, 0.30, 0.10),
+                Feed("Brachiaria grass (fresh)", FeedCategory.Forage, 25, 7, 52, 0.35, 0.20, 0.08),
+                Feed("Palm kernel cake (PKC)", FeedCategory.ByProduct, 90, 16, 72, 0.25, 0.55, 0.70),
+                Feed("Rice bran", FeedCategory.ByProduct, 90, 13, 70, 0.10, 1.50, 1.20),
+                Feed("Soybean meal", FeedCategory.Concentrate, 89, 48, 82, 0.30, 0.70, 2.80),
+                Feed("Molasses", FeedCategory.Supplement, 75, 4, 75, 0.80, 0.08, 1.00),
+                Feed("Limestone", FeedCategory.Mineral, 99, 0, 0, 38, 0, 0.50),
+                Feed("Dicalcium phosphate", FeedCategory.Mineral, 97, 0, 0, 22, 18, 4.50));
+        }
+
         await db.SaveChangesAsync(ct);
 
         // Link the farm to its projects if it was seeded before projects existed.
@@ -111,6 +126,13 @@ public sealed class DbSeeder(
             await db.SaveChangesAsync(ct);
         }
     }
+
+    private static FeedIngredient Feed(string name, FeedCategory category, double dm, double cp, double tdn, double ca, double p, double price) =>
+        new()
+        {
+            Name = name, Category = category, DryMatterPercent = (decimal)dm, CrudeProteinPercent = (decimal)cp, TdnPercent = (decimal)tdn,
+            CalciumPercent = (decimal)ca, PhosphorusPercent = (decimal)p, PricePerKg = (decimal)price,
+        };
 
     private async Task CreateUserAsync(string email, string fullName, string password, string role, Farm? farm)
     {

@@ -19,7 +19,7 @@ src/
   Felcra.Profiling.Domain/          Entities and business rules (no dependencies)
   Felcra.Profiling.Application/     Use-case interfaces and services
   Felcra.Profiling.Infrastructure/  EF Core, Identity, auditing, migrations, seeding
-  Felcra.Profiling.Analytics/       Growth / lactation / ration models (Step 7)
+  Felcra.Profiling.Analytics/       Growth / lactation / ration models (pure C#, also runs in the browser)
   Felcra.Profiling.Contracts/       DTOs and validators shared by API and clients
   Felcra.Profiling.Api/             Web API; also serves both clients
   Felcra.Profiling.UI.Shared/       Shared Blazor components and client auth
@@ -86,7 +86,8 @@ dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \
 
 ### How the field app works offline
 
-- After sign-in the app downloads the officer's farm animals, treatment list and open programmes to the phone
+- After sign-in the app downloads the officer's farm animals, treatment list, open programmes, tasks and feed
+  ingredients to the phone
   (IndexedDB), then refreshes them every few minutes and whenever the connection returns (`GET /api/sync/pull`,
   incremental by timestamp).
 - Records are saved on the phone first (an outbox) and sent in order through the normal record endpoints. Each record
@@ -95,6 +96,19 @@ dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \
   until the officer retries or discards it on the **Sync** screen.
 - Signing out deletes the phone's copy (shared phones); the app warns first if records have not been sent.
 - History is shown as last seen online; latest weight and BCS are part of the downloaded data.
+
+### Analytics
+
+| Model | Where | Notes |
+|---|---|---|
+| Gompertz growth W(t) = A·exp(−b·exp(−k·t)) | Admin → Analytics → Growth (`GET /api/analytics/growth`) | Fitted per sex by Levenberg–Marquardt to all weights (field and census) of animals with a birth date; animals ≥ 15% below the curve for their age are listed (from 3 months old) |
+| Ali-Schaeffer lactation | Admin → Analytics → Lactation (`GET /api/analytics/lactation`) | Linear least squares on daily milk yields, using days since the last calving; needs ≥ 6 test days |
+| Least-cost ration | Admin → Analytics → Ration planner; field app → Ration planner | Linear program (two-phase simplex) run in the browser / phone from Master data feed ingredients, so it works offline |
+
+The dashboard (`GET /api/analytics/dashboard`) summarises one farm or all farms. Development data includes
+**indicative** values for eight common Malaysian feeds (Napier, Brachiaria, PKC, rice bran, soybean meal, molasses,
+limestone, dicalcium phosphate). They are for trying the planner only: FELCRA should replace them with analysed
+values and current prices, and have the ration targets confirmed by a nutritionist.
 
 ### Trying the field app on a phone
 
@@ -130,5 +144,7 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 - **Farm scoping** is enforced by EF Core global query filters: managers and officers only ever query their assigned farms.
 - **Audit trail and soft delete** are applied automatically by a `SaveChanges` interceptor.
 - **Refresh-token rotation** with reuse detection: replaying an old refresh token revokes all of that user's sessions.
+- **Analytics without dependencies:** curve fitting and linear programming are small, tested pure-C# routines, so the
+  same library runs on the server and in the Blazor clients (offline ration planning), and charts are plain SVG.
 - Both Blazor clients are hosted by the API under `/admin` and `/field`; shared library assets live at `/_content`
   and are rewritten for each base path.

@@ -1,0 +1,124 @@
+@page "/analytics/growth"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@inject NavigationManager Navigation
+@using Felcra.Profiling.Contracts.Analytics
+
+<PageHeader Title="Growth" Subtitle="Gompertz growth curves fitted to the herd's weighings" Error="@LoadError">
+    <Actions>
+        <FarmFilter Farms="_farms" Value="_farmId" ValueChanged="OnFarmChanged" />
+    </Actions>
+</PageHeader>
+
+@if (_growth is null)
+{
+    @if (IsLoading) { <MudProgressLinear Indeterminate="true" /> }
+}
+else
+{
+    <MudTabs Elevation="1" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-4" Class="mb-4">
+        @foreach (var curve in _growth.Curves)
+        {
+            <MudTabPanel Text="@(curve.Sex == Sex.Female ? "Females" : "Males")">
+                @if (curve.Fit is not { } fit)
+                {
+                    <MudAlert Severity="Severity.Info">@curve.Message</MudAlert>
+                }
+                else
+                {
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" lg="8">
+                            <XyChart XLabel="Age (months)" YLabel="Weight (kg)" AriaLabel="Growth curve" Series="@Series(curve)" />
+                        </MudItem>
+                        <MudItem xs="12" lg="4">
+                            <MudSimpleTable Dense="true" Elevation="0">
+                                <tbody>
+                                    <tr><td>Mature weight (A)</td><td style="text-align:right" data-testid="mature-weight">@fit.MatureWeightKg.ToString("0") kg</td></tr>
+                                    <tr><td>Fastest growth at</td><td style="text-align:right">@AnimalText.Months((int)Math.Round(fit.InflectionAgeDays / 30.44))</td></tr>
+                                    <tr><td>Peak daily gain</td><td style="text-align:right">@PeakGain(curve).ToString("0.00") kg/day</td></tr>
+                                    <tr><td>Weight at 12 / 24 months</td><td style="text-align:right">@WeightAt(curve, 12) / @WeightAt(curve, 24) kg</td></tr>
+                                    <tr><td>Fit (R²)</td><td style="text-align:right">@fit.RSquared.ToString("0.00")</td></tr>
+                                    <tr><td>Typical error</td><td style="text-align:right">± @fit.RmseKg.ToString("0") kg</td></tr>
+                                    <tr><td>Weighings used</td><td style="text-align:right">@fit.Points</td></tr>
+                                </tbody>
+                            </MudSimpleTable>
+                            <MudText Typo="Typo.caption" Style="display:block" Class="mt-2">
+                                W(t) = A·exp(−b·exp(−k·t)), with b = @fit.B.ToString("0.###") and k = @fit.K.ToString("0.#####") per day
+                                (t in days). The curve gives @fit.BirthWeightKg.ToString("0") kg at birth; a 30 kg birth weight guides the fit when few young animals are weighed.
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                }
+            </MudTabPanel>
+        }
+    </MudTabs>
+
+    <MudText Typo="Typo.h6" Class="mb-2">Below the curve (@_growth.BelowCurve.Count)</MudText>
+    <MudTable T="GrowthAnimalDto" Items="_growth.BelowCurve" Dense="true" Hover="true" Elevation="1" Breakpoint="Breakpoint.Sm"
+              OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.AnimalId}"))" RowStyle="cursor:pointer">
+        <HeaderContent>
+            <MudTh>Animal</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>Age</MudTh>
+            <MudTh Style="text-align:right">Weight</MudTh>
+            <MudTh Style="text-align:right">Expected</MudTh>
+            <MudTh Style="text-align:right">Difference</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Animal">@context.AnimalNo · @(context.TagNumber ?? "no tag")</MudTd>
+            <MudTd DataLabel="Category">@AnimalText.Category(context.Category)</MudTd>
+            <MudTd DataLabel="Age">@(context.AgeIsEstimated ? "~" : "")@AnimalText.Months((int)(context.AgeDays / 30.44))</MudTd>
+            <MudTd DataLabel="Weight" Style="text-align:right">@context.WeightKg.ToString("0") kg <MudText Typo="Typo.caption" Style="display:block">@context.WeighedOn.ToString("dd MMM yyyy")</MudText></MudTd>
+            <MudTd DataLabel="Expected" Style="text-align:right">@context.ExpectedKg?.ToString("0") kg</MudTd>
+            <MudTd DataLabel="Difference" Style="text-align:right"><MudText Typo="Typo.body2" Color="Color.Error">@context.DeviationPercent?.ToString("0")%</MudText></MudTd>
+        </RowTemplate>
+        <NoRecordsContent><MudText>No animal is more than @(-_growth.BelowCurveThresholdPercent)% below the curve.</MudText></NoRecordsContent>
+    </MudTable>
+    <MudText Typo="Typo.caption" Style="display:block" Class="mt-2">
+        Each animal's latest weight is compared with the curve for its age; animals @(-_growth.BelowCurveThresholdPercent)% or more below it are listed (calves under 3 months are not judged).
+        Uses @_growth.WeighingsUsed weighings (field and census) of animals with a birth date.
+        @if (_growth.AnimalsWithoutBirthDate > 0)
+        {
+            <span>@_growth.AnimalsWithoutBirthDate active animals have no birth date or estimated age, so their weights are not used.</span>
+        }
+        Ages estimated from teeth (~) make the curve less precise.
+    </MudText>
+}
+
+@code {
+    private List<FarmDto> _farms = [];
+    private Guid? _farmId;
+    private GrowthAnalysisDto? _growth;
+
+    protected override async Task LoadAsync()
+    {
+        if (_farms.Count == 0) _farms = await Api.GetAsync<List<FarmDto>>("api/farms");
+        _growth = await Api.GetAsync<GrowthAnalysisDto>($"api/analytics/growth{FarmFilter.Query(_farmId)}");
+    }
+
+    private async Task OnFarmChanged(Guid? farmId)
+    {
+        _farmId = farmId;
+        await ReloadAsync();
+    }
+
+    private static List<ChartSeries> Series(GrowthCurveDto curve)
+    {
+        // Show the curve a year past the oldest animal weighed, so it is not dwarfed by an 8-year axis.
+        var maxMonths = curve.Animals.Count == 0 ? 96 : Math.Min(96, curve.Animals.Max(a => a.AgeDays) / 30.44 + 12);
+        return
+        [
+            new("Latest weights", ChartColors.Secondary, SeriesKind.Points, curve.Animals.Select(a => new ChartPoint(
+                a.AgeDays / 30.44, (double)a.WeightKg,
+                $"{a.AnimalNo} · {a.TagNumber ?? "no tag"}: {a.WeightKg:0} kg at {AnimalText.Months((int)(a.AgeDays / 30.44))}" +
+                (a.DeviationPercent is { } d ? $" ({d:+0;-0}%)" : ""))).ToList()),
+            new("Gompertz curve", ChartColors.Primary, SeriesKind.Line,
+                curve.Curve.Where(p => p.AgeMonths <= maxMonths).Select(p => new ChartPoint(p.AgeMonths, p.WeightKg)).ToList()),
+        ];
+    }
+
+    private static double PeakGain(GrowthCurveDto curve) => curve.Curve.Count == 0 ? 0 : curve.Curve.Max(p => p.DailyGainKg);
+
+    private static string WeightAt(GrowthCurveDto curve, int months) =>
+        curve.Curve.FirstOrDefault(p => Math.Abs(p.AgeMonths - months) < 0.5)?.WeightKg.ToString("0") ?? "–";
+}

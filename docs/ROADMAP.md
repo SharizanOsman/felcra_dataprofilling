@@ -11,7 +11,7 @@ Delivery is split into steps; each is demoable and deployable to staging. Milest
 | 4 | Field PWA (online) | Done — QR scan, find by tag, weight / BCS / milk, treatments, observations with photos |
 | 5 | Offline-first & sync | Done — farm data on the phone, outbox with retry, rejected records kept for review; animal registration offline comes with calving in Step 6 |
 | 6 | Fertility, breeding & reminders | Done — events incl. calving that registers calves, reproduction status, herd figures, culling candidates, in-app task list; push notifications moved to Step 9 |
-| 7 | Analytics engine & dashboard | Not started |
+| 7 | Analytics engine & dashboard | Done — Gompertz growth, Ali-Schaeffer lactation and least-cost ration in pure C# (no MathNet / OR-Tools needed); HQ dashboard; the ration planner also works offline on the phone. Ration targets are edited per plan; the below-curve threshold (15%) is fixed for now |
 | 8 | Reports & export | Not started |
 | 9 | Hardening & DevOps | Not started |
 | 10 | UAT, Pagoh pilot, training & go-live | Not started |
@@ -72,7 +72,7 @@ Each step is demoable and deployable to staging. Mapped to the quotation's payme
 - `Analytics` project (pure functions, unit-tested against reference data):
   - **Gompertz:** W(t) = A·exp(−b·exp(−k·t)), fitted per animal/group → expected weight, ADG, animals below curve.
   - **Ali-Schaeffer:** y(t) = a + b(t/305) + c(t/305)² + d·ln(305/t) + e·ln²(305/t) (linear least squares) → expected lactation yield.
-  - **Least-cost ration:** LP (OR-Tools GLOP) — minimise cost subject to nutrient requirements (DM, CP, TDN/ME, Ca, P) per group & target.
+  - **Least-cost ration:** LP (two-phase simplex, built in; originally planned with OR-Tools GLOP) — minimise cost subject to nutrient requirements (DM, CP, TDN/ME, Ca, P) per group & target.
 - Admin dashboard: KPIs per farm/project (population by category, average weight/BCS, pregnancy rate, calving rate, mortality), trends, cross-project comparison.
 - **Output:** HQ dashboard + ration screen in the field app.
 

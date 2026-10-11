@@ -119,7 +119,11 @@ internal static class SyncEndpoints
 
         return TypedResults.Ok(new SyncPullDto(
             serverTime, since is null, changed, removed, products, await CensusEndpoints.ToDtosAsync(db, sessions, ct),
-            await breedingQueries.RemindersAsync(null, ReminderDays, ct)));
+            await breedingQueries.RemindersAsync(null, ReminderDays, ct),
+            await db.FeedIngredients.AsNoTracking().Where(f => f.IsActive).OrderBy(f => f.Name)
+                .Select(f => new FeedIngredientDto(f.Id, f.Name, f.Category, f.DryMatterPercent, f.CrudeProteinPercent, f.TdnPercent,
+                    f.MetabolisableEnergy, f.CalciumPercent, f.PhosphorusPercent, f.PricePerKg, f.IsActive, f.Version))
+                .ToListAsync(ct)));
     }
 
     /// <summary>The more recent of a value recorded at the pen and one recorded in a census.</summary>

@@ -14,6 +14,7 @@ public sealed class FieldData(OfflineDb db)
     private const string ProductsKey = "products";
     private const string SessionsKey = "sessions";
     private const string RemindersKey = "reminders";
+    private const string FeedsKey = "feeds";
     private const string CursorKey = "cursor";
     private const string LastSyncKey = "lastSync";
     private const string UserKey = "userId";
@@ -52,6 +53,7 @@ public sealed class FieldData(OfflineDb db)
         await db.PutAsync(OfflineDb.Meta, ProductsKey, pull.TreatmentProducts);
         await db.PutAsync(OfflineDb.Meta, SessionsKey, pull.OpenCensusSessions);
         await db.PutAsync(OfflineDb.Meta, RemindersKey, pull.Reminders);
+        await db.PutAsync(OfflineDb.Meta, FeedsKey, pull.FeedIngredients);
         await db.PutAsync(OfflineDb.Meta, CursorKey, pull.ServerTime);
         _animals = null;
     }
@@ -67,6 +69,10 @@ public sealed class FieldData(OfflineDb db)
     /// <summary>Tasks as of the last sync (due within two weeks, plus overdue).</summary>
     public async Task<List<ReminderDto>> RemindersAsync() =>
         await db.GetAsync<List<ReminderDto>>(OfflineDb.Meta, RemindersKey) ?? [];
+
+    /// <summary>Feed ingredients for the ration planner, as of the last sync.</summary>
+    public async Task<List<FeedIngredientDto>> FeedIngredientsAsync() =>
+        await db.GetAsync<List<FeedIngredientDto>>(OfflineDb.Meta, FeedsKey) ?? [];
 
     /// <summary>Bulls on a farm, for choosing the sire of a natural service.</summary>
     public async Task<List<SyncAnimalDto>> BullsAsync(Guid farmId) =>

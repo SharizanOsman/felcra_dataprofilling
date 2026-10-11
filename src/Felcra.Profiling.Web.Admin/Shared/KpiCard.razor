@@ -1,0 +1,26 @@
+@* One headline number on the dashboard. *@
+<MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+    <a href="@Href" style="color:inherit;text-decoration:none;display:block;height:100%" data-testid="kpi">
+        <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+            <MudIcon Icon="@Icon" Color="@Color" Class="mt-1" />
+            <div style="min-width:0">
+                <MudText Typo="Typo.caption" Style="display:block">@Label</MudText>
+                <MudText Typo="Typo.h5" data-testid="kpi-value">@Value</MudText>
+                @if (Detail is not null)
+                {
+                    <MudText Typo="Typo.caption" Color="@(DetailWarning ? Color.Warning : Color.Default)" Style="display:block">@Detail</MudText>
+                }
+            </div>
+        </MudStack>
+    </a>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public bool DetailWarning { get; set; }
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Insights;
+    [Parameter] public Color Color { get; set; } = Color.Primary;
+    [Parameter] public string? Href { get; set; }
+}

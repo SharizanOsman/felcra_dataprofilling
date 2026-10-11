@@ -1,29 +1,111 @@
 @page "/"
 @attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
-@inject HttpClient Http
+@inherits AdminPageBase
+@using Felcra.Profiling.Contracts.Analytics
 
-<PageTitle>Dashboard — FELCRA Admin</PageTitle>
+<PageHeader Title="Dashboard" Subtitle="Herd at a glance" Error="@LoadError">
+    <Actions>
+        <FarmFilter Farms="_farms" Value="_farmId" ValueChanged="OnFarmChanged" />
+    </Actions>
+</PageHeader>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Dashboard</MudText>
-
-@if (_user is null)
+@if (_dashboard is null)
 {
-    <MudProgressCircular Indeterminate="true" />
+    @if (IsLoading) { <MudProgressLinear Indeterminate="true" /> }
 }
 else
 {
-    <MudPaper Class="pa-4" Elevation="1">
-        <MudText Typo="Typo.h6">Welcome, @_user.FullName</MudText>
-        <MudText Typo="Typo.body2">Roles: @string.Join(", ", _user.Roles)</MudText>
-        <MudText Typo="Typo.body2">
-            Farms: @(_user.Roles.Contains(Roles.HqAdmin) ? "All farms (HQ)" : _user.FarmIds.Count.ToString())
-        </MudText>
-    </MudPaper>
+    var d = _dashboard;
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Active animals" Value="@d.ActiveAnimals.ToString()" Icon="@Icons.Material.Filled.Pets" Href="animals"
+                     Detail="@(d.Capacity is > 0 ? $"{100.0 * d.ActiveAnimals / d.Capacity.Value:0}% of capacity ({d.Capacity})" : null)" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Pregnancy rate" Value="@(d.PregnancyRatePercent is { } p ? $"{p:0.#}%" : "–")" Icon="@Icons.Material.Filled.Favorite" Href="breeding"
+                     Color="Color.Secondary" DetailWarning="@(d.BreedingFemalesWithoutRecords > 0)"
+                     Detail="@(d.BreedingFemalesWithoutRecords > 0 ? $"{d.BreedingFemalesWithoutRecords} breeding females have no records" : "of breeding females")" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Tasks due (14 days)" Value="@d.TasksDue.ToString()" Icon="@Icons.Material.Filled.Alarm" Href="breeding"
+                     Color="@(d.TasksOverdue > 0 ? Color.Error : Color.Primary)" DetailWarning="@(d.TasksOverdue > 0)"
+                     Detail="@(d.TasksOverdue > 0 ? $"{d.TasksOverdue} overdue" : "none overdue")" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Culling candidates" Value="@d.CullingCandidates.ToString()" Icon="@Icons.Material.Filled.ContentCut" Href="breeding"
+                     Color="Color.Warning" Detail="by age, fertility and BCS rules" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Weighed in last 90 days" Value="@d.WeighedLast90Days.ToString()" Icon="@Icons.Material.Filled.Scale" Href="analytics/growth"
+                     Detail="@(d.ActiveAnimals > 0 ? $"{100.0 * d.WeighedLast90Days / d.ActiveAnimals:0}% of the herd" : null)"
+                     DetailWarning="@(d.ActiveAnimals > 0 && d.WeighedLast90Days < d.ActiveAnimals / 2)" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Calves born (12 months)" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Secondary" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Treatments (30 days)" Value="@d.TreatmentsLast30Days.ToString()" Icon="@Icons.Material.Filled.Vaccines" Href="animals" Color="Color.Info" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Tag problems" Value="@((d.Untagged + d.SharingATag).ToString())" Icon="@Icons.Material.Filled.Label" Href="animals"
+                     Color="@(d.Untagged + d.SharingATag > 0 ? Color.Warning : Color.Success)"
+                     Detail="@($"{d.Untagged} untagged · {d.SharingATag} sharing a tag")" DetailWarning="@(d.Untagged + d.SharingATag > 0)" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Herd by category</MudText>
+                <MudSimpleTable Dense="true" Elevation="0">
+                    <thead>
+                        <tr><th>Category</th><th style="text-align:right">Head</th><th style="text-align:right">Avg weight</th><th style="text-align:right">Avg BCS</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in d.Categories)
+                        {
+                            <tr>
+                                <td>@AnimalText.Category(c.Category)</td>
+                                <td style="text-align:right">@c.Count</td>
+                                <td style="text-align:right">@(c.AverageWeightKg is { } w ? $"{w:0} kg" : "–")</td>
+                                <td style="text-align:right">@(c.AverageBcs?.ToString("0.0") ?? "–")</td>
+                            </tr>
+                        }
+                        <tr style="font-weight:600"><td>Total</td><td style="text-align:right">@d.ActiveAnimals</td><td></td><td></td></tr>
+                    </tbody>
+                </MudSimpleTable>
+                <MudText Typo="Typo.caption" Style="display:block" Class="mt-2">Averages use each animal's latest weighing or census record.</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Recording activity (last 12 weeks)</MudText>
+                <BarChart Labels="@d.Activity.Select(a => a.WeekStart.ToString("dd MMM")).ToList()" AriaLabel="Records per week"
+                          Series="@([
+                              new BarSeries("Weighings", ChartColors.Primary, d.Activity.Select(a => (double)a.Weighings).ToList()),
+                              new BarSeries("Treatments", ChartColors.Secondary, d.Activity.Select(a => (double)a.Treatments).ToList()),
+                              new BarSeries("Breeding events", ChartColors.Purple, d.Activity.Select(a => (double)a.BreedingEvents).ToList()),
+                              new BarSeries("Observations", ChartColors.Muted, d.Activity.Select(a => (double)a.Observations).ToList()),
+                          ])" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
-    private CurrentUserDto? _user;
+    private List<FarmDto> _farms = [];
+    private Guid? _farmId;
+    private DashboardDto? _dashboard;
 
-    protected override async Task OnInitializedAsync() =>
-        _user = await Http.GetFromJsonAsync<CurrentUserDto>("api/auth/me");
+    protected override async Task LoadAsync()
+    {
+        if (_farms.Count == 0) _farms = await Api.GetAsync<List<FarmDto>>("api/farms");
+        _dashboard = await Api.GetAsync<DashboardDto>($"api/analytics/dashboard{FarmFilter.Query(_farmId)}");
+    }
+
+    private async Task OnFarmChanged(Guid? farmId)
+    {
+        _farmId = farmId;
+        await ReloadAsync();
+    }
 }
