@@ -1,0 +1,167 @@
+@page "/a/{Id:guid}/breeding"
+@attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@inherits RecordPageBase
+
+<PageTitle>Breeding — FELCRA Field</PageTitle>
+
+@if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Error">@LoadError</MudAlert>
+}
+else if (Animal is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <AnimalHeader Animal="Animal" DuplicateTag="DuplicateTag" />
+    @if (BreedingText.Status(Animal.Reproduction, Animal.ExpectedCalving) is { } status)
+    {
+        <MudChip T="string" Color="@BreedingText.StateColor(Animal.Reproduction)" Variant="Variant.Outlined" Class="mb-2">@status</MudChip>
+    }
+
+    <MudText Typo="Typo.subtitle1" Class="mb-1">What happened?</MudText>
+    <MudChipSet T="BreedingEventType" SelectedValue="_model.Type" SelectedValueChanged="OnTypeChanged" SelectionMode="SelectionMode.SingleSelection"
+                CheckMark="true" Color="Color.Primary" Variant="Variant.Outlined" Class="mb-3">
+        @foreach (var type in Types)
+        {
+            <MudChip Value="type" Text="@BreedingText.EventType(type)" />
+        }
+    </MudChipSet>
+
+    <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
+        <MudStack Spacing="3">
+            <DateField Value="_model.EventDate" ValueChanged="@(d => _model.EventDate = d ?? _model.EventDate)" Label="Date" Clearable="false"
+                       Max="DateOnly.FromDateTime(DateTime.Today)" />
+
+            @switch (_model.Type)
+            {
+                case BreedingEventType.Insemination:
+                    <MudTextField @bind-Value="_model.SemenCode" For="@(() => _model.SemenCode)" Label="Semen / straw code" Variant="Variant.Outlined" />
+                    break;
+
+                case BreedingEventType.NaturalService:
+                    <MudSelect T="Guid?" @bind-Value="_model.SireId" Label="Bull" Variant="Variant.Outlined" Clearable="true"
+                               ToStringFunc="@(id => BullLabel(id))">
+                        @foreach (var bull in _bulls)
+                        {
+                            <MudSelectItem T="Guid?" Value="bull.Id">@BullLabel(bull.Id)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    break;
+
+                case BreedingEventType.PregnancyCheck:
+                    <MudRadioGroup T="PregnancyResult?" @bind-Value="_model.PregnancyResult">
+                        @foreach (var result in Enum.GetValues<PregnancyResult>())
+                        {
+                            <MudRadio T="PregnancyResult?" Value="result" Color="Color.Primary">@EnumText.Humanize(result)</MudRadio>
+                        }
+                    </MudRadioGroup>
+                    @if (_model.PregnancyResult == PregnancyResult.Pregnant)
+                    {
+                        <MudNumericField T="int?" @bind-Value="_model.GestationDays" For="@(() => _model.GestationDays)" Label="Gestation age (days, optional)"
+                                         Variant="Variant.Outlined" HideSpinButtons="true" InputMode="InputMode.numeric"
+                                         HelperText="If known from palpation / scan; otherwise the service date is used." />
+                    }
+                    break;
+
+                case BreedingEventType.Calving:
+                    <MudSwitch T="bool" Value="@(_model.Assisted == true)" ValueChanged="@(v => _model.Assisted = v)" Label="Assisted calving" Color="Color.Primary" />
+                    @foreach (var (calf, index) in _model.Calves.Select((c, i) => (c, i)))
+                    {
+                        <MudPaper Class="pa-3" Outlined="true">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.subtitle2">Calf @(index + 1)</MudText>
+                                <MudSpacer />
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => _model.Calves.Remove(calf)" aria-label="Remove calf" />
+                            </MudStack>
+                            <MudRadioGroup T="Sex" @bind-Value="calf.Sex">
+                                <MudRadio T="Sex" Value="Sex.Female" Color="Color.Primary">Female</MudRadio>
+                                <MudRadio T="Sex" Value="Sex.Male" Color="Color.Primary">Male</MudRadio>
+                            </MudRadioGroup>
+                            <MudStack Row="true">
+                                <MudTextField @bind-Value="calf.TagNumber" Label="Ear tag (if tagged)" Variant="Variant.Outlined" />
+                                <MudNumericField T="decimal?" @bind-Value="calf.BirthWeightKg" Label="Birth weight (kg)" Variant="Variant.Outlined"
+                                                 HideSpinButtons="true" InputMode="@(InputMode.@decimal)" />
+                            </MudStack>
+                        </MudPaper>
+                    }
+                    @if (_model.Calves.Count < 3)
+                    {
+                        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => _model.Calves.Add(new CalfRequest()))">Add calf</MudButton>
+                    }
+                    <MudNumericField T="int?" @bind-Value="_model.StillbornCount" For="@(() => _model.StillbornCount)" Label="Stillborn calves"
+                                     Variant="Variant.Outlined" HideSpinButtons="true" InputMode="InputMode.numeric" />
+                    break;
+
+                case BreedingEventType.BullSoundnessExam:
+                    <MudRadioGroup T="SoundnessResult?" @bind-Value="_model.SoundnessResult">
+                        @foreach (var result in Enum.GetValues<SoundnessResult>())
+                        {
+                            <MudRadio T="SoundnessResult?" Value="result" Color="Color.Primary">@EnumText.Humanize(result)</MudRadio>
+                        }
+                    </MudRadioGroup>
+                    break;
+            }
+
+            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="Notes (optional)" Variant="Variant.Outlined" />
+
+            @if (_formError is not null) { <MudAlert Severity="Severity.Error" Dense="true">@_formError</MudAlert> }
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="SubmitAsync"
+                       Disabled="@(Saving || Animal.Status != AnimalStatus.Active)" Style="height:56px">
+                @(Saving ? "Saving…" : "Save")
+            </MudButton>
+        </MudStack>
+    </MudForm>
+}
+
+@code {
+    private static readonly BreedingEventRequestValidator Validator = new();
+    private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(Validator);
+    private MudForm _form = null!;
+    private BreedingEventRequest _model = new();
+    private List<SyncAnimalDto> _bulls = [];
+    private string? _formError;
+
+    private IEnumerable<BreedingEventType> Types => Animal?.Sex == Sex.Male
+        ? [BreedingEventType.BullSoundnessExam]
+        : Enum.GetValues<BreedingEventType>().Where(t => t != BreedingEventType.BullSoundnessExam);
+
+    private Guid? _formFor;
+
+    protected override async Task OnAnimalLoadedAsync()
+    {
+        // Set up the form before any await: the chips are already on screen and a quick tap must not be undone.
+        if (_formFor != Id)
+        {
+            _formFor = Id;
+            _model = new BreedingEventRequest { Type = Types.First() };
+        }
+        _bulls = await Data.BullsAsync(Animal!.FarmId);
+    }
+
+    private void OnTypeChanged(BreedingEventType type)
+    {
+        // Start from a clean request so fields of another event type are not sent along.
+        _model = new BreedingEventRequest { Type = type, EventDate = _model.EventDate, Notes = _model.Notes };
+        if (type == BreedingEventType.Calving) _model.Calves.Add(new CalfRequest());
+        _formError = null;
+    }
+
+    private string BullLabel(Guid? id) =>
+        _bulls.FirstOrDefault(b => b.Id == id) is { } b ? $"{(b.TagNumber is null ? "No tag" : $"Tag {b.TagNumber}")} · {b.AnimalNo}" : "";
+
+    private async Task SubmitAsync()
+    {
+        await _form.ValidateAsync();
+        // Rules that span several fields (e.g. "add the calf") are shown here rather than on one input.
+        var whole = await Validator.ValidateAsync(_model);
+        _formError = whole.IsValid ? null : string.Join(" ", whole.Errors.Select(e => e.ErrorMessage).Distinct());
+        if (!_form.IsValid || !whole.IsValid) return;
+
+        var summary = BreedingText.Summary(_model.Type, _model.PregnancyResult, _model.GestationDays, _model.Calves.Count,
+            _model.StillbornCount, _model.Assisted, _model.SoundnessResult);
+        await SaveAsync(_model.Id, OutboxKind.BreedingEvent, _model, summary, _model.EventDate);
+    }
+}

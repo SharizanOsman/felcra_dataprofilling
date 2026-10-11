@@ -1,4 +1,5 @@
 using Felcra.Profiling.Contracts.Animals;
+using Felcra.Profiling.Contracts.Breeding;
 using Felcra.Profiling.Contracts.Census;
 using Felcra.Profiling.Contracts.MasterData;
 using Felcra.Profiling.Contracts.Records;
@@ -12,6 +13,7 @@ public sealed class FieldData(OfflineDb db)
 {
     private const string ProductsKey = "products";
     private const string SessionsKey = "sessions";
+    private const string RemindersKey = "reminders";
     private const string CursorKey = "cursor";
     private const string LastSyncKey = "lastSync";
     private const string UserKey = "userId";
@@ -49,6 +51,7 @@ public sealed class FieldData(OfflineDb db)
         await db.BulkAsync(OfflineDb.Animals, pull.Animals.Select(a => (a.Id.ToString(), a)), pull.RemovedAnimalIds.Select(id => id.ToString()));
         await db.PutAsync(OfflineDb.Meta, ProductsKey, pull.TreatmentProducts);
         await db.PutAsync(OfflineDb.Meta, SessionsKey, pull.OpenCensusSessions);
+        await db.PutAsync(OfflineDb.Meta, RemindersKey, pull.Reminders);
         await db.PutAsync(OfflineDb.Meta, CursorKey, pull.ServerTime);
         _animals = null;
     }
@@ -60,6 +63,15 @@ public sealed class FieldData(OfflineDb db)
 
     public async Task<List<CensusSessionDto>> OpenSessionsAsync(Guid farmId) =>
         (await db.GetAsync<List<CensusSessionDto>>(OfflineDb.Meta, SessionsKey) ?? []).Where(s => s.FarmId == farmId).ToList();
+
+    /// <summary>Tasks as of the last sync (due within two weeks, plus overdue).</summary>
+    public async Task<List<ReminderDto>> RemindersAsync() =>
+        await db.GetAsync<List<ReminderDto>>(OfflineDb.Meta, RemindersKey) ?? [];
+
+    /// <summary>Bulls on a farm, for choosing the sire of a natural service.</summary>
+    public async Task<List<SyncAnimalDto>> BullsAsync(Guid farmId) =>
+        (await AnimalsAsync()).Where(a => a.FarmId == farmId && a.Sex == Sex.Male && a.Category == AnimalCategory.Bull && a.Status == AnimalStatus.Active)
+            .OrderBy(a => a.TagNumber).ToList();
 
     public Task<DateTimeOffset?> CursorAsync() => db.GetAsync<DateTimeOffset?>(OfflineDb.Meta, CursorKey);
 
@@ -86,12 +98,15 @@ public sealed class FieldData(OfflineDb db)
 
     // ---- Cached history (last version seen online) ---------------------------------------------
 
-    public Task CacheDetailAsync(AnimalDto animal, AnimalRecordsDto records) => Task.WhenAll(
+    public Task CacheDetailAsync(AnimalDto animal, AnimalRecordsDto records, AnimalBreedingDto breeding) => Task.WhenAll(
         db.PutAsync(OfflineDb.Records, $"animal:{animal.Id}", animal),
-        db.PutAsync(OfflineDb.Records, $"records:{animal.Id}", records));
+        db.PutAsync(OfflineDb.Records, $"records:{animal.Id}", records),
+        db.PutAsync(OfflineDb.Records, $"breeding:{animal.Id}", breeding));
 
-    public async Task<(AnimalDto? Animal, AnimalRecordsDto? Records)> CachedDetailAsync(Guid id) =>
-        (await db.GetAsync<AnimalDto>(OfflineDb.Records, $"animal:{id}"), await db.GetAsync<AnimalRecordsDto>(OfflineDb.Records, $"records:{id}"));
+    public async Task<(AnimalDto? Animal, AnimalRecordsDto? Records, AnimalBreedingDto? Breeding)> CachedDetailAsync(Guid id) =>
+        (await db.GetAsync<AnimalDto>(OfflineDb.Records, $"animal:{id}"),
+         await db.GetAsync<AnimalRecordsDto>(OfflineDb.Records, $"records:{id}"),
+         await db.GetAsync<AnimalBreedingDto>(OfflineDb.Records, $"breeding:{id}"));
 
     // ---- Outbox --------------------------------------------------------------------------------
 

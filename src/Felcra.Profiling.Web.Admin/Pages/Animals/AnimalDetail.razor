@@ -23,6 +23,10 @@
 
 @if (_animal is not null && _lookups is not null)
 {
+    @if (_breeding?.CullingReasons is { Count: > 0 } cullReasons)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">Culling candidate: @string.Join("; ", cullReasons)</MudAlert>
+    }
     @if (_animal.DuplicateTagAnimalIds.Count > 0)
     {
         <MudAlert Severity="Severity.Warning" Class="mb-4">
@@ -122,6 +126,58 @@
                                 </tbody>
                             </MudSimpleTable>
                         </MudTabPanel>
+                        @if (_breeding is not null)
+                        {
+                            <MudTabPanel Text="@($"Breeding ({_breeding.Events.Count})")">
+                                @if (_breeding.Reproduction is { } r)
+                                {
+                                    <MudStack Row="true" Spacing="4" Wrap="Wrap.Wrap" Class="mb-3">
+                                        <MudChip T="string" Color="@BreedingText.StateColor(r.State)" Variant="Variant.Outlined">
+                                            @(BreedingText.Status(r.State, r.ExpectedCalving, r.PregnancyCheckDue) ?? "No breeding records")
+                                        </MudChip>
+                                        <MudText Typo="Typo.body2">Calvings: <strong>@r.CalvingCount</strong></MudText>
+                                        @if (r.LastCalving is { } lc) { <MudText Typo="Typo.body2">Last calving: <strong>@lc.ToString("dd MMM yyyy")</strong></MudText> }
+                                        @if (r.CalvingIntervalDays is { } ci) { <MudText Typo="Typo.body2">Calving interval: <strong>@ci days</strong></MudText> }
+                                        @if (r.DaysOpen is { } open) { <MudText Typo="Typo.body2">Days open: <strong>@open</strong></MudText> }
+                                    </MudStack>
+                                }
+                                <MudSimpleTable Dense="true" Elevation="0">
+                                    <thead><tr><th>Date</th><th>Event</th><th>Bull / semen</th><th>Calves</th><th>Notes</th><th>Recorded by</th><th></th></tr></thead>
+                                    <tbody>
+                                        @foreach (var e in _breeding.Events)
+                                        {
+                                            <tr>
+                                                <td>@e.EventDate.ToString("dd MMM yyyy")</td>
+                                                <td>@BreedingText.Summary(e)</td>
+                                                <td>@(e.SireLabel ?? e.SemenCode)</td>
+                                                <td>
+                                                    @foreach (var calfId in e.CalfIds)
+                                                    {
+                                                        <MudLink Href="@($"animals/{calfId}")" Class="mr-2">@(_breeding.Offspring.FirstOrDefault(o => o.Id == calfId)?.AnimalNo)</MudLink>
+                                                    }
+                                                </td>
+                                                <td>@e.Notes</td>
+                                                <td>@e.RecordedBy</td>
+                                                <td style="text-align:right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                    OnClick="@(() => DeleteRecordAsync($"api/breeding-events/{e.Id}", BreedingText.Summary(e)))" aria-label="Delete" /></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                                @if (_breeding.Offspring.Count > 0)
+                                {
+                                    <MudText Typo="Typo.subtitle2" Class="mt-3">Offspring</MudText>
+                                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                                        @foreach (var o in _breeding.Offspring)
+                                        {
+                                            <MudChip T="string" Href="@($"animals/{o.Id}")" Variant="Variant.Outlined">
+                                                @o.AnimalNo · @(o.TagNumber ?? "no tag") · @o.Sex · @o.BirthDate?.ToString("dd MMM yyyy")
+                                            </MudChip>
+                                        }
+                                    </MudStack>
+                                }
+                            </MudTabPanel>
+                        }
                         <MudTabPanel Text="@($"Observations ({_records.Observations.Count})")">
                             @foreach (var o in _records.Observations)
                             {
@@ -191,6 +247,7 @@
 
     private AnimalDto? _animal;
     private AnimalRecordsDto? _records;
+    private AnimalBreedingDto? _breeding;
     private Lookups? _lookups;
 
     private static string MeasurementText(MeasurementDto m) => m.Type switch
@@ -218,6 +275,7 @@
         _lookups ??= await Lookups.LoadAsync(Api, includeGroups: true);
         _animal = await Api.GetAsync<AnimalDto>($"api/animals/{Id}");
         _records = await Api.GetAsync<AnimalRecordsDto>($"api/animals/{Id}/records");
+        _breeding = await Api.GetAsync<AnimalBreedingDto>($"api/animals/{Id}/breeding");
         _breadcrumbs =[new("Animals", "animals"), new(_animal.AnimalNo, null, disabled: true)];
     }
 

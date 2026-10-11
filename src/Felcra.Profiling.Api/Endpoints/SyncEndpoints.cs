@@ -1,4 +1,6 @@
+using Felcra.Profiling.Api.Breeding;
 using Felcra.Profiling.Contracts.MasterData;
+using Felcra.Profiling.Domain.Breeding;
 using Felcra.Profiling.Contracts.Sync;
 using Felcra.Profiling.Domain.Animals;
 using Felcra.Profiling.Domain.Records;
@@ -32,7 +34,11 @@ internal static class SyncEndpoints
         decimal? WeightKg, DateOnly? WeighedOn, decimal? CensusWeightKg, DateOnly? CensusWeighedOn,
         decimal? Bcs, DateOnly? BcsOn, decimal? CensusBcs, DateOnly? CensusBcsOn);
 
-    private static async Task<Ok<SyncPullDto>> Pull(AppDbContext db, TimeProvider clock, CancellationToken ct, DateTimeOffset? since = null)
+    /// <summary>Tasks sent to the phone: due within this many days (plus overdue).</summary>
+    private const int ReminderDays = 14;
+
+    private static async Task<Ok<SyncPullDto>> Pull(
+        AppDbContext db, BreedingQueries breedingQueries, TimeProvider clock, CancellationToken ct, DateTimeOffset? since = null)
     {
         var serverTime = clock.GetUtcNow();
         var changedSince = since - Overlap;
@@ -41,13 +47,16 @@ internal static class SyncEndpoints
         var animals = db.Animals.IgnoreQueryFilters([QueryFilters.SoftDelete]).AsNoTracking();
         var allMeasurements = db.Measurements.IgnoreQueryFilters([QueryFilters.SoftDelete]);
         var allEntries = db.CensusEntries.IgnoreQueryFilters([QueryFilters.SoftDelete]);
+        var allBreeding = db.BreedingEvents.IgnoreQueryFilters([QueryFilters.SoftDelete]);
         animals = changedSince is { } s
             ? animals.Where(a =>
                 (a.UpdatedAt ?? a.CreatedAt) > s
                 || a.DeletedAt > s
                 // A new or removed weighing / census entry changes the animal's latest values.
                 || allMeasurements.Any(m => m.AnimalId == a.Id && ((m.UpdatedAt ?? m.CreatedAt) > s || m.DeletedAt > s))
-                || allEntries.Any(e => e.AnimalId == a.Id && ((e.UpdatedAt ?? e.CreatedAt) > s || e.DeletedAt > s)))
+                || allEntries.Any(e => e.AnimalId == a.Id && ((e.UpdatedAt ?? e.CreatedAt) > s || e.DeletedAt > s))
+                // A breeding event changes the reproduction status.
+                || allBreeding.Any(e => e.AnimalId == a.Id && ((e.UpdatedAt ?? e.CreatedAt) > s || e.DeletedAt > s)))
             : animals.Where(a => !a.IsDeleted);
 
         var rows = await animals
@@ -89,13 +98,17 @@ internal static class SyncEndpoints
             .ToListAsync(ct);
 
         var removed = rows.Where(r => r.IsDeleted).Select(r => r.Id).ToList();
+        var females = rows.Where(r => !r.IsDeleted && r.Sex == Sex.Female).Select(r => r.Id).ToList();
+        var breeding = await breedingQueries.EventsByAnimalAsync(females, ct);
         var changed = rows.Where(r => !r.IsDeleted).Select(r =>
         {
             var (weight, weighedOn) = Newest(r.WeightKg, r.WeighedOn, r.CensusWeightKg, r.CensusWeighedOn);
             var (bcs, bcsOn) = Newest(r.Bcs, r.BcsOn, r.CensusBcs, r.CensusBcsOn);
+            var reproduction = r.Sex == Sex.Female ? breedingQueries.Evaluate(breeding.GetValueOrDefault(r.Id) ?? []) : null;
             return new SyncAnimalDto(
                 r.Id, Animal.FormatAnimalNo(r.AnimalNo), r.TagNumber, r.Sex, r.Category, r.BirthDate, r.BirthDateMethod,
-                r.FarmId, r.FarmCode, r.ProjectCode, r.Status, weight, weighedOn, bcs, bcsOn);
+                r.FarmId, r.FarmCode, r.ProjectCode, r.Status, weight, weighedOn, bcs, bcsOn,
+                reproduction?.State, reproduction?.State is ReproductiveState.Pregnant or ReproductiveState.Served ? reproduction.ExpectedCalving : null);
         }).ToList();
 
         var products = await db.TreatmentProducts.AsNoTracking().Where(t => t.IsActive).OrderBy(t => t.Name)
@@ -105,7 +118,8 @@ internal static class SyncEndpoints
             .OrderByDescending(s => s.StartDate).ToListAsync(ct);
 
         return TypedResults.Ok(new SyncPullDto(
-            serverTime, since is null, changed, removed, products, await CensusEndpoints.ToDtosAsync(db, sessions, ct)));
+            serverTime, since is null, changed, removed, products, await CensusEndpoints.ToDtosAsync(db, sessions, ct),
+            await breedingQueries.RemindersAsync(null, ReminderDays, ct)));
     }
 
     /// <summary>The more recent of a value recorded at the pen and one recorded in a census.</summary>

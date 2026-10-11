@@ -2,6 +2,7 @@ using System.Reflection;
 using Felcra.Profiling.Application.Abstractions;
 using Felcra.Profiling.Domain.Animals;
 using Felcra.Profiling.Domain.Auditing;
+using Felcra.Profiling.Domain.Breeding;
 using Felcra.Profiling.Domain.Census;
 using Felcra.Profiling.Domain.Common;
 using Felcra.Profiling.Domain.Farms;
@@ -35,6 +36,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser? 
     public DbSet<CensusSession> CensusSessions => Set<CensusSession>();
     public DbSet<CensusSessionTreatment> CensusSessionTreatments => Set<CensusSessionTreatment>();
     public DbSet<CensusEntry> CensusEntries => Set<CensusEntry>();
+    public DbSet<BreedingEvent> BreedingEvents => Set<BreedingEvent>();
     public DbSet<Measurement> Measurements => Set<Measurement>();
     public DbSet<TreatmentRecord> TreatmentRecords => Set<TreatmentRecord>();
     public DbSet<Observation> Observations => Set<Observation>();

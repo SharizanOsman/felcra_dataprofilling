@@ -1,4 +1,6 @@
+using Felcra.Profiling.Contracts.Breeding;
 using Felcra.Profiling.Contracts.Census;
+using Felcra.Profiling.Domain.Breeding;
 using Felcra.Profiling.Contracts.MasterData;
 using Felcra.Profiling.Domain.Animals;
 
@@ -20,7 +22,9 @@ public sealed record SyncAnimalDto(
     decimal? LatestWeightKg,
     DateOnly? LatestWeighedOn,
     decimal? LatestBcs,
-    DateOnly? LatestBcsOn);
+    DateOnly? LatestBcsOn,
+    ReproductiveState? Reproduction = null,
+    DateOnly? ExpectedCalving = null);
 
 /// <summary>
 /// Changes since the device's last pull. Animals are incremental; the small reference lists are
@@ -32,4 +36,5 @@ public sealed record SyncPullDto(
     IReadOnlyList<SyncAnimalDto> Animals,
     IReadOnlyList<Guid> RemovedAnimalIds,
     IReadOnlyList<TreatmentProductDto> TreatmentProducts,
-    IReadOnlyList<CensusSessionDto> OpenCensusSessions);
+    IReadOnlyList<CensusSessionDto> OpenCensusSessions,
+    IReadOnlyList<ReminderDto> Reminders);

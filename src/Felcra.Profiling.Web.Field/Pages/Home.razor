@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject RecentAnimals Recent
 @inject SyncService Sync
+@inject FieldData Data
 
 <PageTitle>FELCRA Field</PageTitle>
 
@@ -42,6 +43,31 @@
     </MudStack>
 </MudPaper>
 
+@if (_tasks.Count > 0)
+{
+    <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">Tasks (@_tasks.Count)</MudText>
+    <MudList T="string" Dense="true">
+        @foreach (var task in _tasks.Take(_showAllTasks ? _tasks.Count : 6))
+        {
+            <MudListItem T="string" Href="@($"a/{task.AnimalId}")" Icon="@BreedingText.ReminderIcon(task.Type)"
+                         IconColor="@(task.IsOverdueOn(_today) ? Color.Error : Color.Primary)">
+                <strong>@task.Title</strong>
+                @if (task.IsOverdueOn(_today))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">overdue</MudChip>
+                }
+                <MudText Typo="Typo.caption" Style="display:block">
+                    @(task.TagNumber is null ? "No tag" : $"Tag {task.TagNumber}") · @task.AnimalNo · @(task.DueDate == _today ? "today" : task.DueDate.ToString("dd MMM"))
+                </MudText>
+            </MudListItem>
+        }
+    </MudList>
+    @if (_tasks.Count > 6 && !_showAllTasks)
+    {
+        <MudButton Variant="Variant.Text" OnClick="@(() => _showAllTasks = true)">Show all @_tasks.Count tasks</MudButton>
+    }
+}
+
 @if (_recent.Count > 0)
 {
     <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">Recently opened</MudText>
@@ -57,15 +83,24 @@
 }
 
 @code {
+    private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
     private List<RecentAnimal> _recent = [];
+    private List<ReminderDto> _tasks = [];
+    private bool _showAllTasks;
 
     protected override async Task OnInitializedAsync()
     {
         Sync.Changed += OnSyncChanged;
         _recent = await Recent.GetAsync();
+        _tasks = await Data.RemindersAsync();
     }
 
-    private void OnSyncChanged() => InvokeAsync(StateHasChanged);
+    // Tasks are refreshed with each sync.
+    private void OnSyncChanged() => _ = InvokeAsync(async () =>
+    {
+        if (!Sync.IsSyncing) _tasks = await Data.RemindersAsync();
+        StateHasChanged();
+    });
 
     public void Dispose() => Sync.Changed -= OnSyncChanged;
 }

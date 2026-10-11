@@ -34,6 +34,8 @@ internal sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
         b.HasOne<Animal>().WithMany().HasForeignKey(x => x.SireId).OnDelete(DeleteBehavior.Restrict);
 
         b.HasMany(x => x.TagHistory).WithOne().HasForeignKey(x => x.AnimalId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.DamId);
+        b.HasIndex(x => x.BirthEventId);
     }
 }
 

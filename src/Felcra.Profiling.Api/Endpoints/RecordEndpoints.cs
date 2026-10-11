@@ -66,7 +66,7 @@ internal static class RecordEndpoints
             observations.Select(o => ToDto(o, names)).ToList()));
     }
 
-    private static async Task<Dictionary<Guid, string>> RecorderNamesAsync(AppDbContext db, IEnumerable<Guid?> userIds, CancellationToken ct)
+    internal static async Task<Dictionary<Guid, string>> RecorderNamesAsync(AppDbContext db, IEnumerable<Guid?> userIds, CancellationToken ct)
     {
         var ids = userIds.OfType<Guid>().Distinct().ToList();
         return await db.Users.Where(u => ids.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
@@ -88,7 +88,7 @@ internal static class RecordEndpoints
     // ---- Write ---------------------------------------------------------------------------------
 
     /// <summary>Loads the animal and refuses records for animals that are no longer on the farm.</summary>
-    private static async Task<(Animal? Animal, IResult? Problem)> LoadActiveAnimalAsync(AppDbContext db, Guid animalId, CancellationToken ct)
+    internal static async Task<(Animal? Animal, IResult? Problem)> LoadActiveAnimalAsync(AppDbContext db, Guid animalId, CancellationToken ct)
     {
         var animal = await db.Animals.AsNoTracking().SingleOrDefaultAsync(a => a.Id == animalId, ct);
         if (animal is null) return (null, TypedResults.NotFound());

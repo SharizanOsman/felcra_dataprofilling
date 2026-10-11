@@ -28,6 +28,7 @@ builder.Services.AddSerilog((services, logger) => logger
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+builder.Services.AddScoped<Felcra.Profiling.Api.Breeding.BreedingQueries>();
 AssemblyScanner.FindValidatorsInAssemblyContaining<LoginRequestValidator>()
     .ForEach(v => builder.Services.AddSingleton(v.InterfaceType, v.ValidatorType));
 
@@ -125,6 +126,7 @@ app.MapAnimalEndpoints();
 app.MapCensusEndpoints();
 app.MapRecordEndpoints();
 app.MapSyncEndpoints();
+app.MapBreedingEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();

@@ -72,6 +72,9 @@ public class Animal : AuditableEntity, IFarmScoped
     public Guid? DamId { get; set; }
     public Guid? SireId { get; set; }
 
+    /// <summary>The calving event that registered this animal, when born on the farm.</summary>
+    public Guid? BirthEventId { get; set; }
+
     public AnimalStatus Status { get; set; } = AnimalStatus.Active;
     public DateOnly? StatusDate { get; set; }
     public string? StatusReason { get; set; }

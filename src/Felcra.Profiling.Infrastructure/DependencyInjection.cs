@@ -56,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<ICensusImportService, CensusImportService>();
 
         services.AddOptions<FileStoreOptions>().Bind(config.GetSection(FileStoreOptions.SectionName));
+        services.AddOptions<Application.Breeding.BreedingOptions>().Bind(config.GetSection(Application.Breeding.BreedingOptions.SectionName));
         services.AddSingleton<IFileStore>(sp =>
         {
             var path = sp.GetRequiredService<IOptions<FileStoreOptions>>().Value.Path;

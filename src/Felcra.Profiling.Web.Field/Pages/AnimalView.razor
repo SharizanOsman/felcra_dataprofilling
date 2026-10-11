@@ -21,6 +21,15 @@ else
 {
     <AnimalHeader Animal="_animal" DuplicateTag="_duplicate" />
 
+    @if (BreedingText.Status(_animal.Reproduction, _animal.ExpectedCalving, _breeding?.Reproduction?.PregnancyCheckDue) is { } status)
+    {
+        <MudChip T="string" Color="@BreedingText.StateColor(_animal.Reproduction)" Variant="Variant.Outlined" Class="mb-3 ml-0">@status</MudChip>
+    }
+    @if (_breeding?.CullingReasons is { Count: > 0 } reasons)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">Culling candidate: @string.Join("; ", reasons)</MudAlert>
+    }
+
     @if (_animal.Status == AnimalStatus.Active)
     {
         <MudGrid Spacing="2" Class="mb-4">
@@ -28,6 +37,11 @@ else
             <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/bcs")" Icon="@Icons.Material.Filled.FitnessCenter" Text="Body condition" Detail="@LatestBcs" /></MudItem>
             <MudItem xs="6"><ActionButton Href="@($"a/{Id}/treatment")" Icon="@Icons.Material.Filled.Vaccines" Text="Treatment" /></MudItem>
             <MudItem xs="6"><ActionButton Href="@($"a/{Id}/observation")" Icon="@Icons.Material.Filled.PhotoCamera" Text="Observation" /></MudItem>
+            @if (_animal.Sex == Sex.Female || _animal.Category == AnimalCategory.Bull)
+            {
+                <MudItem xs="6"><ActionButton Href="@($"a/{Id}/breeding")" Icon="@Icons.Material.Filled.Favorite"
+                                              Text="@(_animal.Sex == Sex.Female ? "Breeding" : "Soundness exam")" /></MudItem>
+            }
             @if (_animal.Category == AnimalCategory.Dam)
             {
                 <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/milk")" Icon="@Icons.Material.Filled.LocalDrink" Text="Milk yield" /></MudItem>
@@ -84,6 +98,7 @@ else
     private bool _duplicate;
     private AnimalDto? _detail;
     private AnimalRecordsDto? _records;
+    private AnimalBreedingDto? _breeding;
     private List<OutboxItem> _pending = [];
     private List<TimelineItem> _timeline = [];
     private bool _historyLoaded;
@@ -142,13 +157,14 @@ else
         {
             var detail = Api.GetAsync<AnimalDto>($"api/animals/{Id}");
             var records = Api.GetAsync<AnimalRecordsDto>($"api/animals/{Id}/records");
-            (_detail, _records) = (await detail, await records);
-            await Data.CacheDetailAsync(_detail, _records);
+            var breeding = Api.GetAsync<AnimalBreedingDto>($"api/animals/{Id}/breeding");
+            (_detail, _records, _breeding) = (await detail, await records, await breeding);
+            await Data.CacheDetailAsync(_detail, _records, _breeding);
             _historyFromCache = false;
         }
         catch (HttpRequestException)
         {
-            (_detail, _records) = await Data.CachedDetailAsync(Id);
+            (_detail, _records, _breeding) = await Data.CachedDetailAsync(Id);
             _historyFromCache = true;
         }
         _historyLoaded = _records is not null;
@@ -177,6 +193,15 @@ else
             items.AddRange(_records.Observations.Select(o => new TimelineItem(
                 o.ObservedOn, o.RecordedAt, EnumText.Humanize(o.Category), o.Notes, o.RecordedBy, Color.Warning, o.PhotoIds)));
             sent.UnionWith(_records.Measurements.Select(m => m.Id).Concat(_records.Treatments.Select(t => t.Id)).Concat(_records.Observations.Select(o => o.Id)));
+        }
+
+        if (_breeding is not null)
+        {
+            items.AddRange(_breeding.Events.Select(e => new TimelineItem(
+                e.EventDate, e.RecordedAt, BreedingText.Summary(e),
+                Join(e.SireLabel is null ? null : $"bull {e.SireLabel}", e.SemenCode is null ? null : $"semen {e.SemenCode}", e.Notes),
+                e.RecordedBy, Color.Tertiary, [])));
+            sent.UnionWith(_breeding.Events.Select(e => e.Id));
         }
 
         if (_detail is not null)

@@ -6,6 +6,7 @@ public enum OutboxKind
     Measurement = 2,
     Treatment = 3,
     Observation = 4,
+    BreedingEvent = 5,
 }
 
 /// <summary>
@@ -41,6 +42,7 @@ public sealed record OutboxItem
         OutboxKind.Photo => $"api/animals/{AnimalId}/photos",
         OutboxKind.Measurement => $"api/animals/{AnimalId}/measurements",
         OutboxKind.Treatment => $"api/animals/{AnimalId}/treatments",
+        OutboxKind.BreedingEvent => $"api/animals/{AnimalId}/breeding-events",
         _ => $"api/animals/{AnimalId}/observations",
     };
 }

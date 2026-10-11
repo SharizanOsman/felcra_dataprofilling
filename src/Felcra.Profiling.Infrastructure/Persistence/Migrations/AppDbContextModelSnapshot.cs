@@ -44,6 +44,10 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("birth_date_method");
 
+                    b.Property<Guid?>("BirthEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("birth_event_id");
+
                     b.Property<Guid?>("BreedId")
                         .HasColumnType("uuid")
                         .HasColumnName("breed_id");
@@ -145,6 +149,9 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                     b.HasIndex("AnimalNo")
                         .IsUnique()
                         .HasDatabaseName("ix_animals_animal_no");
+
+                    b.HasIndex("BirthEventId")
+                        .HasDatabaseName("ix_animals_birth_event_id");
 
                     b.HasIndex("BreedId")
                         .HasDatabaseName("ix_animals_breed_id");
@@ -260,6 +267,112 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_audit_logs_entity_type_entity_id");
 
                     b.ToTable("audit_logs", (string)null);
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Breeding.BreedingEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AnimalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("animal_id");
+
+                    b.Property<bool?>("Assisted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("assisted");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<DateOnly>("EventDate")
+                        .HasColumnType("date")
+                        .HasColumnName("event_date");
+
+                    b.Property<Guid>("FarmId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("farm_id");
+
+                    b.Property<int?>("GestationDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("gestation_days");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PregnancyResult")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("pregnancy_result");
+
+                    b.Property<string>("SemenCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("semen_code");
+
+                    b.Property<Guid?>("SireId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sire_id");
+
+                    b.Property<string>("SoundnessResult")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("soundness_result");
+
+                    b.Property<int?>("StillbornCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("stillborn_count");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_breeding_events");
+
+                    b.HasIndex("SireId")
+                        .HasDatabaseName("ix_breeding_events_sire_id");
+
+                    b.HasIndex("AnimalId", "EventDate")
+                        .HasDatabaseName("ix_breeding_events_animal_id_event_date");
+
+                    b.ToTable("breeding_events", (string)null);
                 });
 
             modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusEntry", b =>
@@ -1716,6 +1829,22 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_animal_tags_animals_animal_id");
+                });
+
+            modelBuilder.Entity("Felcra.Profiling.Domain.Breeding.BreedingEvent", b =>
+                {
+                    b.HasOne("Felcra.Profiling.Domain.Animals.Animal", null)
+                        .WithMany()
+                        .HasForeignKey("AnimalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_breeding_events_animals_animal_id");
+
+                    b.HasOne("Felcra.Profiling.Domain.Animals.Animal", null)
+                        .WithMany()
+                        .HasForeignKey("SireId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_breeding_events_animals_sire_id");
                 });
 
             modelBuilder.Entity("Felcra.Profiling.Domain.Census.CensusEntry", b =>

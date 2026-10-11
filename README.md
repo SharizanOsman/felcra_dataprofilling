@@ -118,6 +118,10 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Seed:DevelopmentData` | Adds the Pagoh farm and sample manager / officer accounts |
 | `RateLimiting:LoginPermitsPerMinute` | Login/refresh attempts per IP per minute (default 10) |
 | `Storage:Path` | Folder for uploaded photos (default `App_Data/uploads`, relative to the API); mount as a volume in Docker |
+| `Breeding:GestationDays` | Gestation length used for calving due dates (default 285) |
+| `Breeding:PregnancyCheckAfterDays` | Days after service when a pregnancy check becomes due (default 45) |
+| `Breeding:CullOpenDays` / `CullAgeYears` / `CullConsecutiveOpenChecks` | Culling rules (defaults 365 days, 8 years, 2 checks — from the Pagoh report) |
+| `Breeding:LowBcs` | BCS below this is flagged (default 2.0 for a 1–5 scale; use 4 for 1–9) |
 
 ## Key design decisions
 

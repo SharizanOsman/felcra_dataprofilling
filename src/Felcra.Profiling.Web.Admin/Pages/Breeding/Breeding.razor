@@ -1,0 +1,134 @@
+@page "/breeding"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@inject NavigationManager Navigation
+
+<PageHeader Title="Breeding" Subtitle="Herd fertility, upcoming tasks and culling candidates" Error="@LoadError">
+    <Actions>
+        <MudSelect T="int" Value="_days" ValueChanged="OnDaysChanged" Label="Tasks due within" Style="min-width:160px" Dense="true">
+            <MudSelectItem Value="7">7 days</MudSelectItem>
+            <MudSelectItem Value="14">14 days</MudSelectItem>
+            <MudSelectItem Value="30">30 days</MudSelectItem>
+            <MudSelectItem Value="60">60 days</MudSelectItem>
+        </MudSelect>
+    </Actions>
+</PageHeader>
+
+<MudText Typo="Typo.h6" Class="mb-2">Herd fertility</MudText>
+<MudTable Items="_summary" Dense="true" Elevation="1" Loading="IsLoading" Class="mb-6" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Farm</MudTh>
+        <MudTh Style="text-align:right">Breeding females</MudTh>
+        <MudTh Style="text-align:right">Pregnant</MudTh>
+        <MudTh Style="text-align:right">Served</MudTh>
+        <MudTh Style="text-align:right">Open</MudTh>
+        <MudTh Style="text-align:right">No records</MudTh>
+        <MudTh Style="text-align:right">Pregnancy rate</MudTh>
+        <MudTh Style="text-align:right">Avg calving interval</MudTh>
+        <MudTh Style="text-align:right">Calves (12 mo)</MudTh>
+        <MudTh Style="text-align:right">Calving rate</MudTh>
+        <MudTh Style="text-align:right">Abortions (12 mo)</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Farm">@context.FarmCode</MudTd>
+        <MudTd DataLabel="Breeding females" Style="text-align:right">@context.Dams</MudTd>
+        <MudTd DataLabel="Pregnant" Style="text-align:right">@context.Pregnant</MudTd>
+        <MudTd DataLabel="Served" Style="text-align:right">@context.Served</MudTd>
+        <MudTd DataLabel="Open" Style="text-align:right">@context.Open</MudTd>
+        <MudTd DataLabel="No records" Style="text-align:right">
+            @if (context.NoRecords > 0)
+            {
+                <MudTooltip Text="No breeding records yet: record pregnancy checks to know their status">
+                    <MudText Typo="Typo.body2" Color="Color.Warning">@context.NoRecords</MudText>
+                </MudTooltip>
+            }
+            else { <span>0</span> }
+        </MudTd>
+        <MudTd DataLabel="Pregnancy rate" Style="text-align:right">@Percent(context.PregnancyRatePercent)</MudTd>
+        <MudTd DataLabel="Avg calving interval" Style="text-align:right">@(context.AverageCalvingIntervalDays is { } d ? $"{d} days" : "–")</MudTd>
+        <MudTd DataLabel="Calves (12 mo)" Style="text-align:right">@context.CalvesLast12Months</MudTd>
+        <MudTd DataLabel="Calving rate" Style="text-align:right">@Percent(context.CalvingRatePercent)</MudTd>
+        <MudTd DataLabel="Abortions (12 mo)" Style="text-align:right">@context.AbortionsLast12Months</MudTd>
+    </RowTemplate>
+</MudTable>
+
+<MudGrid>
+    <MudItem xs="12" lg="6">
+        <MudText Typo="Typo.h6" Class="mb-2">Tasks (@_reminders.Count)</MudText>
+        <MudTable T="ReminderDto" Items="_reminders" Dense="true" Hover="true" Elevation="1" Loading="IsLoading" Breakpoint="Breakpoint.Sm"
+                  OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.AnimalId}"))" RowStyle="cursor:pointer">
+            <HeaderContent>
+                <MudTh>Due</MudTh>
+                <MudTh>Task</MudTh>
+                <MudTh>Animal</MudTh>
+                <MudTh>Farm</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Due">
+                    <MudText Typo="Typo.body2" Color="@(context.IsOverdueOn(_today) ? Color.Error : Color.Default)">
+                        @context.DueDate.ToString("dd MMM yyyy")@(context.IsOverdueOn(_today) ? " (overdue)" : "")
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Task">
+                    <MudIcon Icon="@BreedingText.ReminderIcon(context.Type)" Size="Size.Small" Style="vertical-align:middle" /> @context.Title
+                    <MudText Typo="Typo.caption" Style="display:block">@context.Detail</MudText>
+                </MudTd>
+                <MudTd DataLabel="Animal">@context.AnimalNo · @(context.TagNumber ?? "no tag")</MudTd>
+                <MudTd DataLabel="Farm">@context.FarmCode</MudTd>
+            </RowTemplate>
+            <NoRecordsContent><MudText>Nothing due.</MudText></NoRecordsContent>
+        </MudTable>
+    </MudItem>
+
+    <MudItem xs="12" lg="6">
+        <MudText Typo="Typo.h6" Class="mb-2">Culling candidates (@_candidates.Count)</MudText>
+        <MudTable T="CullingCandidateDto" Items="_candidates" Dense="true" Hover="true" Elevation="1" Loading="IsLoading" Breakpoint="Breakpoint.Sm"
+                  OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.AnimalId}"))" RowStyle="cursor:pointer">
+            <HeaderContent>
+                <MudTh>Animal</MudTh>
+                <MudTh>Age</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Reasons</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Animal">@context.AnimalNo · @(context.TagNumber ?? "no tag") <MudText Typo="Typo.caption" Style="display:block">@context.FarmCode</MudText></MudTd>
+                <MudTd DataLabel="Age">@AnimalText.Months(context.AgeMonths)</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@BreedingText.StateColor(context.State)">@EnumText.Humanize(context.State)</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Reasons">
+                    @foreach (var reason in context.Reasons) { <div>@reason</div> }
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent><MudText>No culling candidates.</MudText></NoRecordsContent>
+        </MudTable>
+        <MudText Typo="Typo.caption" Class="mt-1" Style="display:block">
+            Rules: aged 8 years or more · not pregnant 12 months after calving · empty at 2 checks in a row · low BCS.
+            Animals without breeding records are not judged on fertility.
+        </MudText>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
+    private List<HerdBreedingSummaryDto> _summary = [];
+    private List<ReminderDto> _reminders = [];
+    private List<CullingCandidateDto> _candidates = [];
+    private int _days = 14;
+
+    protected override async Task LoadAsync()
+    {
+        var summary = Api.GetAsync<List<HerdBreedingSummaryDto>>("api/breeding/summary");
+        var reminders = Api.GetAsync<List<ReminderDto>>($"api/reminders?days={_days}");
+        var candidates = Api.GetAsync<List<CullingCandidateDto>>("api/breeding/culling-candidates");
+        (_summary, _reminders, _candidates) = (await summary, await reminders, await candidates);
+    }
+
+    private async Task OnDaysChanged(int days)
+    {
+        _days = days;
+        _reminders = await Api.GetAsync<List<ReminderDto>>($"api/reminders?days={_days}");
+    }
+
+    private static string Percent(decimal? value) => value is { } v ? $"{v:0.#}%" : "–";
+}
