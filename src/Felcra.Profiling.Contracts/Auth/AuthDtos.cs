@@ -1,3 +1,4 @@
+using Felcra.Profiling.Contracts.Users;
 using FluentValidation;
 
 namespace Felcra.Profiling.Contracts.Auth;
@@ -29,5 +30,22 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
     {
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.Password).NotEmpty();
+    }
+}
+
+/// <summary>A signed-in user changing their own password.</summary>
+public sealed class ChangePasswordRequest
+{
+    public string CurrentPassword { get; set; } = "";
+    public string NewPassword { get; set; } = "";
+}
+
+public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequest>
+{
+    public ChangePasswordRequestValidator()
+    {
+        RuleFor(x => x.CurrentPassword).NotEmpty();
+        RuleFor(x => x.NewPassword).ValidPassword()
+            .NotEqual(x => x.CurrentPassword).WithMessage("Choose a password different from the current one.");
     }
 }

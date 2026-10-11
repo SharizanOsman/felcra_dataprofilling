@@ -1,0 +1,103 @@
+@* Morning task notifications for this phone. *@
+@inject PushClient Push
+@inject ISnackbar Snackbar
+@inject SyncService Sync
+
+<MudPaper Class="pa-3" Elevation="0" Outlined="true" data-testid="notifications">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudIcon Icon="@(_state == PushState.On ? Icons.Material.Filled.NotificationsActive : Icons.Material.Filled.NotificationsOff)"
+                 Color="@(_state == PushState.On ? Color.Primary : Color.Default)" />
+        <div style="flex:1">
+            <MudText Typo="Typo.subtitle2">Task notifications</MudText>
+            <MudText Typo="Typo.caption" Style="display:block" data-testid="notification-state">@Description</MudText>
+        </div>
+    </MudStack>
+    @if (_state is PushState.Off or PushState.On)
+    {
+        <MudStack Row="true" Spacing="2" Class="mt-2">
+            @if (_state == PushState.Off)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.NotificationsActive"
+                           Disabled="@(_busy || !Sync.IsOnline)" OnClick="EnableAsync">Turn on</MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Outlined" Disabled="@(_busy || !Sync.IsOnline)" OnClick="TestAsync">Send a test</MudButton>
+                <MudButton Variant="Variant.Text" Disabled="@(_busy || !Sync.IsOnline)" OnClick="DisableAsync">Turn off</MudButton>
+            }
+        </MudStack>
+    }
+</MudPaper>
+
+@code {
+    private PushState? _state;
+    private bool _busy;
+
+    private string Description => _state switch
+    {
+        PushState.On => "On: a message each morning when pregnancy checks, calvings or treatments are due.",
+        PushState.Off => "Get a message each morning when pregnancy checks, calvings or treatments are due.",
+        PushState.Denied => "Blocked for this site. Allow notifications in the browser's site settings, then come back.",
+        PushState.NotConfigured => "Not available yet: notifications are not set up on the server.",
+        PushState.Unsupported => "Not supported in this browser. On iPhone, add the app to the Home Screen first (iOS 16.4 or later) and open it from there.",
+        _ => "Checking…",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _state = await Push.StateAsync();
+        }
+        catch (HttpRequestException)
+        {
+            _state = PushState.Off; // Offline: the buttons stay disabled until the connection returns.
+        }
+    }
+
+    private async Task EnableAsync()
+    {
+        _busy = true;
+        try
+        {
+            var error = await Push.EnableAsync();
+            if (error is null) Snackbar.Add("Task notifications are on.", Severity.Success);
+            else Snackbar.Add(error, Severity.Warning);
+            _state = await Push.StateAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DisableAsync()
+    {
+        _busy = true;
+        try
+        {
+            await Push.DisableAsync();
+            _state = await Push.StateAsync();
+            Snackbar.Add("Task notifications are off.", Severity.Info);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task TestAsync()
+    {
+        _busy = true;
+        try
+        {
+            var result = await Push.SendTestAsync();
+            if (result.Value is { Sent: > 0 }) Snackbar.Add("Test sent. It should appear in a few seconds.", Severity.Success);
+            else Snackbar.Add(result.FullError ?? "This phone is not registered any more. Turn notifications off and on again.", Severity.Warning);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

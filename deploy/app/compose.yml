@@ -1,0 +1,97 @@
+# One FELCRA stack (production or staging): API + PostgreSQL + nightly backups.
+# Run through ../deploy.sh, or directly from this folder:
+#   docker compose -p felcra-production --env-file production.env up -d
+services:
+  app:
+    image: ${APP_IMAGE:?set APP_IMAGE}:${APP_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Host=db;Port=5432;Database=felcra;Username=felcra;Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY}
+      Seed__AdminEmail: ${ADMIN_EMAIL:-}
+      Seed__AdminPassword: ${ADMIN_PASSWORD:-}
+      Seed__DevelopmentData: ${SEED_DEMO_DATA:-false}
+      Email__From: ${EMAIL_FROM:-}
+      Email__Smtp__Host: ${SMTP_HOST:-}
+      Email__Smtp__Port: ${SMTP_PORT:-587}
+      Email__Smtp__UserName: ${SMTP_USER:-}
+      Email__Smtp__Password: ${SMTP_PASSWORD:-}
+      Reports__Monthly__Enabled: ${MONTHLY_REPORTS:-false}
+      Reports__Monthly__PortalUrl: https://${DOMAIN:-localhost}
+      Push__PublicKey: ${PUSH_PUBLIC_KEY:-}
+      Push__PrivateKey: ${PUSH_PRIVATE_KEY:-}
+      Push__Subject: ${PUSH_SUBJECT:-mailto:admin@felcra.local}
+    volumes:
+      - appdata:/app/data
+    networks:
+      default: {}
+      web:
+        aliases:
+          - ${STACK_NAME:?set STACK_NAME}-app
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: felcra
+      POSTGRES_USER: felcra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U felcra -d felcra"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Nightly database dump + photos archive into ${BACKUP_DIR}; see backup.sh.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: felcra
+      PGDATABASE: felcra
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_HOUR: ${BACKUP_HOUR:-2}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: MYT-8
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+      - appdata:/app/data:ro
+
+  # Optional off-site copy of the backups (enable with --profile offsite; configure rclone.conf).
+  offsite:
+    image: rclone/rclone:1.68.2
+    profiles: ["offsite"]
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          rclone copy /backups "$${OFFSITE_TARGET}" --max-age 48h --log-level INFO || echo "off-site copy failed"
+          sleep 21600
+        done
+    environment:
+      OFFSITE_TARGET: ${OFFSITE_TARGET:-offsite:felcra-backups}
+    volumes:
+      - ${BACKUP_DIR:-./backups}:/backups:ro
+      - ./rclone.conf:/config/rclone/rclone.conf:ro
+
+volumes:
+  appdata:
+  pgdata:
+
+networks:
+  web:
+    name: felcra-web
+    external: true

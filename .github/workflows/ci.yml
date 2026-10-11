@@ -27,6 +27,11 @@ jobs:
           dotnet ef migrations has-pending-model-changes --no-build --configuration Release \
             --project src/Felcra.Profiling.Infrastructure --startup-project src/Felcra.Profiling.Api
 
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list Felcra.Profiling.slnx package --vulnerable --include-transitive | tee vulnerable.txt
+          ! grep -q "has the following vulnerable packages" vulnerable.txt
+
       # Integration tests start PostgreSQL via Testcontainers (Docker is available on ubuntu runners).
       - name: Test
         run: dotnet test Felcra.Profiling.slnx -c Release --no-build --logger "trx" --results-directory TestResults

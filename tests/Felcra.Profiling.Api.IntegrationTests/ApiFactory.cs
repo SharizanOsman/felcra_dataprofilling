@@ -5,6 +5,7 @@ using Felcra.Profiling.Contracts.Auth;
 using Felcra.Profiling.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
@@ -24,6 +25,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>Where the API writes e-mails (as .eml files) during tests.</summary>
     public string MailDirectory { get; } = Path.Combine(Path.GetTempPath(), $"felcra-mail-{Guid.NewGuid():N}");
 
+    /// <summary>Captures push notifications the API sends.</summary>
+    internal FakePushSender Push { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -42,6 +46,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Email:From", "FELCRA Tests <tests@felcra.local>");
         builder.UseSetting("Email:PickupDirectory", MailDirectory);
         builder.UseSetting("Reports:Monthly:Enabled", "false");
+        // Push messages are captured instead of sent; the daily schedule is driven by the tests.
+        var (publicKey, privateKey) = Notifications.PushOptions.GenerateKeys();
+        builder.UseSetting("Push:PublicKey", publicKey);
+        builder.UseSetting("Push:PrivateKey", privateKey);
+        builder.UseSetting("Push:Hour", "24");
+        builder.ConfigureTestServices(services => services.AddSingleton<Notifications.IPushSender>(Push));
     }
 
     public async Task InitializeAsync()

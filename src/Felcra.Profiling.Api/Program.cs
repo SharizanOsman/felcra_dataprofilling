@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Felcra.Profiling.Api.Endpoints;
 using Felcra.Profiling.Api.Infrastructure;
+using Felcra.Profiling.Api.Notifications;
 using Felcra.Profiling.Api.Reports;
 using Felcra.Profiling.Application.Abstractions;
 using Felcra.Profiling.Contracts.Auth;
@@ -11,12 +12,16 @@ using Felcra.Profiling.Infrastructure.Persistence;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
+
+if (Commands.TryRun(args, out var exitCode)) return exitCode;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +43,11 @@ builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
 builder.Services.Configure<MonthlyReportOptions>(builder.Configuration.GetSection(MonthlyReportOptions.Section));
 builder.Services.AddHostedService<MonthlyReportService>();
+builder.Services.Configure<PushOptions>(builder.Configuration.GetSection(PushOptions.Section));
+builder.Services.AddHttpClient("webpush");
+builder.Services.AddSingleton<IPushSender, WebPushSender>();
+builder.Services.AddScoped<ReminderNotificationJob>();
+builder.Services.AddHostedService<ReminderNotificationService>();
 AssemblyScanner.FindValidatorsInAssemblyContaining<LoginRequestValidator>()
     .ForEach(v => builder.Services.AddSingleton(v.InterfaceType, v.ValidatorType));
 
@@ -66,13 +76,42 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(Policies.Manager, p => p.RequireRole(Roles.HqAdmin, Roles.FarmManager));
 
 var loginPermitLimit = builder.Configuration.GetValue("RateLimiting:LoginPermitsPerMinute", 10);
+var apiPermitLimit = builder.Configuration.GetValue("RateLimiting:ApiRequestsPerMinute", 600);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy(AuthEndpoints.LoginRateLimitPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = loginPermitLimit, Window = TimeSpan.FromMinutes(1) }));
+    // Every API call, per signed-in user (or per IP before sign-in). Generous: a phone sending its outbox
+    // after a day offline makes a burst of calls. Static files (the clients) are not limited.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        !context.Request.Path.StartsWithSegments("/api")
+            ? RateLimitPartition.GetNoLimiter("static")
+            : RateLimitPartition.GetFixedWindowLimiter(
+                context.User.FindFirst(Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames.Sub)?.Value
+                    ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = apiPermitLimit, Window = TimeSpan.FromMinutes(1) }));
 });
+
+// Behind the reverse proxy (Caddy): take the client IP and https scheme from X-Forwarded-* so rate limits,
+// logs and HSTS see the real request. Only enable when the API is reachable through the proxy alone.
+if (builder.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.ForwardLimit = 1;
+        // The proxy's address on the Docker network is not fixed.
+        o.KnownIPNetworks.Clear();
+        o.KnownProxies.Clear();
+    });
+}
+
+// Keys protect Identity tokens; keep them on the data volume so they survive container restarts.
+var dataProtection = builder.Services.AddDataProtection().SetApplicationName("felcra-profiling");
+if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath)
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 
 // Malformed query/route values are the caller's fault: always answer 400, never 500 (Development throws by default).
 builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = false);
@@ -86,6 +125,7 @@ var app = builder.Build();
 await InitialiseDatabaseAsync(app);
 
 // --- Pipeline -------------------------------------------------------------------------------
+if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled")) app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSecurityHeaders();
@@ -138,12 +178,14 @@ app.MapSyncEndpoints();
 app.MapBreedingEndpoints();
 app.MapAnalyticsEndpoints();
 app.MapReportEndpoints();
+app.MapPushEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();
 app.MapGet("/", () => Results.Redirect("/admin/")).AllowAnonymous().ExcludeFromDescription();
 
 app.Run();
+return 0;
 
 static async Task InitialiseDatabaseAsync(WebApplication app)
 {

@@ -21,7 +21,10 @@ RUN dotnet publish src/Felcra.Profiling.Api/Felcra.Profiling.Api.csproj -c Relea
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
+# Photos, logs and data-protection keys live here; mount a volume (see deploy/).
+RUN mkdir -p /app/data && chown $APP_UID /app/data
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 USER $APP_UID
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD ["dotnet", "Felcra.Profiling.Api.dll", "healthcheck"]
 ENTRYPOINT ["dotnet", "Felcra.Profiling.Api.dll"]

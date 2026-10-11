@@ -1,3 +1,4 @@
+using Felcra.Profiling.Api.Infrastructure;
 using Felcra.Profiling.Application.Abstractions;
 using Felcra.Profiling.Application.Auth;
 using Felcra.Profiling.Contracts.Auth;
@@ -19,6 +20,7 @@ internal static class AuthEndpoints
         // Holding the refresh token is proof enough; the access token may already have expired.
         group.MapPost("/logout", Logout).AllowAnonymous();
         group.MapGet("/me", Me);
+        group.MapPost("/change-password", ChangePassword).Validate<ChangePasswordRequest>();
 
         return app;
     }
@@ -44,6 +46,15 @@ internal static class AuthEndpoints
     {
         await auth.LogoutAsync(request.RefreshToken, ct);
         return TypedResults.NoContent();
+    }
+
+    private static async Task<Results<Ok<TokenResponse>, ValidationProblem>> ChangePassword(
+        ChangePasswordRequest request, ICurrentUser currentUser, IAuthService auth, CancellationToken ct)
+    {
+        var tokens = await auth.ChangePasswordAsync(currentUser.UserId!.Value, request, ct);
+        return tokens is not null
+            ? TypedResults.Ok(tokens)
+            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { [nameof(request.CurrentPassword)] = ["The current password is not correct."] });
     }
 
     private static async Task<Results<Ok<CurrentUserDto>, NotFound>> Me(

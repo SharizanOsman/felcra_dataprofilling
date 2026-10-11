@@ -1,0 +1,21 @@
+{
+	# Let's Encrypt account e-mail (expiry notices).
+	email {$ACME_EMAIL}
+}
+
+# Shared settings for every FELCRA site.
+(felcra) {
+	encode zstd gzip
+	header -Server
+	# HTTPS only from now on (the API also sends HSTS); 180 days.
+	header Strict-Transport-Security "max-age=15552000"
+	request_body {
+		max_size 25MB
+	}
+	log {
+		output stdout
+		format console
+	}
+}
+
+import sites/*.caddy

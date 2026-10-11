@@ -5,6 +5,7 @@
 @inject IJSRuntime JS
 @inject SyncService Sync
 @inject IDialogService Dialogs
+@inject PushClient Push
 
 <MudThemeProvider Theme="FelcraTheme.Theme" />
 <MudPopoverProvider />
@@ -65,7 +66,15 @@
                 yesText: "Sign out anyway", cancelText: "Cancel") != true)
             return;
 
-        // Shared phones: remove this user's farm data and queued records.
+        // Shared phones: stop this user's notifications and remove their farm data and queued records.
+        try
+        {
+            await Push.DisableAsync();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JSException)
+        {
+            // Offline: the push service drops the subscription once the browser has unsubscribed.
+        }
         await Sync.ResetAsync();
         await Auth.LogoutAsync();
         Navigation.NavigateTo("login");

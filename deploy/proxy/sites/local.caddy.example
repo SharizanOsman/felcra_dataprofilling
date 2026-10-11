@@ -1,0 +1,6 @@
+# For trying the production stack on a laptop: Caddy's own certificate authority, https://localhost:<HTTPS_PORT>.
+localhost {
+	import felcra
+	tls internal
+	reverse_proxy felcra-local-app:8080
+}

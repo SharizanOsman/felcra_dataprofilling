@@ -285,6 +285,8 @@ Census mode (fast sequential entry) · Ration view · Sync status.
     HQ admins and farm managers should receive it.
 13. Reports are in English (the original census form is in Malay). Is a Malay version of the census form needed for
     submission to FFISB / FELCRA?
+14. Hosting: which VPS provider and size, the domain names (production and staging), who operates the server
+    day to day, where off-site backups should go, and the IT contact for alerts and security reports.
 
 ## 11. Approval
 
