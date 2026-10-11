@@ -11,6 +11,13 @@
     <Actions>
         @if (_session is not null)
         {
+            <MudMenu Label="Reports" StartIcon="@Icons.Material.Filled.Summarize" EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                     Variant="Variant.Outlined" Disabled="@(Downloading is not null)">
+                <MudMenuItem Icon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/form?format=pdf"))">Census and profiling form (PDF)</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.TableView" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/form?format=xlsx"))">Census sheet (Excel)</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/selected?format=pdf"))">Selected animals (PDF)</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.TableView" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/selected?format=xlsx"))">Selected animals (Excel)</MudMenuItem>
+            </MudMenu>
             <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditSessionAsync">Edit session</MudButton>
             @if (!_session.IsClosed)
             {

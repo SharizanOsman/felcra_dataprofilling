@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Felcra.Profiling.Api.Endpoints;
 using Felcra.Profiling.Api.Infrastructure;
+using Felcra.Profiling.Api.Reports;
 using Felcra.Profiling.Application.Abstractions;
 using Felcra.Profiling.Contracts.Auth;
 using Felcra.Profiling.Infrastructure;
@@ -29,6 +30,14 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 builder.Services.AddScoped<Felcra.Profiling.Api.Breeding.BreedingQueries>();
+builder.Services.AddScoped<Felcra.Profiling.Api.Analytics.AnalyticsQueries>();
+builder.Services.AddScoped<ReportQueries>();
+builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<MonthlyReportJob>();
+builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
+builder.Services.Configure<MonthlyReportOptions>(builder.Configuration.GetSection(MonthlyReportOptions.Section));
+builder.Services.AddHostedService<MonthlyReportService>();
 AssemblyScanner.FindValidatorsInAssemblyContaining<LoginRequestValidator>()
     .ForEach(v => builder.Services.AddSingleton(v.InterfaceType, v.ValidatorType));
 
@@ -128,6 +137,7 @@ app.MapRecordEndpoints();
 app.MapSyncEndpoints();
 app.MapBreedingEndpoints();
 app.MapAnalyticsEndpoints();
+app.MapReportEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();

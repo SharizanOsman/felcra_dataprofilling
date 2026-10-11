@@ -110,6 +110,27 @@ The dashboard (`GET /api/analytics/dashboard`) summarises one farm or all farms.
 limestone, dicalcium phosphate). They are for trying the planner only: FELCRA should replace them with analysed
 values and current prices, and have the ration targets confirmed by a nutritionist.
 
+### Reports
+
+Admin → **Reports** (HQ and farm managers), each as PDF for printing and Excel for analysis:
+
+| Report | Covers |
+|---|---|
+| Census and profiling form | A census programme in the layout of the Pagoh report: summary, farm box, the animal list with P / I / AJ / AB ticks and selected animals highlighted, sign-off. The Excel version uses the import template's columns, so a corrected sheet can be imported again |
+| Selected animals | The animals selected in a census programme |
+| Health and treatments | Treatments given in a period, with dose, batch and withdrawal date |
+| Farm performance | Herd by category, records made in a period, animals that left the herd, breeding, growth, data quality |
+| Culling candidates | Animals meeting the culling rules today |
+
+The census form and culling list can also be downloaded from the census programme and Breeding pages. On the 1st of
+each month (configurable) last month's farm performance, treatment and culling reports are e-mailed as PDFs: HQ admins
+get all farms, each farm manager gets their own farms. Each month is sent once, even across restarts or several server
+instances. HQ can send themselves a test copy from the Reports page. In development the e-mails are written to
+`src/Felcra.Profiling.Api/App_Data/mail` as `.eml` files (open them with any mail program).
+
+PDFs embed the Carlito font (SIL Open Font Licence, metric-compatible with Calibri), so they look the same on Windows
+and on the Linux server.
+
 ### Trying the field app on a phone
 
 Browsers only allow camera access (QR scanning, photos) on **HTTPS** pages or `localhost`. Opening
@@ -136,6 +157,12 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Breeding:PregnancyCheckAfterDays` | Days after service when a pregnancy check becomes due (default 45) |
 | `Breeding:CullOpenDays` / `CullAgeYears` / `CullConsecutiveOpenChecks` | Culling rules (defaults 365 days, 8 years, 2 checks — from the Pagoh report) |
 | `Breeding:LowBcs` | BCS below this is flagged (default 2.0 for a 1–5 scale; use 4 for 1–9) |
+| `Email:From` | Sender of report e-mails, e.g. `FELCRA Cattle Profiling <no-reply@felcra.com.my>` |
+| `Email:Smtp:Host` / `Port` / `UserName` / `Password` | SMTP server for outgoing e-mail (port 587 with STARTTLS by default) |
+| `Email:PickupDirectory` | Write e-mails as `.eml` files here instead of sending them (development: `App_Data/mail`) |
+| `Reports:Monthly:Enabled` | Send last month's reports by e-mail each month (off by default; on in development) |
+| `Reports:Monthly:DayOfMonth` / `Hour` | When to send them, Malaysia time (default day 1, 07:00) |
+| `Reports:Monthly:PortalUrl` | Portal address for links in the e-mail |
 
 ## Key design decisions
 

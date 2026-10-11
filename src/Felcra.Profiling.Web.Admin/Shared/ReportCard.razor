@@ -1,0 +1,18 @@
+@* One report on the Reports page. *@
+<MudPaper Class="pa-4" Elevation="1" Style="height:100%" data-testid="report-card">
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Class="mb-2">
+        <MudIcon Icon="@Icon" Color="Color.Primary" />
+        <div>
+            <MudText Typo="Typo.h6">@Title</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Description</MudText>
+        </div>
+    </MudStack>
+    @ChildContent
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Description;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
