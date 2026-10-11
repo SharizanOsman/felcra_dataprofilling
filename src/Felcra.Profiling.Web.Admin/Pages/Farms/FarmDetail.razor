@@ -17,6 +17,21 @@
                         <tr><td>Address</td><td>@_farm.Address</td></tr>
                         <tr><td>State</td><td>@_farm.State</td></tr>
                         <tr><td>Area</td><td>@_farm.AreaHectares?.ToString("N1") ha</td></tr>
+                        <tr>
+                            <td>Location</td>
+                            <td>
+                                @if (_farm.Latitude is { } lat && _farm.Longitude is { } lon)
+                                {
+                                    var coords = FormattableString.Invariant($"{lat:0.######},{lon:0.######}");
+                                    <span>@coords</span>
+                                    <MudLink Href="@($"https://www.google.com/maps/search/?api=1&query={coords}")" Target="_blank" Class="ml-2">Open in Google Maps</MudLink>
+                                }
+                                else
+                                {
+                                    <span>Not set</span>
+                                }
+                            </td>
+                        </tr>
                         <tr><td>Capacity</td><td>@_farm.Capacity head</td></tr>
                         <tr><td>Projects</td><td>@string.Join(", ", _farm.ProjectIds.Select(id => _projects.FirstOrDefault(p => p.Id == id)?.Code))</td></tr>
                         <tr><td>Status</td><td><StatusChip Active="_farm.IsActive" /></td></tr>

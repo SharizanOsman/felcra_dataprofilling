@@ -11,6 +11,10 @@
     </Actions>
 </PageHeader>
 
+<MudPaper Class="pa-4 mb-4" Elevation="1" data-testid="farm-map">
+    <MalaysiaMap Farms="_mapPoints" />
+</MudPaper>
+
 <MudTable Items="_farms" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
         <MudTh>Code</MudTh>
@@ -44,12 +48,14 @@
 @code {
     private List<FarmDto> _farms = [];
     private List<ProjectDto> _projects = [];
+    private List<FarmMapPointDto> _mapPoints = [];
     private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new FarmRequestValidator());
 
     protected override async Task LoadAsync()
     {
         _projects = await Api.GetAsync<List<ProjectDto>>("api/projects");
         _farms = await Api.GetAsync<List<FarmDto>>("api/farms");
+        _mapPoints = await Api.GetAsync<List<FarmMapPointDto>>("api/farms/map");
     }
 
     private string ProjectCode(Guid id) => _projects.FirstOrDefault(p => p.Id == id)?.Code ?? "?";
@@ -77,11 +83,21 @@
             <MudTextField @bind-Value="m.Code" For="@(() => m.Code)" Label="Code" HelperText="Short unique code, e.g. PAGOH" />
             <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" />
             <MudTextField @bind-Value="m.Address" For="@(() => m.Address)" Label="Address" Lines="2" />
-            <MudTextField @bind-Value="m.State" For="@(() => m.State)" Label="State" />
+            <MudSelect T="string" @bind-Value="m.State" For="@(() => m.State)" Label="State" Clearable="true">
+                @foreach (var state in MalaysianStates.All)
+                {
+                    <MudSelectItem Value="state">@state</MudSelectItem>
+                }
+            </MudSelect>
             <MudStack Row="true">
                 <MudNumericField @bind-Value="m.AreaHectares" For="@(() => m.AreaHectares)" Label="Area (ha)" />
                 <MudNumericField @bind-Value="m.Capacity" For="@(() => m.Capacity)" Label="Capacity (head)" />
             </MudStack>
+            <MudStack Row="true">
+                <MudNumericField @bind-Value="m.Latitude" For="@(() => m.Latitude)" Label="Latitude" HideSpinButtons="true" Format="0.######" />
+                <MudNumericField @bind-Value="m.Longitude" For="@(() => m.Longitude)" Label="Longitude" HideSpinButtons="true" Format="0.######" />
+            </MudStack>
+            <MudText Typo="Typo.caption">For the map. In Google Maps, right-click the farm and click the numbers at the top (e.g. 2.148, 102.771) to copy them.</MudText>
             <MudSelect T="Guid" Label="Projects / schemes" MultiSelection="true"
                        SelectedValues="m.ProjectIds" SelectedValuesChanged="@(v => m.ProjectIds = v.ToList())"
                        ToStringFunc="ProjectCode">

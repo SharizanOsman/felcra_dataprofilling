@@ -40,7 +40,7 @@ try {
 
   // Farms: list, add, edit
   await hq.getByRole('link', { name: 'Farms' }).click();
-  await hq.getByText('PAGOH').first().waitFor();
+  await hq.getByRole('cell', { name: 'PAGOH', exact: true }).waitFor();
   check('Farms list shows seeded PAGOH with its projects', await (await rowWith(hq, 'PAGOH')).innerText().then(t => t.includes('EPP5') && t.includes('RP4')));
 
   const farmCode = `T${suffix}`;
@@ -48,15 +48,19 @@ try {
   await hq.getByRole('dialog').waitFor();
   await hq.getByRole('dialog').getByLabel('Code').fill(farmCode);
   await hq.getByRole('dialog').getByLabel('Name', { exact: true }).fill('UI test farm');
-  await hq.getByRole('dialog').getByLabel('State').fill('Pahang');
+  await hq.getByRole('dialog').getByRole('combobox', { name: 'State' }).click();
+  await hq.getByRole('option', { name: 'Pahang', exact: true }).click();
+  await hq.getByRole('dialog').getByLabel('Latitude').fill('3.8126');
+  await hq.getByRole('dialog').getByLabel('Longitude').fill('103.3256');
   await save(hq, 'Farm added.');
   await hq.locator('td', { hasText: farmCode }).first().waitFor({ timeout: 10000 }).catch(() => {});
   check('Add farm via dialog', await hq.locator('td', { hasText: farmCode }).first().isVisible());
+  check('New farm appears as a pin on the Malaysia map', await hq.locator('[data-testid=farm-pin]').filter({ hasText: farmCode }).isVisible());
 
   await (await rowWith(hq, farmCode)).getByRole('button', { name: 'Edit' }).click();
   await hq.getByRole('dialog').getByLabel('Name', { exact: true }).fill('UI test farm (edited)');
   await save(hq, 'Farm updated.');
-  check('Edit farm via dialog', await hq.getByText('UI test farm (edited)').first().isVisible());
+  check('Edit farm via dialog', await visible(hq.getByRole('link', { name: 'UI test farm (edited)' })));
 
   // Client-side validation blocks a bad farm code
   await hq.getByRole('button', { name: 'Add farm' }).click();

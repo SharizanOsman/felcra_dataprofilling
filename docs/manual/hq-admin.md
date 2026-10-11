@@ -6,7 +6,9 @@ applies to you too; this guide covers the extra screens under **Master data** an
 ## 1. Setting up a new farm (checklist)
 
 1. **Master data → Projects & schemes**: the schemes the farm belongs to (e.g. EPP5, RP4).
-2. **Farms → Add farm**: code (short, e.g. `PAGOH`), name, address, state, area (ha), grazing capacity, projects.
+2. **Farms → Add farm**: code (short, e.g. `PAGOH`), name, address, state (from the list), area (ha), grazing capacity,
+   projects, and the **latitude / longitude** so the farm shows on the Malaysia map (in Google Maps, right-click the
+   farm and click the numbers to copy them).
    Open the farm to add **groups / pens** if animals are kept in groups.
 3. **Administration → Users → Add user** for the farm manager and field officers, with the farm assigned.
 4. Register the animals — usually by importing the census sheet (farm manager guide, section 3).
