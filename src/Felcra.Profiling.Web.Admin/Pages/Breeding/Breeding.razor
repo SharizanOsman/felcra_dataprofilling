@@ -81,7 +81,11 @@
     </MudItem>
 
     <MudItem xs="12" lg="6">
-        <MudText Typo="Typo.h6" Class="mb-2">Culling candidates (@_candidates.Count)</MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+            <MudText Typo="Typo.h6">Culling candidates (@_candidates.Count)</MudText>
+            <MudSpacer />
+            <ReportButtons Name="Culling candidates" Href="api/reports/culling-candidates" Download="DownloadAsync" Busy="@Downloading" />
+        </MudStack>
         <MudTable T="CullingCandidateDto" Items="_candidates" Dense="true" Hover="true" Elevation="1" Loading="IsLoading" Breakpoint="Breakpoint.Sm"
                   OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.AnimalId}"))" RowStyle="cursor:pointer">
             <HeaderContent>

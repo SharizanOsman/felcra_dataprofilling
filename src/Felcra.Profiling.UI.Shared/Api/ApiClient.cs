@@ -23,6 +23,9 @@ public sealed record ApiResult<T>(T? Value, string? Error, IReadOnlyDictionary<s
         : FieldErrors.Count == 0 ? Error : string.Join(" ", FieldErrors.Values.SelectMany(v => v));
 }
 
+/// <summary>A downloaded file.</summary>
+public sealed record DownloadedFile(string FileName, string ContentType, byte[] Content);
+
 /// <summary>Thin wrapper over the authenticated <see cref="HttpClient"/> that maps API errors to messages.</summary>
 public sealed class ApiClient(HttpClient http)
 {
@@ -49,13 +52,24 @@ public sealed class ApiClient(HttpClient http)
 
     public Task<byte[]> GetBytesAsync(string url) => http.GetByteArrayAsync(url);
 
+    /// <summary>Downloads a file (e.g. a report), named as the server suggests.</summary>
+    public Task<ApiResult<DownloadedFile>> DownloadAsync(string url) =>
+        SendAsync(() => http.GetAsync(url), async response =>
+        {
+            var disposition = response.Content.Headers.ContentDisposition;
+            return new DownloadedFile(
+                disposition?.FileNameStar ?? disposition?.FileName?.Trim('"') ?? "download",
+                response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream",
+                await response.Content.ReadAsByteArrayAsync());
+        });
+
     public async Task<ApiResult<bool>> DeleteAsync(string url)
     {
         var result = await SendAsync<object>(() => http.DeleteAsync(url));
         return new ApiResult<bool>(result.Succeeded, result.Error, result.FieldErrors, result.StatusCode);
     }
 
-    private static async Task<ApiResult<T>> SendAsync<T>(Func<Task<HttpResponseMessage>> send)
+    private static async Task<ApiResult<T>> SendAsync<T>(Func<Task<HttpResponseMessage>> send, Func<HttpResponseMessage, Task<T>>? read = null)
     {
         HttpResponseMessage response;
         try
@@ -69,8 +83,8 @@ public sealed class ApiClient(HttpClient http)
 
         if (response.IsSuccessStatusCode)
         {
-            var value = response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0
-                ? default
+            var value = read is not null ? await read(response)
+                : response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0 ? default
                 : await response.Content.ReadFromJsonAsync<T>();
             return new(value, null, NoFieldErrors, response.StatusCode);
         }

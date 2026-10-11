@@ -21,6 +21,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     private readonly PostgreSqlContainer _db = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
+    /// <summary>Where the API writes e-mails (as .eml files) during tests.</summary>
+    public string MailDirectory { get; } = Path.Combine(Path.GetTempPath(), $"felcra-mail-{Guid.NewGuid():N}");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -35,6 +38,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Seed:AdminEmail", AdminEmail);
         builder.UseSetting("Seed:AdminPassword", Password);
         builder.UseSetting("Seed:DevelopmentData", "true");
+        // E-mails are written to a folder the tests read; the hourly schedule is driven by the tests instead.
+        builder.UseSetting("Email:From", "FELCRA Tests <tests@felcra.local>");
+        builder.UseSetting("Email:PickupDirectory", MailDirectory);
+        builder.UseSetting("Reports:Monthly:Enabled", "false");
     }
 
     public async Task InitializeAsync()

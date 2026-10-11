@@ -281,6 +281,10 @@ Census mode (fast sequential entry) · Ration view · Sync status.
 10. Line 17 (tag 175) is recorded as a male calf (AJ) aged 3 years — should it be a bull?
 11. Tags 107, 08478, 135 and 136 are each used by two animals, and 8 animals are untagged. Re-tagging them before the
     next census lets the system match animals automatically.
+12. Monthly report e-mail: FELCRA's SMTP server (host, port, account) and sender address, and whether anyone besides
+    HQ admins and farm managers should receive it.
+13. Reports are in English (the original census form is in Malay). Is a Malay version of the census form needed for
+    submission to FFISB / FELCRA?
 
 ## 11. Approval
 

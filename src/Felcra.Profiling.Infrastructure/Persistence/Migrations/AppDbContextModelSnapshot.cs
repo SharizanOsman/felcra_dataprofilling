@@ -1458,6 +1458,38 @@ namespace Felcra.Profiling.Infrastructure.Persistence.Migrations
                     b.ToTable("treatment_records", (string)null);
                 });
 
+            modelBuilder.Entity("Felcra.Profiling.Domain.Reports.ScheduledReportRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<int>("EmailsSent")
+                        .HasColumnType("integer")
+                        .HasColumnName("emails_sent");
+
+                    b.Property<DateOnly>("Period")
+                        .HasColumnType("date")
+                        .HasColumnName("period");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scheduled_report_runs");
+
+                    b.HasIndex("Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_scheduled_report_runs_period");
+
+                    b.ToTable("scheduled_report_runs", (string)null);
+                });
+
             modelBuilder.Entity("Felcra.Profiling.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")

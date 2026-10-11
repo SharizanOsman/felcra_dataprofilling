@@ -8,6 +8,7 @@ using Felcra.Profiling.Domain.Common;
 using Felcra.Profiling.Domain.Farms;
 using Felcra.Profiling.Domain.MasterData;
 using Felcra.Profiling.Domain.Records;
+using Felcra.Profiling.Domain.Reports;
 using Felcra.Profiling.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -44,6 +45,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser? 
     public DbSet<UserFarm> UserFarms => Set<UserFarm>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ScheduledReportRun> ScheduledReportRuns => Set<ScheduledReportRun>();
 
     // Evaluated per context instance, so query filters below are parameterised per request.
     // No authenticated user (background jobs, seeding, migrations) or HQ admin => no farm restriction.

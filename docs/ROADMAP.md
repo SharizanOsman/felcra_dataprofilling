@@ -12,7 +12,7 @@ Delivery is split into steps; each is demoable and deployable to staging. Milest
 | 5 | Offline-first & sync | Done — farm data on the phone, outbox with retry, rejected records kept for review; animal registration offline comes with calving in Step 6 |
 | 6 | Fertility, breeding & reminders | Done — events incl. calving that registers calves, reproduction status, herd figures, culling candidates, in-app task list; push notifications moved to Step 9 |
 | 7 | Analytics engine & dashboard | Done — Gompertz growth, Ali-Schaeffer lactation and least-cost ration in pure C# (no MathNet / OR-Tools needed); HQ dashboard; the ration planner also works offline on the phone. Ration targets are edited per plan; the below-curve threshold (15%) is fixed for now |
-| 8 | Reports & export | Not started |
+| 8 | Reports & export | Done — census & profiling form (Pagoh layout), selected animals, health & treatments, farm performance, culling candidates in PDF and Excel; monthly report e-mail. PDFs use MigraDoc (MIT) instead of QuestPDF to avoid a commercial licence; the census Excel export re-imports as is |
 | 9 | Hardening & DevOps | Not started |
 | 10 | UAT, Pagoh pilot, training & go-live | Not started |
 
@@ -84,6 +84,8 @@ Each step is demoable and deployable to staging. Mapped to the quotation's payme
 ### Step 9 — Hardening & DevOps
 - Production Docker Compose: API (hosting both clients), PostgreSQL, Caddy (automatic HTTPS), staging + production.
 - Daily `pg_dump` backups + offsite copy, health checks, Serilog → file/Seq, rate limiting, security headers, OWASP checklist, basic penetration test.
+- Writable data volume for uploaded photos (`Storage:Path`): the container runs as a non-root user and cannot write under `/app`. SMTP settings for the monthly report e-mail.
+- Web Push notifications for reminders (moved from Step 6).
 - **Output:** staging & production live on the VPS.
 
 ### Step 10 — UAT, Pagoh Pilot, Training & Go-Live *(20% → 10% milestones)*

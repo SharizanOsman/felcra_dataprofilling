@@ -1,0 +1,23 @@
+@* "PDF" and "Excel" download buttons for one report URL. *@
+<MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf"
+               Disabled="@(Busy is not null)" OnClick="@(() => Download.InvokeAsync(Url("pdf")))" aria-label="@($"{Name} PDF")">PDF</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.TableView"
+               Disabled="@(Busy is not null)" OnClick="@(() => Download.InvokeAsync(Url("xlsx")))" aria-label="@($"{Name} Excel")">Excel</MudButton>
+    @if (Busy is not null && Busy.StartsWith(Href, StringComparison.Ordinal))
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+    }
+</MudStack>
+
+@code {
+    /// <summary>Report URL without the format.</summary>
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    /// <summary>Report name, for screen readers.</summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter, EditorRequired] public EventCallback<string> Download { get; set; }
+    /// <summary>URL currently downloading, if any.</summary>
+    [Parameter] public string? Busy { get; set; }
+
+    private string Url(string format) => $"{Href}{(Href.Contains('?') ? '&' : '?')}format={format}";
+}

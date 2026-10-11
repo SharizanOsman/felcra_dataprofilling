@@ -2,6 +2,7 @@ using Felcra.Profiling.Contracts.Auth;
 using Felcra.Profiling.UI.Shared.Api;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Felcra.Profiling.Web.Admin.Shared;
@@ -60,6 +61,30 @@ public abstract class AdminPageBase : ComponentBase
         else
         {
             Snackbar.Add(result.FullError ?? "Something went wrong.", Severity.Error);
+        }
+    }
+
+    [Inject] private IJSRuntime JS { get; set; } = null!;
+
+    /// <summary>The URL being downloaded, so its button can show progress.</summary>
+    protected string? Downloading { get; private set; }
+
+    /// <summary>Fetches a report or other file and saves it in the browser.</summary>
+    protected async Task DownloadAsync(string url)
+    {
+        if (Downloading is not null) return;
+        Downloading = url;
+        try
+        {
+            var result = await Api.DownloadAsync(url);
+            if (result.Value is { } file)
+                await JS.InvokeVoidAsync("felcra.downloadFile", file.FileName, file.ContentType, Convert.ToBase64String(file.Content));
+            else
+                Snackbar.Add(result.FullError ?? "The file could not be downloaded.", Severity.Error);
+        }
+        finally
+        {
+            Downloading = null;
         }
     }
 
