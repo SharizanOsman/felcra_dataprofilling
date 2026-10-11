@@ -1,0 +1,17 @@
+@* "All farms" or one farm, for the analytics pages. *@
+<MudSelect T="Guid?" Value="Value" ValueChanged="ValueChanged" Label="Farm" Dense="true" Style="min-width:200px"
+           ToStringFunc="@(id => id is null ? "All farms" : Farms.FirstOrDefault(f => f.Id == id)?.Name ?? "")">
+    <MudSelectItem T="Guid?" Value="null">All farms</MudSelectItem>
+    @foreach (var farm in Farms)
+    {
+        <MudSelectItem T="Guid?" Value="@farm.Id">@farm.Code · @farm.Name</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<FarmDto> Farms { get; set; } = [];
+    [Parameter] public Guid? Value { get; set; }
+    [Parameter] public EventCallback<Guid?> ValueChanged { get; set; }
+
+    public static string Query(Guid? farmId) => farmId is { } id ? $"?farmId={id}" : "";
+}

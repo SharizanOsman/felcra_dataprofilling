@@ -1,0 +1,49 @@
+@page "/ration"
+@attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@implements IDisposable
+@inject FieldData Data
+@inject SyncService Sync
+
+<PageTitle>Ration — FELCRA Field</PageTitle>
+
+<MudText Typo="Typo.h6" Class="mb-1">Ration planner</MudText>
+<MudText Typo="Typo.caption" Style="display:block" Class="mb-3">
+    Lowest-cost daily feed mix for a group of animals. Works without internet, using feed prices from the last sync.
+</MudText>
+
+@if (_feeds is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_feeds.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">
+        @(Sync.IsOnline ? "No feed ingredients have been set up yet. Ask your manager or HQ to add them." : "Connect to the internet once to download the feed ingredients.")
+    </MudAlert>
+}
+else
+{
+    <RationPlanner Feeds="_feeds" Compact="true" />
+}
+
+@code {
+    private List<FeedIngredientDto>? _feeds;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Sync.Changed += OnSyncChanged;
+        _feeds = await Data.FeedIngredientsAsync();
+    }
+
+    // The first download may still be running when the page opens.
+    private void OnSyncChanged() => _ = InvokeAsync(async () =>
+    {
+        if (!Sync.IsSyncing && _feeds is { Count: 0 })
+        {
+            _feeds = await Data.FeedIngredientsAsync();
+            StateHasChanged();
+        }
+    });
+
+    public void Dispose() => Sync.Changed -= OnSyncChanged;
+}

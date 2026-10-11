@@ -127,6 +127,7 @@ app.MapCensusEndpoints();
 app.MapRecordEndpoints();
 app.MapSyncEndpoints();
 app.MapBreedingEndpoints();
+app.MapAnalyticsEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();

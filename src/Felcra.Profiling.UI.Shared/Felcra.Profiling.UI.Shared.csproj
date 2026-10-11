@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Felcra.Profiling.Contracts\Felcra.Profiling.Contracts.csproj" />
+    <ProjectReference Include="..\Felcra.Profiling.Analytics\Felcra.Profiling.Analytics.csproj" />
   </ItemGroup>
 
 </Project>

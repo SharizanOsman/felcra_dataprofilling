@@ -1,0 +1,94 @@
+@page "/analytics/lactation"
+@attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
+@inherits AdminPageBase
+@inject NavigationManager Navigation
+@using Felcra.Profiling.Contracts.Analytics
+
+<PageHeader Title="Lactation" Subtitle="Ali-Schaeffer lactation curves from daily milk yields" Error="@LoadError">
+    <Actions>
+        <FarmFilter Farms="_farms" Value="_farmId" ValueChanged="OnFarmChanged" />
+    </Actions>
+</PageHeader>
+
+@if (_lactation is null)
+{
+    @if (IsLoading) { <MudProgressLinear Indeterminate="true" /> }
+}
+else
+{
+    @if (_lactation.Message is not null)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4" data-testid="lactation-message">@_lactation.Message</MudAlert>
+    }
+    @if (_lactation.HerdFit is { } fit)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudGrid Spacing="3">
+                <MudItem xs="12" lg="8">
+                    <XyChart XLabel="Days in milk" YLabel="Litres / day" AriaLabel="Herd lactation curve"
+                             Series="@([new ChartSeries("Herd curve", ChartColors.Secondary, SeriesKind.Line,
+                                 _lactation.HerdCurve.Select(p => new ChartPoint(p.AgeMonths, p.WeightKg)).ToList())])" />
+                </MudItem>
+                <MudItem xs="12" lg="4">
+                    <MudSimpleTable Dense="true" Elevation="0">
+                        <tbody>
+                            <tr><td>305-day yield</td><td style="text-align:right" data-testid="yield-305">@fit.Total305Litres.ToString("#,0") L</td></tr>
+                            <tr><td>Peak</td><td style="text-align:right">@fit.PeakLitres.ToString("0.0") L/day at day @fit.PeakDay</td></tr>
+                            <tr><td>Fit (R²)</td><td style="text-align:right">@fit.RSquared.ToString("0.00")</td></tr>
+                            <tr><td>Test days used</td><td style="text-align:right">@fit.Points of @_lactation.MilkRecords</td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+                    @if (_lactation.RecordsWithoutCalving > 0)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Warning" Style="display:block" Class="mt-2">
+                            @_lactation.RecordsWithoutCalving milk records could not be used: no calving is recorded before them (or they are over 400 days after calving).
+                        </MudText>
+                    }
+                    <MudText Typo="Typo.caption" Style="display:block" Class="mt-2">
+                        y(t) = a + b(t/305) + c(t/305)² + d·ln(305/t) + e·ln²(305/t), with t = days since the last calving.
+                    </MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+    @if (_lactation.Animals.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mb-2">Dams</MudText>
+        <MudTable T="LactationAnimalDto" Items="_lactation.Animals" Dense="true" Hover="true" Elevation="1" Breakpoint="Breakpoint.Sm"
+                  OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.AnimalId}"))" RowStyle="cursor:pointer">
+            <HeaderContent>
+                <MudTh>Animal</MudTh>
+                <MudTh Style="text-align:right">Test days</MudTh>
+                <MudTh Style="text-align:right">305-day yield</MudTh>
+                <MudTh Style="text-align:right">Peak</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Animal">@context.AnimalNo · @(context.TagNumber ?? "no tag")</MudTd>
+                <MudTd DataLabel="Test days" Style="text-align:right">@context.TestDays</MudTd>
+                <MudTd DataLabel="305-day yield" Style="text-align:right">@(context.Fit is { } f ? $"{f.Total305Litres:#,0} L" : "needs 6+ test days")</MudTd>
+                <MudTd DataLabel="Peak" Style="text-align:right">@(context.Fit is { } p ? $"{p.PeakLitres:0.0} L (day {p.PeakDay})" : "–")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+    <MudText Typo="Typo.caption" Style="display:block" Class="mt-3">
+        Pagoh runs beef cattle, so milk is only recorded where dams are milked (open question in the URS).
+    </MudText>
+}
+
+@code {
+    private List<FarmDto> _farms = [];
+    private Guid? _farmId;
+    private LactationAnalysisDto? _lactation;
+
+    protected override async Task LoadAsync()
+    {
+        if (_farms.Count == 0) _farms = await Api.GetAsync<List<FarmDto>>("api/farms");
+        _lactation = await Api.GetAsync<LactationAnalysisDto>($"api/analytics/lactation{FarmFilter.Query(_farmId)}");
+    }
+
+    private async Task OnFarmChanged(Guid? farmId)
+    {
+        _farmId = farmId;
+        await ReloadAsync();
+    }
+}

@@ -37,4 +37,5 @@ public sealed record SyncPullDto(
     IReadOnlyList<Guid> RemovedAnimalIds,
     IReadOnlyList<TreatmentProductDto> TreatmentProducts,
     IReadOnlyList<CensusSessionDto> OpenCensusSessions,
-    IReadOnlyList<ReminderDto> Reminders);
+    IReadOnlyList<ReminderDto> Reminders,
+    IReadOnlyList<FeedIngredientDto> FeedIngredients);

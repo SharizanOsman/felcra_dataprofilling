@@ -1,0 +1,64 @@
+@* Stacked bar chart drawn as SVG. *@
+@using static ChartColors
+
+<div class="felcra-chart" style="@Style">
+    <svg viewBox="0 0 @Width @Height" role="img" aria-label="@AriaLabel" style="width:100%;height:auto;display:block">
+        @foreach (var tick in _y.Ticks())
+        {
+            <line x1="@Svg(Left)" x2="@Svg(Width - Right)" y1="@Svg(Py(tick))" y2="@Svg(Py(tick))" stroke="#e0e0e0" stroke-width="1" />
+            <g><text x="@Svg(Left - 6)" y="@Svg(Py(tick) + 4)" text-anchor="end" font-size="11" fill="#616161">@AxisScale.Format(tick)</text></g>
+        }
+        @for (var i = 0; i < Labels.Count; i++)
+        {
+            var x = Left + i * Slot + Slot * 0.15;
+            var bottom = 0.0;
+            foreach (var series in Series)
+            {
+                var value = i < series.Values.Count ? series.Values[i] : 0;
+                if (value <= 0) continue;
+                <rect x="@Svg(x)" width="@Svg(Slot * 0.7)" y="@Svg(Py(bottom + value))" height="@Svg(Py(bottom) - Py(bottom + value))" fill="@series.Color">
+                    <title>@Labels[i]: @AxisScale.Format(value) @series.Name.ToLowerInvariant()</title>
+                </rect>
+                bottom += value;
+            }
+            if (ShowLabel(i))
+            {
+                <g><text x="@Svg(x + Slot * 0.35)" y="@Svg(Height - Bottom + 16)" text-anchor="middle" font-size="11" fill="#616161">@Labels[i]</text></g>
+            }
+        }
+        <line x1="@Svg(Left)" x2="@Svg(Width - Right)" y1="@Svg(Height - Bottom)" y2="@Svg(Height - Bottom)" stroke="#9e9e9e" />
+    </svg>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;font-size:0.8rem;margin-top:4px">
+        @foreach (var series in Series)
+        {
+            <span style="display:inline-flex;align-items:center;gap:4px">
+                <span style="width:10px;height:10px;background:@series.Color;display:inline-block"></span>@series.Name
+            </span>
+        }
+    </div>
+</div>
+
+@code {
+    private const double Width = 640, Height = 260, Left = 40, Right = 12, Top = 12, Bottom = 28;
+
+    [Parameter, EditorRequired] public IReadOnlyList<string> Labels { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlyList<BarSeries> Series { get; set; } = [];
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = "Bar chart";
+
+    private AxisScale _y = AxisScale.For(0, 1);
+    private double Slot => (Width - Left - Right) / Math.Max(1, Labels.Count);
+
+    protected override void OnParametersSet()
+    {
+        var max = Enumerable.Range(0, Labels.Count)
+            .Select(i => Series.Sum(s => i < s.Values.Count ? Math.Max(0, s.Values[i]) : 0))
+            .DefaultIfEmpty(0).Max();
+        _y = AxisScale.For(0, Math.Max(max, 4), 4);
+    }
+
+    // Every label when there is room, otherwise every other one.
+    private bool ShowLabel(int i) => Labels.Count <= 8 || i % 2 == (Labels.Count - 1) % 2;
+
+    private double Py(double y) => Height - Bottom - (y - _y.Min) / (_y.Max - _y.Min) * (Height - Top - Bottom);
+}
