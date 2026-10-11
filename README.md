@@ -5,6 +5,7 @@ and an installable, offline-capable **field PWA** for officers at the pen, backe
 
 - Requirements: [docs/URS.md](docs/URS.md)
 - Delivery plan and status: [docs/ROADMAP.md](docs/ROADMAP.md)
+- Deployment and operations: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · Security: [docs/SECURITY.md](docs/SECURITY.md)
 - Source documents (proposal, quotation, Pagoh census report): [Document/](Document/)
 
 ## Tech stack
@@ -96,6 +97,9 @@ dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \
   until the officer retries or discards it on the **Sync** screen.
 - Signing out deletes the phone's copy (shared phones); the app warns first if records have not been sent.
 - History is shown as last seen online; latest weight and BCS are part of the downloaded data.
+- **Task notifications** (Sync screen → Turn on): each morning a phone gets one message when pregnancy checks,
+  calvings or treatments are due on the officer's farms (Web Push). On iPhone this needs iOS 16.4+ with the app added
+  to the Home Screen. Signing out turns them off for that phone.
 
 ### Analytics
 
@@ -152,6 +156,9 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Seed:AdminEmail` / `Seed:AdminPassword` | First HQ admin, created only when no users exist |
 | `Seed:DevelopmentData` | Adds the Pagoh farm and sample manager / officer accounts |
 | `RateLimiting:LoginPermitsPerMinute` | Login/refresh attempts per IP per minute (default 10) |
+| `RateLimiting:ApiRequestsPerMinute` | API calls per user (or IP before sign-in) per minute (default 600) |
+| `ReverseProxy:Enabled` | Trust `X-Forwarded-For` / `-Proto` from the reverse proxy (on in production; only when the API is reachable through the proxy alone) |
+| `DataProtection:KeysPath` | Folder for ASP.NET Core data-protection keys (production: `/app/data/keys`) |
 | `Storage:Path` | Folder for uploaded photos (default `App_Data/uploads`, relative to the API); mount as a volume in Docker |
 | `Breeding:GestationDays` | Gestation length used for calving due dates (default 285) |
 | `Breeding:PregnancyCheckAfterDays` | Days after service when a pregnancy check becomes due (default 45) |
@@ -163,6 +170,9 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Reports:Monthly:Enabled` | Send last month's reports by e-mail each month (off by default; on in development) |
 | `Reports:Monthly:DayOfMonth` / `Hour` | When to send them, Malaysia time (default day 1, 07:00) |
 | `Reports:Monthly:PortalUrl` | Portal address for links in the e-mail |
+| `Push:PublicKey` / `PrivateKey` | Web Push (VAPID) key pair for task notifications; generate with `dotnet Felcra.Profiling.Api.dll vapid-keys`. Notifications are off without them |
+| `Push:Subject` | Contact sent to push services, e.g. `mailto:it@felcra.com.my` |
+| `Push:Hour` | Hour (Malaysia time) from which the daily task notification is sent (default 7) |
 
 ## Key design decisions
 

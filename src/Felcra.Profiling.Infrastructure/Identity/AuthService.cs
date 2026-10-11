@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Felcra.Profiling.Application.Auth;
 using Felcra.Profiling.Contracts.Auth;
+using Felcra.Profiling.Domain.Auditing;
 using Felcra.Profiling.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -46,9 +47,14 @@ internal sealed class AuthService(
         if (stored.RevokedAt is not null)
         {
             // A rotated token was presented again: assume it was stolen and revoke the whole family.
-            await db.RefreshTokens
-                .Where(t => t.UserId == stored.UserId && t.RevokedAt == null)
-                .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now), ct);
+            // Tokens revoked deliberately (sign-out, password change, admin action) are simply refused, so a
+            // phone still holding one cannot sign the user out of the session that replaced it.
+            if (stored.ReplacedByTokenHash is not null)
+            {
+                await db.RefreshTokens
+                    .Where(t => t.UserId == stored.UserId && t.RevokedAt == null)
+                    .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now), ct);
+            }
             return null;
         }
         if (!stored.IsActive(now)) return null;
@@ -74,6 +80,36 @@ internal sealed class AuthService(
 
         var roles = await users.GetRolesAsync(user);
         return new CurrentUserDto(user.Id, user.Email!, user.FullName, [.. roles], [.. user.Farms.Select(f => f.FarmId)]);
+    }
+
+    public async Task<TokenResponse?> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        var user = await users.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive || await users.IsLockedOutAsync(user)) return null;
+        if (!await users.CheckPasswordAsync(user, request.CurrentPassword))
+        {
+            await users.AccessFailedAsync(user);
+            return null;
+        }
+
+        var now = clock.GetUtcNow();
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        // Set directly (as the admin reset does) rather than UserManager.UpdateAsync, which re-marks the whole graph.
+        user.PasswordHash = users.PasswordHasher.HashPassword(user, request.NewPassword);
+        user.SecurityStamp = Guid.NewGuid().ToString();
+        user.AccessFailedCount = 0;
+        db.AuditLogs.Add(new AuditLog
+        {
+            Timestamp = now, UserId = user.Id, UserName = user.Email, Action = AuditAction.Updated, EntityType = "User", EntityId = user.Id,
+            Changes = """{"Password":{"new":"(changed by the user)"}}""",
+        });
+        await db.SaveChangesAsync(ct);
+        // Anyone else signed in as this user (another phone, a stolen session) is signed out.
+        await db.RefreshTokens.Where(t => t.UserId == user.Id && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now), ct);
+        var tokens = await IssueTokensAsync(user, previous: null, ct);
+        await tx.CommitAsync(ct);
+        return tokens;
     }
 
     private async Task<TokenResponse> IssueTokensAsync(ApplicationUser user, RefreshToken? previous, CancellationToken ct)

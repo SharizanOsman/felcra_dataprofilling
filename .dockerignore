@@ -6,3 +6,6 @@
 Document/
 tests/
 *.md
+**/App_Data/
+deploy/
+.github/

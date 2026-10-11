@@ -1,0 +1,5 @@
+# Copy to production.caddy and set the domain. The upstream name is "<STACK_NAME>-app" from the stack's env file.
+profiling.felcra.com.my {
+	import felcra
+	reverse_proxy felcra-production-app:8080
+}

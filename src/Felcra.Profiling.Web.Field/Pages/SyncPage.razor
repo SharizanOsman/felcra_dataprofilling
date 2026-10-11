@@ -4,6 +4,9 @@
 @inject SyncService Sync
 @inject FieldData Data
 @inject IDialogService Dialogs
+@inject ApiClient Api
+@inject AuthClient Auth
+@inject ISnackbar Snackbar
 
 <PageTitle>Sync — FELCRA Field</PageTitle>
 
@@ -62,8 +65,31 @@ else
     </MudList>
 }
 
+<div class="mt-6">
+    <NotificationSettings />
+</div>
+
+<MudPaper Class="pa-3 mt-3" Elevation="0" Outlined="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
+        <div style="flex:1">
+            <MudText Typo="Typo.subtitle2">Account</MudText>
+            <AuthorizeView>
+                <MudText Typo="Typo.caption" Style="display:block">Signed in as @context.User.FindFirst(AppClaimTypes.FullName)?.Value</MudText>
+            </AuthorizeView>
+        </div>
+        <MudButton Variant="Variant.Outlined" Disabled="@(!Sync.IsOnline)" OnClick="ChangePasswordAsync">Change password</MudButton>
+    </MudStack>
+</MudPaper>
+
 @code {
     private List<OutboxItem> _items = [];
+
+    private async Task ChangePasswordAsync()
+    {
+        if (await Dialogs.ChangePasswordAsync(Api, Auth))
+            Snackbar.Add("Password changed. Other devices signed in as you have been signed out.", Severity.Success);
+    }
     private Dictionary<Guid, SyncAnimalDto> _animals = [];
 
     protected override async Task OnInitializedAsync()

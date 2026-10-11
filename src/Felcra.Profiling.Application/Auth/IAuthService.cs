@@ -13,4 +13,10 @@ public interface IAuthService
     Task LogoutAsync(string refreshToken, CancellationToken ct = default);
 
     Task<CurrentUserDto?> GetUserAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Changes the user's own password and signs out their other devices. Returns new tokens for this device,
+    /// or null when the current password is wrong (counted towards lockout).
+    /// </summary>
+    Task<TokenResponse?> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken ct = default);
 }

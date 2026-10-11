@@ -483,3 +483,9 @@ $RECYCLE.BIN/
 
 # Uploaded files in development
 **/App_Data/
+
+# Deployment: secrets and data stay on the server.
+deploy/app/*.env
+deploy/app/rclone.conf
+deploy/app/backups*/
+deploy/proxy/sites/*.caddy

@@ -58,6 +58,13 @@ public sealed class AuthClient(
         return new(true);
     }
 
+    /// <summary>Stores new tokens issued by the server (e.g. after changing the password).</summary>
+    public async Task SaveTokensAsync(TokenResponse tokens)
+    {
+        await store.SetAsync(tokens);
+        authState.NotifyChanged();
+    }
+
     public async Task LogoutAsync()
     {
         var tokens = await store.GetAsync();

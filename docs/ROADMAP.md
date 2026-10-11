@@ -13,7 +13,7 @@ Delivery is split into steps; each is demoable and deployable to staging. Milest
 | 6 | Fertility, breeding & reminders | Done — events incl. calving that registers calves, reproduction status, herd figures, culling candidates, in-app task list; push notifications moved to Step 9 |
 | 7 | Analytics engine & dashboard | Done — Gompertz growth, Ali-Schaeffer lactation and least-cost ration in pure C# (no MathNet / OR-Tools needed); HQ dashboard; the ration planner also works offline on the phone. Ration targets are edited per plan; the below-curve threshold (15%) is fixed for now |
 | 8 | Reports & export | Done — census & profiling form (Pagoh layout), selected animals, health & treatments, farm performance, culling candidates in PDF and Excel; monthly report e-mail. PDFs use MigraDoc (MIT) instead of QuestPDF to avoid a commercial licence; the census Excel export re-imports as is |
-| 9 | Hardening & DevOps | Not started |
+| 9 | Hardening & DevOps | Done — production stack (Caddy HTTPS, staging + production on one VPS), nightly backups with off-site copy and a tested restore, release images via GitHub Actions, strict security headers / CSP, rate limits, self-service password change, security test suite, Web Push task notifications. Runbook: [DEPLOYMENT.md](DEPLOYMENT.md), checklist: [SECURITY.md](SECURITY.md). Needs a VPS, domain and SMTP from FELCRA to go live |
 | 10 | UAT, Pagoh pilot, training & go-live | Not started |
 
 ## Steps

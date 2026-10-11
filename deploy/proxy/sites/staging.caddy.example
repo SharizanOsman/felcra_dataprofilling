@@ -1,0 +1,5 @@
+# Copy to staging.caddy and set the domain.
+staging.profiling.felcra.com.my {
+	import felcra
+	reverse_proxy felcra-staging-app:8080
+}

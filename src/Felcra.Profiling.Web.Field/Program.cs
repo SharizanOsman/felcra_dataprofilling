@@ -15,6 +15,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 var apiBase = new Uri(new Uri(builder.HostEnvironment.BaseAddress), "/");
 builder.Services.AddFelcraClient(apiBase, new ClientAuthOptions { AppName = "field", AllowedRoles = Roles.FieldApp }, mobile: true);
 builder.Services.AddScoped<RecentAnimals>();
+builder.Services.AddScoped<PushClient>();
 // Scoped = one instance for the app's lifetime in WebAssembly (there is a single scope), so offline
 // data and the sync loop are shared by all pages. Singleton would clash with the scoped ApiClient.
 builder.Services.AddScoped<OfflineDb>();
