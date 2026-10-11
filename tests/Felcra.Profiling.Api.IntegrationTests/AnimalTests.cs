@@ -143,6 +143,17 @@ public class AnimalTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Hq_can_delete_an_animal_and_its_census_entries()
+    {
+        var hq = await factory.CreateAuthenticatedClientAsync(ApiFactory.AdminEmail);
+        var animal = await (await hq.PostAsJsonAsync("/api/animals", NewDam(await PagohIdAsync(hq), TestHelpers.UniqueCode("del"))))
+            .ReadAsync<AnimalDto>();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await hq.DeleteAsync($"/api/animals/{animal.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await hq.GetAsync($"/api/animals/{animal.Id}")).StatusCode);
+    }
+
+    [Fact]
     public async Task Dam_must_be_female()
     {
         var hq = await factory.CreateAuthenticatedClientAsync(ApiFactory.AdminEmail);

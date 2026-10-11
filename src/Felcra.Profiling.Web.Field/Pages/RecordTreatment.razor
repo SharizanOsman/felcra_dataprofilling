@@ -14,7 +14,7 @@ else if (Animal is null || _products is null)
 }
 else
 {
-    <AnimalHeader Animal="Animal" />
+    <AnimalHeader Animal="Animal" DuplicateTag="DuplicateTag" />
     <MudText Typo="Typo.h6" Class="mb-2">Treatment / vaccination</MudText>
 
     <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
@@ -82,9 +82,10 @@ else
 
     protected override async Task OnAnimalLoadedAsync()
     {
-        _products = (await Api.GetAsync<List<TreatmentProductDto>>("api/treatment-products")).Where(p => p.IsActive).ToList();
+        // Both lists come from the phone's copy, so this works offline.
+        _products = await Data.TreatmentProductsAsync();
         // Open programmes on this farm, so treatments given during a census can be linked to it.
-        _sessions = (await Api.GetAsync<List<CensusSessionDto>>($"api/census-sessions?farmId={Animal!.FarmId}")).Where(s => !s.IsClosed).ToList();
+        _sessions = await Data.OpenSessionsAsync(Animal!.FarmId);
     }
 
     private void OnProductChanged(Guid productId)
@@ -99,6 +100,7 @@ else
     {
         await _form.ValidateAsync();
         if (!_form.IsValid) return;
-        await SaveAsync<TreatmentRecordDto>("treatments", _model, "Treatment saved.");
+        var product = _products!.First(p => p.Id == _model.TreatmentProductId);
+        await SaveAsync(_model.Id, OutboxKind.Treatment, _model, product.Name, _model.GivenOn);
     }
 }

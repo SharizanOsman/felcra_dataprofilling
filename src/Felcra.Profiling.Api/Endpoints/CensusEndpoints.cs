@@ -128,7 +128,7 @@ internal static class CensusEndpoints
             : TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["TreatmentProductIds"] = ["One or more treatments do not exist."] });
     }
 
-    private static async Task<List<CensusSessionDto>> ToDtosAsync(AppDbContext db, List<CensusSession> sessions, CancellationToken ct)
+    internal static async Task<List<CensusSessionDto>> ToDtosAsync(AppDbContext db, List<CensusSession> sessions, CancellationToken ct)
     {
         var ids = sessions.Select(s => s.Id).ToList();
         var farmIds = sessions.Select(s => s.FarmId).Distinct().ToList();

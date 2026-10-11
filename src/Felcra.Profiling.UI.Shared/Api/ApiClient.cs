@@ -5,9 +5,17 @@ using System.Text.Json;
 namespace Felcra.Profiling.UI.Shared.Api;
 
 /// <summary>Result of a write call: either a value, or a user-readable error (plus per-field validation errors).</summary>
-public sealed record ApiResult<T>(T? Value, string? Error, IReadOnlyDictionary<string, string[]> FieldErrors)
+/// <param name="StatusCode">HTTP status; null when the server could not be reached.</param>
+public sealed record ApiResult<T>(T? Value, string? Error, IReadOnlyDictionary<string, string[]> FieldErrors, HttpStatusCode? StatusCode = null)
 {
     public bool Succeeded => Error is null;
+
+    /// <summary>
+    /// The request itself was rejected (invalid, forbidden, not found, conflict): sending it again will not help.
+    /// Anything else (no connection, server error, expired session) is worth retrying later.
+    /// </summary>
+    public bool IsPermanentFailure => StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Forbidden
+        or HttpStatusCode.NotFound or HttpStatusCode.Conflict or HttpStatusCode.RequestEntityTooLarge;
 
     /// <summary>Error text including any field errors, for showing in a single alert.</summary>
     public string? FullError => Error is null
@@ -26,13 +34,16 @@ public sealed class ApiClient(HttpClient http)
 
     public async Task<ApiResult<T>> PutAsync<T>(string url, object body) => await SendAsync<T>(() => http.PutAsJsonAsync(url, body));
 
-    /// <summary>Uploads a file as multipart/form-data field "file".</summary>
-    public async Task<ApiResult<T>> PostFileAsync<T>(string url, Stream content, string fileName, string? contentType)
+    /// <summary>Uploads a file as multipart/form-data field "file", with optional extra form fields.</summary>
+    public async Task<ApiResult<T>> PostFileAsync<T>(
+        string url, Stream content, string fileName, string? contentType, IReadOnlyDictionary<string, string>? fields = null)
     {
         using var form = new MultipartFormDataContent();
         var file = new StreamContent(content);
         if (contentType is { Length: > 0 }) file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
         form.Add(file, "file", fileName);
+        foreach (var (name, value) in fields ?? new Dictionary<string, string>())
+            form.Add(new StringContent(value), name);
         return await SendAsync<T>(() => http.PostAsync(url, form));
     }
 
@@ -41,7 +52,7 @@ public sealed class ApiClient(HttpClient http)
     public async Task<ApiResult<bool>> DeleteAsync(string url)
     {
         var result = await SendAsync<object>(() => http.DeleteAsync(url));
-        return new ApiResult<bool>(result.Succeeded, result.Error, result.FieldErrors);
+        return new ApiResult<bool>(result.Succeeded, result.Error, result.FieldErrors, result.StatusCode);
     }
 
     private static async Task<ApiResult<T>> SendAsync<T>(Func<Task<HttpResponseMessage>> send)
@@ -61,19 +72,20 @@ public sealed class ApiClient(HttpClient http)
             var value = response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0
                 ? default
                 : await response.Content.ReadFromJsonAsync<T>();
-            return new(value, null, NoFieldErrors);
+            return new(value, null, NoFieldErrors, response.StatusCode);
         }
 
         var problem = await ReadProblemAsync(response);
         var message = response.StatusCode switch
         {
             HttpStatusCode.BadRequest => "Please correct the highlighted fields.",
+            HttpStatusCode.Unauthorized => "Your session has expired. Please sign in again.",
             HttpStatusCode.Forbidden => "You do not have permission to do this.",
             HttpStatusCode.NotFound => "The record was not found. It may have been deleted.",
             HttpStatusCode.Conflict => problem?.Detail ?? "The change conflicts with existing data.",
             _ => problem?.Detail ?? problem?.Title ?? $"Unexpected error ({(int)response.StatusCode}).",
         };
-        return new(default, message, problem?.Errors ?? NoFieldErrors);
+        return new(default, message, problem?.Errors ?? NoFieldErrors, response.StatusCode);
     }
 
     private static async Task<Problem?> ReadProblemAsync(HttpResponseMessage response)

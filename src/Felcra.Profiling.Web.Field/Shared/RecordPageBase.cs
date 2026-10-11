@@ -1,55 +1,79 @@
-using Felcra.Profiling.Contracts.Animals;
-using Felcra.Profiling.UI.Shared.Api;
+using System.Text.Json;
+using Felcra.Profiling.Contracts.Sync;
+using Felcra.Profiling.Web.Field.Offline;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Felcra.Profiling.Web.Field.Shared;
 
-/// <summary>Common behaviour for recording screens: load the animal, save, return to the animal page.</summary>
+/// <summary>
+/// Common behaviour for recording screens. The animal comes from the phone's copy of the farm data and
+/// records are saved on the phone first, so recording works without a connection.
+/// </summary>
 public abstract class RecordPageBase : ComponentBase
 {
     [Parameter] public Guid Id { get; set; }
 
-    [Inject] protected ApiClient Api { get; set; } = null!;
+    [Inject] protected FieldData Data { get; set; } = null!;
+    [Inject] protected SyncService Sync { get; set; } = null!;
     [Inject] protected NavigationManager Navigation { get; set; } = null!;
     [Inject] protected ISnackbar Snackbar { get; set; } = null!;
 
-    protected AnimalDto? Animal { get; private set; }
+    protected SyncAnimalDto? Animal { get; private set; }
+    protected bool DuplicateTag { get; private set; }
     protected string? LoadError { get; private set; }
     protected string? SaveError { get; set; }
     protected bool Saving { get; private set; }
 
     protected override async Task OnParametersSetAsync()
     {
-        try
+        Animal = await Data.AnimalAsync(Id);
+        if (Animal is null && Sync.IsOnline)
         {
-            Animal = await Api.GetAsync<AnimalDto>($"api/animals/{Id}");
-            await OnAnimalLoadedAsync();
+            // Not on the phone yet (e.g. registered since the last sync): fetch the latest farm data.
+            await Sync.EnsureSyncedAsync();
+            Animal = await Data.AnimalAsync(Id);
         }
-        catch (HttpRequestException ex)
+
+        if (Animal is null)
         {
-            LoadError = ex.StatusCode == System.Net.HttpStatusCode.NotFound
+            LoadError = Sync.IsOnline
                 ? "This animal is not on any of your farms."
-                : "Could not load the animal. Check your connection.";
+                : "This animal is not on this phone yet. Connect to the internet once to download your farm's animals.";
+            return;
         }
+
+        DuplicateTag = await Data.HasDuplicateTagAsync(Animal);
+        await OnAnimalLoadedAsync();
     }
 
     protected virtual Task OnAnimalLoadedAsync() => Task.CompletedTask;
 
-    /// <summary>Posts the record; on success shows a confirmation and returns to the animal page.</summary>
-    protected async Task SaveAsync<T>(string path, object request, string successMessage)
+    /// <summary>Queues the record on the phone (it is sent when online) and returns to the animal page.</summary>
+    protected async Task SaveAsync(Guid recordId, OutboxKind kind, object request, string summary, DateOnly date)
     {
         Saving = true;
-        SaveError = null;
-        var result = await Api.PostAsync<T>($"api/animals/{Id}/{path}", request);
+        await Sync.EnqueueAsync(MakeItem(recordId, kind, JsonSerializer.Serialize(request, JsonSerializerOptions.Web), summary, date));
         Saving = false;
 
-        if (!result.Succeeded)
-        {
-            SaveError = result.FullError;
-            return;
-        }
-        Snackbar.Add(successMessage, Severity.Success);
+        Snackbar.Add(Sync.IsOnline ? $"{summary} saved." : $"{summary} saved on this phone — it will be sent when you are back online.",
+            Severity.Success);
         Navigation.NavigateTo($"a/{Id}", replace: true);
+    }
+
+    protected OutboxItem MakeItem(Guid recordId, OutboxKind kind, string payload, string summary, DateOnly date)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new OutboxItem
+        {
+            Key = OutboxItem.MakeKey(now, recordId),
+            Id = recordId,
+            Kind = kind,
+            AnimalId = Id,
+            Payload = payload,
+            Summary = summary,
+            Date = date,
+            QueuedAt = now,
+        };
     }
 }

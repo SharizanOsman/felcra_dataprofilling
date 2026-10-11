@@ -14,7 +14,7 @@ else if (Animal is null)
 }
 else
 {
-    <AnimalHeader Animal="Animal" />
+    <AnimalHeader Animal="Animal" DuplicateTag="DuplicateTag" />
     <MudText Typo="Typo.h6" Class="mb-2">Health / condition observation</MudText>
 
     <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
@@ -60,7 +60,7 @@ else
     private static readonly Func<object, string, Task<IEnumerable<string>>> Validate = FormValidation.For(new ObservationRequestValidator());
     private MudForm _form = null!;
     private readonly ObservationRequest _model = new();
-    private readonly List<(Guid Id, string Preview)> _photos = [];
+    private readonly List<(Guid Id, string Base64, string Preview)> _photos = [];
     private bool _uploading;
 
     private async Task OnPhotoSelected(InputFileChangeEventArgs e)
@@ -69,19 +69,14 @@ else
         SaveError = null;
         try
         {
-            // Phone photos are several MB; shrink in the browser before sending over a weak connection.
+            // Phone photos are several MB; shrink in the browser before storing and sending them.
             var resized = await e.File.RequestImageFileAsync("image/jpeg", 1600, 1600);
             using var buffer = new MemoryStream();
             await resized.OpenReadStream(8 * 1024 * 1024).CopyToAsync(buffer);
-            var bytes = buffer.ToArray();
+            var base64 = Convert.ToBase64String(buffer.ToArray());
 
-            var result = await Api.PostFileAsync<PhotoDto>($"api/animals/{Id}/photos", new MemoryStream(bytes), "photo.jpg", "image/jpeg");
-            if (!result.Succeeded)
-            {
-                SaveError = result.FullError;
-                return;
-            }
-            _photos.Add((result.Value!.Id, $"data:image/jpeg;base64,{Convert.ToBase64String(bytes)}"));
+            // Kept on the phone; uploaded together with the observation when it is saved.
+            _photos.Add((Guid.CreateVersion7(), base64, $"data:image/jpeg;base64,{base64}"));
             _model.PhotoIds = _photos.Select(p => p.Id).ToList();
         }
         catch (IOException)
@@ -98,6 +93,18 @@ else
     {
         await _form.ValidateAsync();
         if (!_form.IsValid) return;
-        await SaveAsync<ObservationDto>("observations", _model, "Observation saved.");
+        // Photos are queued just ahead of the observation that refers to them, so they are sent first.
+        var queuedAt = DateTimeOffset.UtcNow.AddMilliseconds(-_photos.Count - 1);
+        foreach (var (photo, index) in _photos.Select((p, i) => (p, i)))
+        {
+            await Data.SavePhotoAsync(new PendingPhoto(photo.Id, Id, "image/jpeg", photo.Base64));
+            await Data.EnqueueAsync(MakeItem(photo.Id, OutboxKind.Photo, "", $"Photo {index + 1}", _model.ObservedOn) with
+            {
+                Key = OutboxItem.MakeKey(queuedAt.AddMilliseconds(index), photo.Id),
+            });
+        }
+
+        var summary = $"{EnumText.Humanize(_model.Category)}{(_photos.Count > 0 ? $" ({_photos.Count} photo{(_photos.Count > 1 ? "s" : "")})" : "")}";
+        await SaveAsync(_model.Id, OutboxKind.Observation, _model, summary, _model.ObservedOn);
     }
 }

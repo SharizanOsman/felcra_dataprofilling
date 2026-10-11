@@ -210,10 +210,20 @@ internal static class RecordEndpoints
         return TypedResults.Created($"/api/animals/{animalId}/records", ToDto(observation, await RecorderNamesAsync(db, [observation.CreatedBy], ct)));
     }
 
-    private static async Task<IResult> UploadPhoto(Guid animalId, IFormFile file, AppDbContext db, IFileStore store, CancellationToken ct)
+    /// <param name="id">Optional device-generated photo ID, so a retried upload is stored once.</param>
+    private static async Task<IResult> UploadPhoto(
+        Guid animalId, IFormFile file, [Microsoft.AspNetCore.Mvc.FromForm] Guid? id, AppDbContext db, IFileStore store, CancellationToken ct)
     {
         var (animal, problem) = await LoadActiveAnimalAsync(db, animalId, ct);
         if (problem is not null) return problem;
+
+        if (id is { } photoId && await db.Photos.AsNoTracking().IgnoreQueryFilters([QueryFilters.SoftDelete])
+                .SingleOrDefaultAsync(p => p.Id == photoId, ct) is { } existing)
+        {
+            return existing.AnimalId == animalId
+                ? TypedResults.Ok(new PhotoDto(existing.Id, existing.ContentType, existing.SizeBytes))
+                : TypedResults.Problem("A photo with this ID already exists.", statusCode: StatusCodes.Status409Conflict);
+        }
         if (file.Length == 0 || file.Length > MaxPhotoBytes)
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["File"] = ["Photos must be between 1 byte and 8 MB."] });
 
@@ -226,6 +236,7 @@ internal static class RecordEndpoints
         stream.Position = 0;
         var key = await store.SaveAsync(stream, extension, ct);
         var photo = new Photo { AnimalId = animalId, FarmId = animal!.FarmId, StorageKey = key, ContentType = contentType, SizeBytes = file.Length };
+        if (id is { } clientId) photo.Id = clientId;
         db.Photos.Add(photo);
         await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/photos/{photo.Id}", new PhotoDto(photo.Id, photo.ContentType, photo.SizeBytes));

@@ -9,7 +9,7 @@ Delivery is split into steps; each is demoable and deployable to staging. Milest
 | 2 | Master data, farm & user management | Done — model parameters & reminder settings moved to Steps 7 & 6, where they are used |
 | 3 | Animal registry, census & import | Done — Pagoh census (140 head) imports cleanly; dam/sire pickers come with breeding in Step 6 |
 | 4 | Field PWA (online) | Done — QR scan, find by tag, weight / BCS / milk, treatments, observations with photos |
-| 5 | Offline-first & sync | Not started |
+| 5 | Offline-first & sync | Done — farm data on the phone, outbox with retry, rejected records kept for review; animal registration offline comes with calving in Step 6 |
 | 6 | Fertility, breeding & reminders | Not started |
 | 7 | Analytics engine & dashboard | Not started |
 | 8 | Reports & export | Not started |

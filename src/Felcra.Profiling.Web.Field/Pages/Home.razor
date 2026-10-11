@@ -1,6 +1,8 @@
 @page "/"
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@implements IDisposable
 @inject RecentAnimals Recent
+@inject SyncService Sync
 
 <PageTitle>FELCRA Field</PageTitle>
 
@@ -15,9 +17,34 @@
                StartIcon="@Icons.Material.Filled.Search" Style="height:56px">Find by tag number</MudButton>
 </MudStack>
 
+<MudPaper Class="pa-3 mt-4" Elevation="0" Outlined="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <SyncIndicator />
+        <div>
+            <MudText Typo="Typo.body2">
+                @if (Sync.AnimalCount == 0)
+                {
+                    <span>@(Sync.IsOnline ? "Downloading your farm's animals…" : "Connect to the internet once to download your farm's animals.")</span>
+                }
+                else
+                {
+                    <span>@Sync.AnimalCount animals on this phone</span>
+                }
+            </MudText>
+            <MudText Typo="Typo.caption">
+                @(Sync.LastSyncedAt is { } last ? $"Last synced {last.ToLocalTime():dd MMM HH:mm}" : "Not synced yet")
+                @if (Sync.PendingCount > 0) { <span> · @Sync.PendingCount waiting to send</span> }
+                @if (Sync.FailedCount > 0) { <span style="color:var(--mud-palette-error)"> · @Sync.FailedCount not accepted</span> }
+            </MudText>
+        </div>
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" Href="sync">Details</MudButton>
+    </MudStack>
+</MudPaper>
+
 @if (_recent.Count > 0)
 {
-    <MudText Typo="Typo.subtitle1" Class="mt-6 mb-1">Recently opened</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">Recently opened</MudText>
     <MudList T="string" Dense="false">
         @foreach (var a in _recent)
         {
@@ -32,5 +59,13 @@
 @code {
     private List<RecentAnimal> _recent = [];
 
-    protected override async Task OnInitializedAsync() => _recent = await Recent.GetAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        Sync.Changed += OnSyncChanged;
+        _recent = await Recent.GetAsync();
+    }
+
+    private void OnSyncChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Sync.Changed -= OnSyncChanged;
 }

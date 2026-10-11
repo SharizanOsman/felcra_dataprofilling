@@ -1,7 +1,10 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject AuthClient Auth
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject SyncService Sync
+@inject IDialogService Dialogs
 
 <MudThemeProvider Theme="FelcraTheme.Theme" />
 <MudPopoverProvider />
@@ -17,11 +20,20 @@
         <MudLink Href="" Color="Color.Inherit" Underline="Underline.None"><MudText Typo="Typo.h6">FELCRA Field</MudText></MudLink>
         <MudSpacer />
         <AuthorizeView>
+            <MudIconButton Href="sync" Color="Color.Inherit" aria-label="Sync status" Class="pa-2">
+                <SyncIndicator OnlineColor="Color.Inherit" />
+            </MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" Color="Color.Inherit" Href="scan" aria-label="Scan" />
             <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="LogoutAsync" aria-label="Sign out" />
         </AuthorizeView>
     </MudAppBar>
     <MudMainContent>
+        @if (!Sync.IsOnline)
+        {
+            <div style="background:var(--mud-palette-warning);color:#fff;text-align:center;font-size:0.8rem;padding:2px">
+                Offline — records are saved on this phone and sent later
+            </div>
+        }
         <MudContainer MaxWidth="MaxWidth.Small" Class="py-3 px-3">
             @Body
         </MudContainer>
@@ -29,15 +41,39 @@
 </MudLayout>
 
 @code {
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = null!;
+
     private bool IsHome => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0] is "" or "/";
 
-    protected override void OnInitialized() => Navigation.LocationChanged += (_, _) => InvokeAsync(StateHasChanged);
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        Sync.Changed += OnSyncChanged;
+        if ((await AuthState).User.Identity?.IsAuthenticated == true) await Sync.StartAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+    private void OnSyncChanged() => InvokeAsync(StateHasChanged);
 
     private async Task BackAsync() => await JS.InvokeVoidAsync("felcra.back");
 
     private async Task LogoutAsync()
     {
+        var unsent = Sync.PendingCount + Sync.FailedCount;
+        if (unsent > 0 && await Dialogs.ShowMessageBoxAsync("Records not sent",
+                $"{unsent} record(s) on this phone have not reached the server yet. Signing out deletes them. Sync first, or sign out anyway?",
+                yesText: "Sign out anyway", cancelText: "Cancel") != true)
+            return;
+
+        // Shared phones: remove this user's farm data and queued records.
+        await Sync.ResetAsync();
         await Auth.LogoutAsync();
         Navigation.NavigateTo("login");
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        Sync.Changed -= OnSyncChanged;
     }
 }

@@ -1,31 +1,28 @@
 @page "/find"
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
-@inject ApiClient Api
+@inject FieldData Data
 @inject NavigationManager Navigation
 
 <PageTitle>Find animal — FELCRA Field</PageTitle>
 
+@* Searches the phone's copy of the farm's animals, so it works offline. *@
 <MudTextField T="string" Value="_query" ValueChanged="SearchAsync" Label="Tag number or animal no." Variant="Variant.Outlined"
-              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" DebounceInterval="400" Immediate="true"
+              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" DebounceInterval="250" Immediate="true"
               InputMode="InputMode.search" AutoFocus="true" Clearable="true" />
 
-@if (_loading)
+@if (_noData)
 {
-    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mt-2" />
-}
-else if (_error is not null)
-{
-    <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="mt-3">No animals on this phone yet. Connect to the internet once to download your farm's animals.</MudAlert>
 }
 else if (_results is not null)
 {
     @if (_results.Count == 0)
     {
-        <MudText Class="mt-4">No active animal matches "@_query".</MudText>
+        <MudText Class="mt-4">No animal matches "@_query".</MudText>
     }
     else
     {
-        @if (_results.Count > 1 && _results.Select(r => r.TagNumber).Distinct().Count() < _results.Count)
+        @if (_results.Count > 1 && _results.Where(r => r.TagNumber is not null).GroupBy(r => r.TagNumber!.ToUpperInvariant()).Any(g => g.Count() > 1))
         {
             <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">Several animals share this tag. Check the category and age to pick the right one.</MudAlert>
         }
@@ -34,6 +31,7 @@ else if (_results is not null)
             {
                 <MudListItem T="string" Href="@($"a/{a.Id}")">
                     <strong>@(a.TagNumber is null ? "No tag" : $"Tag {a.TagNumber}")</strong> · @a.AnimalNo
+                    @if (a.Status != AnimalStatus.Active) { <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@AnimalText.Status(a.Status)</MudChip> }
                     <MudText Typo="Typo.caption" Style="display:block">
                         @AnimalText.Category(a.Category) · @AnimalText.Age(a.BirthDate, a.BirthDateMethod, _today)
                         @(a.LatestWeightKg is null ? "" : $" · {AnimalText.Weight(a.LatestWeightKg)}") · @a.FarmCode @a.ProjectCode
@@ -49,41 +47,28 @@ else if (_results is not null)
 
     private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
     private string? _query;
-    private List<AnimalListItemDto>? _results;
-    private bool _loading;
-    private string? _error;
+    private List<SyncAnimalDto>? _results;
+    private bool _noData;
 
     protected override async Task OnInitializedAsync()
     {
+        _noData = (await Data.AnimalsAsync()).Count == 0;
         if (!string.IsNullOrWhiteSpace(Initial)) await SearchAsync(Initial);
     }
 
     private async Task SearchAsync(string? query)
     {
         _query = query;
-        _error = null;
         if (string.IsNullOrWhiteSpace(query))
         {
             _results = null;
             return;
         }
 
-        _loading = true;
-        try
-        {
-            var page = await Api.GetAsync<PagedResult<AnimalListItemDto>>($"api/animals?search={Uri.EscapeDataString(query.Trim())}&sort=tag&pageSize=30");
-            _results = [.. page.Items];
-            // One exact match: open it straight away.
-            if (_results.Count == 1 && string.Equals(_results[0].TagNumber, query.Trim(), StringComparison.OrdinalIgnoreCase))
-                Navigation.NavigateTo($"a/{_results[0].Id}");
-        }
-        catch (HttpRequestException)
-        {
-            _error = "Cannot reach the server. Check your connection.";
-        }
-        finally
-        {
-            _loading = false;
-        }
+        _results = await Data.SearchAsync(query);
+        // One exact, active match: open it straight away.
+        var exact = _results.Where(r => r.Status == AnimalStatus.Active && string.Equals(r.TagNumber, query.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+        if (exact.Count == 1 && _results.Count(r => string.Equals(r.TagNumber, query.Trim(), StringComparison.OrdinalIgnoreCase)) == 1)
+            Navigation.NavigateTo($"a/{exact[0].Id}");
     }
 }

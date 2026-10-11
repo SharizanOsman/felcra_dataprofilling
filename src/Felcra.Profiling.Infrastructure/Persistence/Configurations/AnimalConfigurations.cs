@@ -11,7 +11,8 @@ internal sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
 {
     public void Configure(EntityTypeBuilder<Animal> b)
     {
-        b.Property(x => x.AnimalNo).UseIdentityAlwaysColumn();
+        b.Property(x => x.AnimalNo).UseIdentityAlwaysColumn()
+            .Metadata.SetAfterSaveBehavior(Microsoft.EntityFrameworkCore.Metadata.PropertySaveBehavior.Ignore);
         b.HasIndex(x => x.AnimalNo).IsUnique();
 
         // Tag numbers are deliberately not unique: real herds have duplicates and untagged animals.

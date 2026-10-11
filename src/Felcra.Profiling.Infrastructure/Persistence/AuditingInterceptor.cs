@@ -65,10 +65,15 @@ public sealed class AuditingInterceptor(ICurrentUser currentUser, TimeProvider c
                     action = AuditAction.Updated;
                     break;
                 case EntityState.Deleted:
-                    entry.State = EntityState.Modified;
+                    // Soft delete: update only the delete columns. Marking the whole entity Modified would also
+                    // write columns the database owns (e.g. identity columns), which PostgreSQL rejects.
+                    entry.State = EntityState.Unchanged;
                     entry.Entity.IsDeleted = true;
                     entry.Entity.DeletedAt = now;
                     entry.Entity.DeletedBy = userId;
+                    entry.Property(e => e.IsDeleted).IsModified = true;
+                    entry.Property(e => e.DeletedAt).IsModified = true;
+                    entry.Property(e => e.DeletedBy).IsModified = true;
                     action = AuditAction.Deleted;
                     break;
                 default:

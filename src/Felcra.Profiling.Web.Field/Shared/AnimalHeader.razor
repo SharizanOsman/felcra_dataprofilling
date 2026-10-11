@@ -4,7 +4,7 @@
     <MudText Typo="Typo.body2">
         @AnimalText.Category(Animal.Category) · @AnimalText.Age(Animal.BirthDate, Animal.BirthDateMethod, DateOnly.FromDateTime(DateTime.Today)) · @Animal.FarmCode
     </MudText>
-    @if (Animal.DuplicateTagAnimalIds.Count > 0)
+    @if (DuplicateTag)
     {
         <MudText Typo="Typo.caption" Color="Color.Warning">Another animal on this farm has the same tag — check before recording.</MudText>
     }
@@ -15,5 +15,6 @@
 </MudPaper>
 
 @code {
-    [Parameter, EditorRequired] public AnimalDto Animal { get; set; } = null!;
+    [Parameter, EditorRequired] public SyncAnimalDto Animal { get; set; } = null!;
+    [Parameter] public bool DuplicateTag { get; set; }
 }

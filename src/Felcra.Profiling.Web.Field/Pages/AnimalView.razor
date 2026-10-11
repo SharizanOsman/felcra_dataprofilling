@@ -1,9 +1,12 @@
 @page "/a/{Id:guid}"
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
+@implements IDisposable
 @inject ApiClient Api
+@inject FieldData Data
+@inject SyncService Sync
 @inject RecentAnimals Recent
 
-@* Target of the QR code on ear-tag labels. *@
+@* Target of the QR code on ear-tag labels. Works offline from the phone's copy of the farm data. *@
 <PageTitle>Animal — FELCRA Field</PageTitle>
 
 @if (_error is not null)
@@ -16,34 +19,50 @@ else if (_animal is null)
 }
 else
 {
-    <AnimalHeader Animal="_animal" />
+    <AnimalHeader Animal="_animal" DuplicateTag="_duplicate" />
 
     @if (_animal.Status == AnimalStatus.Active)
     {
         <MudGrid Spacing="2" Class="mb-4">
-            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/weight")" Icon="@Icons.Material.Filled.MonitorWeight" Text="Weight" Detail="@Latest(MeasurementType.Weight)" /></MudItem>
-            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/bcs")" Icon="@Icons.Material.Filled.FitnessCenter" Text="Body condition" Detail="@Latest(MeasurementType.BodyCondition)" /></MudItem>
+            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/weight")" Icon="@Icons.Material.Filled.MonitorWeight" Text="Weight" Detail="@LatestWeight" /></MudItem>
+            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/bcs")" Icon="@Icons.Material.Filled.FitnessCenter" Text="Body condition" Detail="@LatestBcs" /></MudItem>
             <MudItem xs="6"><ActionButton Href="@($"a/{Id}/treatment")" Icon="@Icons.Material.Filled.Vaccines" Text="Treatment" /></MudItem>
             <MudItem xs="6"><ActionButton Href="@($"a/{Id}/observation")" Icon="@Icons.Material.Filled.PhotoCamera" Text="Observation" /></MudItem>
             @if (_animal.Category == AnimalCategory.Dam)
             {
-                <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/milk")" Icon="@Icons.Material.Filled.LocalDrink" Text="Milk yield" Detail="@Latest(MeasurementType.MilkYield)" /></MudItem>
+                <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/milk")" Icon="@Icons.Material.Filled.LocalDrink" Text="Milk yield" /></MudItem>
             }
         </MudGrid>
     }
 
-    <MudText Typo="Typo.subtitle1" Class="mb-1">History</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-1">
+        <MudText Typo="Typo.subtitle1">History</MudText>
+        <MudSpacer />
+        @if (_historyFromCache)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Offline — showing history as last downloaded</MudText>
+        }
+    </MudStack>
     @if (_timeline.Count == 0)
     {
-        <MudText Typo="Typo.body2">Nothing recorded yet.</MudText>
+        <MudText Typo="Typo.body2">@(_historyLoaded ? "Nothing recorded yet." : "History is shown when you are online.")</MudText>
     }
     <MudTimeline TimelinePosition="TimelinePosition.Start" Class="pt-0">
         @foreach (var item in _timeline)
         {
             <MudTimelineItem Color="item.Color" Size="Size.Small" Elevation="0">
-                <MudText Typo="Typo.body1"><strong>@item.Title</strong></MudText>
+                <MudText Typo="Typo.body1">
+                    <strong>@item.Title</strong>
+                    @if (item.Pending is { } pending)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(pending.Error is null ? Color.Warning : Color.Error)" Class="ml-1">
+                            @(pending.Error is null ? "Waiting to sync" : "Not accepted")
+                        </MudChip>
+                    }
+                </MudText>
                 <MudText Typo="Typo.caption" Style="display:block">@item.Date.ToString("dd MMM yyyy")@(item.By is null ? "" : $" · {item.By}")</MudText>
                 @if (item.Detail is not null) { <MudText Typo="Typo.body2">@item.Detail</MudText> }
+                @if (item.Pending?.Error is { } error) { <MudText Typo="Typo.caption" Color="Color.Error">@error</MudText> }
                 @if (item.PhotoIds.Count > 0)
                 {
                     <MudStack Row="true" Spacing="1" Class="mt-1">
@@ -61,60 +80,121 @@ else
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    private AnimalDto? _animal;
+    private SyncAnimalDto? _animal;
+    private bool _duplicate;
+    private AnimalDto? _detail;
     private AnimalRecordsDto? _records;
+    private List<OutboxItem> _pending = [];
     private List<TimelineItem> _timeline = [];
+    private bool _historyLoaded;
+    private bool _historyFromCache;
     private string? _error;
 
-    private sealed record TimelineItem(DateOnly Date, DateTimeOffset Order, string Title, string? Detail, string? By, Color Color, IReadOnlyList<Guid> PhotoIds);
+    private sealed record TimelineItem(
+        DateOnly Date, DateTimeOffset Order, string Title, string? Detail, string? By, Color Color, IReadOnlyList<Guid> PhotoIds,
+        OutboxItem? Pending = null);
+
+    protected override void OnInitialized() => Sync.Changed += OnSyncChanged;
+
+    // When a sync finishes: records sent from this phone move from "Waiting to sync" into the
+    // server's history, so reload the history once this animal's queue has shrunk.
+    private void OnSyncChanged() => _ = InvokeAsync(async () =>
+    {
+        if (Sync.IsSyncing || _animal is null) return;
+        var before = _pending.Count;
+        await LoadLocalAsync();
+        if (_pending.Count < before) await LoadHistoryAsync();
+        StateHasChanged();
+    });
 
     protected override async Task OnParametersSetAsync()
     {
         _error = null;
+        _animal = await Data.AnimalAsync(Id);
+        if (_animal is null && Sync.IsOnline)
+        {
+            await Sync.EnsureSyncedAsync();
+            _animal = await Data.AnimalAsync(Id);
+        }
+        if (_animal is null)
+        {
+            _error = Sync.IsOnline
+                ? "This animal is not on any of your farms."
+                : "This animal is not on this phone yet. Connect to the internet once to download your farm's animals.";
+            return;
+        }
+
+        await Recent.AddAsync(new RecentAnimal(_animal.Id, _animal.AnimalNo, _animal.TagNumber, AnimalText.Category(_animal.Category)));
+        await LoadHistoryAsync();
+    }
+
+    private async Task LoadLocalAsync()
+    {
+        _animal = await Data.AnimalAsync(Id) ?? _animal;
+        _duplicate = await Data.HasDuplicateTagAsync(_animal!);
+        _pending = (await Data.OutboxAsync()).Where(i => i.AnimalId == Id && i.Kind != OutboxKind.Photo).ToList();
+        _timeline = BuildTimeline();
+    }
+
+    private async Task LoadHistoryAsync()
+    {
         try
         {
-            var animal = Api.GetAsync<AnimalDto>($"api/animals/{Id}");
+            var detail = Api.GetAsync<AnimalDto>($"api/animals/{Id}");
             var records = Api.GetAsync<AnimalRecordsDto>($"api/animals/{Id}/records");
-            (_animal, _records) = (await animal, await records);
-            _timeline = BuildTimeline(_animal, _records);
-            await Recent.AddAsync(new RecentAnimal(_animal.Id, _animal.AnimalNo, _animal.TagNumber, AnimalText.Category(_animal.Category)));
+            (_detail, _records) = (await detail, await records);
+            await Data.CacheDetailAsync(_detail, _records);
+            _historyFromCache = false;
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            _error = ex.StatusCode == System.Net.HttpStatusCode.NotFound
-                ? "This animal is not on any of your farms."
-                : "Could not load the animal. Check your connection.";
+            (_detail, _records) = await Data.CachedDetailAsync(Id);
+            _historyFromCache = true;
         }
+        _historyLoaded = _records is not null;
+        await LoadLocalAsync();
     }
 
-    private string? Latest(MeasurementType type) =>
-        _records?.Measurements.FirstOrDefault(m => m.Type == type) is { } m ? $"{FieldText.Measurement(m.Type, m.Value)} · {m.MeasuredOn:dd MMM}" : null;
+    private string? LatestWeight => _animal?.LatestWeightKg is { } w ? $"{w:0.#} kg · {_animal.LatestWeighedOn:dd MMM}" : null;
+    private string? LatestBcs => _animal?.LatestBcs is { } b ? $"BCS {b:0.#} · {_animal.LatestBcsOn:dd MMM}" : null;
 
-    private static List<TimelineItem> BuildTimeline(AnimalDto animal, AnimalRecordsDto records)
+    private List<TimelineItem> BuildTimeline()
     {
         var items = new List<TimelineItem>();
-        items.AddRange(records.Measurements.Select(m => new TimelineItem(
-            m.MeasuredOn, m.RecordedAt, FieldText.Measurement(m.Type, m.Value),
-            string.Join(" · ", new[] { m.Method is null ? null : EnumText.Humanize(m.Method.Value), m.Notes }.Where(s => s is not null)) is { Length: > 0 } d ? d : null,
-            m.RecordedBy, Color.Primary, [])));
-        items.AddRange(records.Treatments.Select(t => new TimelineItem(
-            t.GivenOn, t.RecordedAt, t.ProductName,
-            string.Join(" · ", new[]
-            {
-                t.Dose is null ? null : $"{t.Dose:0.###} {t.DoseUnit}",
-                t.Route is null ? null : EnumText.Humanize(t.Route.Value),
-                t.NextDueOn is null ? null : $"next due {t.NextDueOn:dd MMM yyyy}",
-                t.WithdrawalUntil is null ? null : $"no slaughter before {t.WithdrawalUntil:dd MMM yyyy}",
-                t.Notes,
-            }.Where(s => s is not null)) is { Length: > 0 } d ? d : null,
-            t.RecordedBy, Color.Secondary, [])));
-        items.AddRange(records.Observations.Select(o => new TimelineItem(
-            o.ObservedOn, o.RecordedAt, EnumText.Humanize(o.Category), o.Notes, o.RecordedBy, Color.Warning, o.PhotoIds)));
-        items.AddRange(animal.CensusHistory.Select(c => new TimelineItem(
-            c.SessionStartDate, default, $"Census: {c.SessionTitle}",
-            string.Join(" · ", new[] { AnimalText.Category(c.Category), AnimalText.Weight(c.WeightKg), c.Selected ? "selected" : null }
-                .Where(s => !string.IsNullOrEmpty(s))),
-            null, Color.Info, [])));
+        var sent = new HashSet<Guid>();
+
+        if (_records is not null)
+        {
+            items.AddRange(_records.Measurements.Select(m => new TimelineItem(
+                m.MeasuredOn, m.RecordedAt, FieldText.Measurement(m.Type, m.Value),
+                Join(m.Method is null ? null : EnumText.Humanize(m.Method.Value), m.Notes), m.RecordedBy, Color.Primary, [])));
+            items.AddRange(_records.Treatments.Select(t => new TimelineItem(
+                t.GivenOn, t.RecordedAt, t.ProductName,
+                Join(t.Dose is null ? null : $"{t.Dose:0.###} {t.DoseUnit}", t.Route is null ? null : EnumText.Humanize(t.Route.Value),
+                    t.NextDueOn is null ? null : $"next due {t.NextDueOn:dd MMM yyyy}",
+                    t.WithdrawalUntil is null ? null : $"no slaughter before {t.WithdrawalUntil:dd MMM yyyy}", t.Notes),
+                t.RecordedBy, Color.Secondary, [])));
+            items.AddRange(_records.Observations.Select(o => new TimelineItem(
+                o.ObservedOn, o.RecordedAt, EnumText.Humanize(o.Category), o.Notes, o.RecordedBy, Color.Warning, o.PhotoIds)));
+            sent.UnionWith(_records.Measurements.Select(m => m.Id).Concat(_records.Treatments.Select(t => t.Id)).Concat(_records.Observations.Select(o => o.Id)));
+        }
+
+        if (_detail is not null)
+        {
+            items.AddRange(_detail.CensusHistory.Select(c => new TimelineItem(
+                c.SessionStartDate, default, $"Census: {c.SessionTitle}",
+                Join(AnimalText.Category(c.Category), AnimalText.Weight(c.WeightKg), c.Selected ? "selected" : null), null, Color.Info, [])));
+        }
+
+        // Records still on the phone (not yet accepted by the server).
+        items.AddRange(_pending.Where(p => !sent.Contains(p.Id)).Select(p => new TimelineItem(
+            p.Date, p.QueuedAt, p.Summary, null, "You", p.Error is null ? Color.Default : Color.Error, [], p)));
+
         return items.OrderByDescending(i => i.Date).ThenByDescending(i => i.Order).ToList();
     }
+
+    private static string? Join(params string?[] parts) =>
+        string.Join(" · ", parts.Where(p => !string.IsNullOrEmpty(p))) is { Length: > 0 } text ? text : null;
+
+    public void Dispose() => Sync.Changed -= OnSyncChanged;
 }

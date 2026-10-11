@@ -84,6 +84,18 @@ dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \
 > **Note:** the service worker only caches assets in published builds. To test offline behaviour,
 > run `dotnet publish` (or the Docker image) rather than `dotnet run`.
 
+### How the field app works offline
+
+- After sign-in the app downloads the officer's farm animals, treatment list and open programmes to the phone
+  (IndexedDB), then refreshes them every few minutes and whenever the connection returns (`GET /api/sync/pull`,
+  incremental by timestamp).
+- Records are saved on the phone first (an outbox) and sent in order through the normal record endpoints. Each record
+  carries an ID made on the phone, so a resend after a dropped connection is stored once.
+- If the server rejects a record (e.g. the animal was sold meanwhile) it stays on the phone, marked "Not accepted",
+  until the officer retries or discards it on the **Sync** screen.
+- Signing out deletes the phone's copy (shared phones); the app warns first if records have not been sent.
+- History is shown as last seen online; latest weight and BCS are part of the downloaded data.
+
 ### Trying the field app on a phone
 
 Browsers only allow camera access (QR scanning, photos) on **HTTPS** pages or `localhost`. Opening

@@ -1,0 +1,46 @@
+@implements IDisposable
+@inject SyncService Sync
+
+@* Connection / sync state at a glance. *@
+<MudTooltip Text="@Text">
+    <MudBadge Content="@(Sync.PendingCount + Sync.FailedCount)" Visible="@(Sync.PendingCount + Sync.FailedCount > 0)"
+              Color="@(Sync.FailedCount > 0 ? Color.Error : Color.Warning)" Overlap="true" Bordered="true">
+        <MudIcon Icon="@Icon" Color="@IconColor" aria-label="@Text" />
+    </MudBadge>
+</MudTooltip>
+
+@code {
+    [Parameter] public Color OnlineColor { get; set; } = Color.Success;
+
+    private string Icon => Sync switch
+    {
+        { IsOnline: false } => Icons.Material.Filled.CloudOff,
+        { IsSyncing: true } => Icons.Material.Filled.CloudSync,
+        { FailedCount: > 0 } => Icons.Material.Filled.ErrorOutline,
+        { PendingCount: > 0 } => Icons.Material.Filled.CloudUpload,
+        _ => Icons.Material.Filled.CloudDone,
+    };
+
+    private Color IconColor => Sync switch
+    {
+        { IsOnline: false } => Color.Default,
+        { FailedCount: > 0 } => Color.Error,
+        { PendingCount: > 0 } => Color.Warning,
+        _ => OnlineColor,
+    };
+
+    private string Text => Sync switch
+    {
+        { IsOnline: false } => $"Offline — records are saved on this phone{(Sync.PendingCount > 0 ? $" ({Sync.PendingCount} waiting)" : "")}",
+        { IsSyncing: true } => "Syncing…",
+        { FailedCount: > 0 } => $"{Sync.FailedCount} record(s) not accepted — open Sync for details",
+        { PendingCount: > 0 } => $"{Sync.PendingCount} record(s) waiting to send",
+        _ => "All records sent",
+    };
+
+    protected override void OnInitialized() => Sync.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Sync.Changed -= OnChanged;
+}
