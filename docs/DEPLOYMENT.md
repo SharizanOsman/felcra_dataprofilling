@@ -172,3 +172,41 @@ SKIP_PULL=1 deploy/deploy.sh local
 
 Open `https://localhost:8443/admin/` (Caddy's local certificate: accept the browser warning, or trust it with
 `docker compose -p felcra-proxy exec caddy caddy trust`).
+
+## 10. Using an existing nginx instead of Caddy
+
+On a server that already runs nginx (other sites on ports 80/443), skip the Caddy proxy (section 2) and let nginx
+forward to the app:
+
+```bash
+cd /srv/felcra/app/deploy/app
+cp nginx.override.yml compose.override.yml        # publishes the app on 127.0.0.1:8080 only
+docker network create felcra-web 2>/dev/null || true
+SKIP_PULL=1 ../deploy.sh production               # or ../deploy.sh production <tag>
+curl -s http://127.0.0.1:8080/health              # must answer: Healthy
+
+sudo cp ../nginx/felcra.conf.example /etc/nginx/sites-available/felcra   # set the domain and certificate paths
+sudo ln -s /etc/nginx/sites-available/felcra /etc/nginx/sites-enabled/
+sudo certbot --nginx -d <domain>                  # if the site has no certificate yet
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+The nginx site must pass `Host`, `X-Forwarded-For` and `X-Forwarded-Proto` (as in the example) and allow 25 MB
+uploads. If port 8080 is taken on the server, set `APP_PORT=<free port>` in the env file and use that port in
+`proxy_pass`.
+
+## 11. Troubleshooting
+
+**502 Bad Gateway** — the proxy is running but cannot reach the app:
+
+| Check | Command | Expected |
+|---|---|---|
+| Containers running | `docker compose -p felcra-production --env-file production.env ps` | `app` and `db` *healthy* |
+| App started without errors | `docker compose -p felcra-production --env-file production.env logs --tail 100 app` | "Now listening on: http://[::]:8080", no exception |
+| App answers on the server | `curl -s http://127.0.0.1:8080/health` (nginx route) | `Healthy` |
+| What nginx says | `sudo tail -n 30 /var/log/nginx/error.log` | "Connection refused … upstream" = nothing on that port (no `compose.override.yml`, wrong port, or app down) |
+| nginx forwards to the right place | `sudo nginx -T \| grep -B2 -A12 <domain>` | `proxy_pass http://127.0.0.1:8080;` |
+
+Common causes: the app container is not published to the host (nginx route without `compose.override.yml`); the app
+exits at start because a setting is missing (`JWT_SIGNING_KEY` shorter than 32 characters, wrong
+`POSTGRES_PASSWORD` after the database was first created — see the log); `proxy_pass` points to another port.

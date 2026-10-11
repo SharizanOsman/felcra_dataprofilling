@@ -493,3 +493,4 @@ deploy/proxy/sites/*.caddy
 # Browser tests
 tests/e2e/node_modules/
 tests/e2e/out/
+deploy/app/compose.override.yml
