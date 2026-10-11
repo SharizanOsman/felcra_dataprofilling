@@ -5,6 +5,10 @@
 
 <PageHeader Title="Animals" Subtitle="Animal register for all assigned farms" Error="@LoadError">
     <Actions>
+        @if (IsHq)
+        {
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.RestoreFromTrash" Href="animals/deleted">Deleted animals</MudButton>
+        }
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCode2" OnClick="PrintLabels">Print QR labels</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="_lookups is null">Register animal</MudButton>
     </Actions>

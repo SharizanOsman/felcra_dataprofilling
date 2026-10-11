@@ -6,6 +6,7 @@ and an installable, offline-capable **field PWA** for officers at the pen, backe
 - Requirements: [docs/URS.md](docs/URS.md)
 - Delivery plan and status: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Deployment and operations: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · Security: [docs/SECURITY.md](docs/SECURITY.md)
+- User manuals: [docs/manual/](docs/manual/README.md) · UAT: [docs/UAT.md](docs/UAT.md) · Pilot, training and go-live: [docs/PILOT.md](docs/PILOT.md)
 - Source documents (proposal, quotation, Pagoh census report): [Document/](Document/)
 
 ## Tech stack
@@ -28,8 +29,13 @@ src/
   Felcra.Profiling.Web.Field/       Field app (Blazor WASM PWA)  -> /field
 tests/
   Felcra.Profiling.Domain.Tests/
+  Felcra.Profiling.Application.Tests/
   Felcra.Profiling.Analytics.Tests/
   Felcra.Profiling.Api.IntegrationTests/   (needs Docker)
+  e2e/                                     Browser tests (Playwright), see tests/e2e/README.md
+tools/
+  uat-workbook.cs                          Builds the UAT Excel tracker from docs/UAT.md
+deploy/                                    Production / staging stacks (see docs/DEPLOYMENT.md)
 ```
 
 ## Getting started
@@ -76,6 +82,12 @@ To run the whole stack in containers instead: `docker compose --profile app up -
 ```bash
 dotnet build Felcra.Profiling.slnx
 dotnet test Felcra.Profiling.slnx
+
+# Browser end-to-end tests (resets the local database; see tests/e2e/README.md)
+powershell -File tests/e2e/run-all.ps1
+
+# Regenerate the UAT workbook after editing docs/UAT.md
+dotnet run tools/uat-workbook.cs
 
 # Add an EF Core migration
 dotnet ef migrations add <Name> --project src/Felcra.Profiling.Infrastructure \

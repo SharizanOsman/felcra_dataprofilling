@@ -157,3 +157,8 @@ public sealed class RetagRequestValidator : AbstractValidator<RetagRequest>
 }
 
 public sealed record DuplicateTagDto(string TagNumber, Guid FarmId, string FarmCode, IReadOnlyList<Guid> AnimalIds, IReadOnlyList<string> AnimalNos);
+
+/// <summary>A deleted animal that HQ can restore.</summary>
+public sealed record DeletedAnimalDto(
+    Guid Id, string AnimalNo, string? TagNumber, string FarmCode, AnimalCategory Category, AnimalStatus Status,
+    DateTimeOffset? DeletedAt, string? DeletedBy);

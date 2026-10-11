@@ -1,0 +1,46 @@
+@page "/animals/deleted"
+@attribute [Authorize(Roles = Roles.HqAdmin)]
+@inherits AdminPageBase
+
+<MudBreadcrumbs Items="@([new("Animals", "animals"), new("Deleted animals", null, disabled: true)])" Class="px-0 pt-0" />
+<PageHeader Title="Deleted animals" Subtitle="Animals removed from the register; restore one deleted by mistake" Error="@LoadError" />
+
+<MudTable T="DeletedAnimalDto" Items="_animals" Dense="true" Elevation="1" Loading="IsLoading" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Animal no.</MudTh>
+        <MudTh>Tag</MudTh>
+        <MudTh>Category</MudTh>
+        <MudTh>Farm</MudTh>
+        <MudTh>Deleted</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Animal no.">@context.AnimalNo</MudTd>
+        <MudTd DataLabel="Tag">@(context.TagNumber ?? "no tag")</MudTd>
+        <MudTd DataLabel="Category">@AnimalText.Category(context.Category)</MudTd>
+        <MudTd DataLabel="Farm">@context.FarmCode</MudTd>
+        <MudTd DataLabel="Deleted">@context.DeletedAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm")@(context.DeletedBy is null ? "" : $" by {context.DeletedBy}")</MudTd>
+        <MudTd Style="text-align:right">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.RestoreFromTrash"
+                       OnClick="@(() => RestoreAsync(context))" aria-label="@($"Restore {context.AnimalNo}")">Restore</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent><MudText>No deleted animals.</MudText></NoRecordsContent>
+</MudTable>
+<MudText Typo="Typo.caption" Class="mt-2" Style="display:block">
+    Restoring brings the animal back with its records and the census entries removed with it. Restores are written to the audit log.
+</MudText>
+
+@code {
+    private List<DeletedAnimalDto> _animals = [];
+
+    protected override async Task LoadAsync() => _animals = await Api.GetAsync<List<DeletedAnimalDto>>("api/animals/deleted");
+
+    private async Task RestoreAsync(DeletedAnimalDto animal)
+    {
+        if (await Dialogs.ShowMessageBoxAsync("Restore animal", $"Restore {animal.AnimalNo} (tag {animal.TagNumber ?? "none"}) to the register?",
+                yesText: "Restore", cancelText: "Cancel") != true)
+            return;
+        await NotifyAsync(await Api.PostAsync<object>($"api/animals/{animal.Id}/restore", new { }), $"{animal.AnimalNo} restored.");
+    }
+}

@@ -61,4 +61,7 @@ public sealed record DashboardDto(
     int CullingCandidates,
     int TreatmentsLast30Days,
     int CalvesLast12Months,
+    int DeathsLast12Months,
+    /// <summary>Deaths in 12 months as % of the herd (active animals plus those deaths).</summary>
+    decimal? MortalityPercent,
     IReadOnlyList<WeeklyActivityDto> Activity);

@@ -181,6 +181,9 @@ internal sealed class AnalyticsQueries(AppDbContext db, BreedingQueries breeding
         var reminders = await breeding.RemindersAsync(farmId, 14, ct);
         var candidates = await breeding.CullingCandidatesAsync(farmId, ct);
 
+        var deaths = await db.Animals.AsNoTracking().CountAsync(a =>
+            a.Status == AnimalStatus.Dead && a.StatusDate >= today.AddDays(-365) && (farmId == null || a.FarmId == farmId), ct);
+
         // Recording activity per week (Monday start) over the last 12 weeks.
         var from = today.AddDays(-((int)today.DayOfWeek + 6) % 7).AddDays(-7 * 11);
         var measuredDates = await db.Measurements.AsNoTracking()
@@ -214,6 +217,8 @@ internal sealed class AnalyticsQueries(AppDbContext db, BreedingQueries breeding
             candidates.Count,
             treatmentDates.Count(d => d >= today.AddDays(-30)),
             summary.Sum(s => s.CalvesLast12Months),
+            deaths,
+            animals.Count + deaths == 0 ? null : Math.Round(100m * deaths / (animals.Count + deaths), 1),
             activity);
     }
 }

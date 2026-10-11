@@ -26,6 +26,8 @@ internal static class AnimalEndpoints
         group.MapPost("/{id:guid}/status", ChangeStatus).RequireAuthorization(Policies.Manager).Validate<ChangeStatusRequest>();
         group.MapPost("/{id:guid}/retag", Retag).Validate<RetagRequest>();
         group.MapDelete("/{id:guid}", DeleteAnimal).RequireAuthorization(Policies.HqAdmin);
+        group.MapGet("/deleted", ListDeleted).RequireAuthorization(Policies.HqAdmin);
+        group.MapPost("/{id:guid}/restore", RestoreAnimal).RequireAuthorization(Policies.HqAdmin);
 
         return app;
     }
@@ -222,6 +224,38 @@ internal static class AnimalEndpoints
         db.Entry(animal).Property(a => a.TagNumber).IsModified = true;
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await ToDtoAsync(db, animal, ct));
+    }
+
+    /// <summary>Deleted animals (most recent first), for HQ to restore one deleted by mistake.</summary>
+    private static async Task<Ok<List<DeletedAnimalDto>>> ListDeleted(AppDbContext db, CancellationToken ct)
+    {
+        var rows = await (
+                from a in db.Animals.IgnoreQueryFilters([QueryFilters.SoftDelete]).AsNoTracking()
+                join f in db.Farms.IgnoreQueryFilters() on a.FarmId equals f.Id
+                where a.IsDeleted
+                orderby a.DeletedAt descending
+                select new
+                {
+                    a.Id, a.AnimalNo, a.TagNumber, f.Code, a.Category, a.Status, a.DeletedAt,
+                    DeletedBy = db.Users.Where(u => u.Id == a.DeletedBy).Select(u => u.FullName).FirstOrDefault(),
+                })
+            .Take(500).ToListAsync(ct);
+        return TypedResults.Ok(rows.Select(r => new DeletedAnimalDto(
+            r.Id, Animal.FormatAnimalNo(r.AnimalNo), r.TagNumber, r.Code, r.Category, r.Status, r.DeletedAt, r.DeletedBy)).ToList());
+    }
+
+    /// <summary>Brings back a deleted animal with the census entries removed together with it.</summary>
+    private static async Task<Results<NoContent, NotFound>> RestoreAnimal(Guid id, AppDbContext db, CancellationToken ct)
+    {
+        var animal = await db.Animals.IgnoreQueryFilters([QueryFilters.SoftDelete]).SingleOrDefaultAsync(a => a.Id == id && a.IsDeleted, ct);
+        if (animal is null) return TypedResults.NotFound();
+
+        var entries = await db.CensusEntries.IgnoreQueryFilters([QueryFilters.SoftDelete])
+            .Where(e => e.AnimalId == id && e.IsDeleted && e.DeletedAt == animal.DeletedAt).ToListAsync(ct);
+        foreach (var item in entries.Cast<Domain.Common.AuditableEntity>().Append(animal))
+            (item.IsDeleted, item.DeletedAt, item.DeletedBy) = (false, null, null);
+        await db.SaveChangesAsync(ct);
+        return TypedResults.NoContent();
     }
 
     private static async Task<Results<NoContent, NotFound>> DeleteAnimal(Guid id, AppDbContext db, CancellationToken ct)

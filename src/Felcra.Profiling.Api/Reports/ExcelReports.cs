@@ -141,6 +141,8 @@ internal static class ExcelReports
             ("Pregnancy rate (%)", h.PregnancyRatePercent),
             ("Breeding females without records", h.BreedingFemalesWithoutRecords),
             ("Calves born in the last 12 months", h.CalvesLast12Months),
+            ("Deaths in the last 12 months", h.DeathsLast12Months),
+            ("Mortality, 12 months (%)", h.MortalityPercent),
             ("Breeding tasks due in 14 days", h.TasksDue),
             ("…of which overdue", h.TasksOverdue),
             ("Culling candidates", d.CullingCandidates),
