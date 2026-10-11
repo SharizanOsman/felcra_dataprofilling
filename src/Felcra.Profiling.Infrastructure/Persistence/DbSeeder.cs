@@ -62,6 +62,9 @@ public sealed class DbSeeder(
             State = "Johor",
             AreaHectares = 319,
             Capacity = 200,
+            // Approximate (Pagoh, Johor); FELCRA to confirm the exact location.
+            Latitude = 2.148m,
+            Longitude = 102.771m,
         };
         farm.Projects = projectIds.Select(p => new FarmProject { FarmId = farm.Id, ProjectId = p }).ToList();
         db.Farms.Add(farm);

@@ -16,6 +16,8 @@ internal sealed class FarmConfiguration : IEntityTypeConfiguration<Farm>
         b.Property(x => x.Address).HasMaxLength(500);
         b.Property(x => x.State).HasMaxLength(100);
         b.Property(x => x.AreaHectares).HasPrecision(10, 2);
+        b.Property(x => x.Latitude).HasPrecision(9, 6);
+        b.Property(x => x.Longitude).HasPrecision(9, 6);
         b.HasIndex(x => x.Code).IsUnique().HasFilter(NotDeleted);
         b.HasMany(x => x.Projects).WithOne().HasForeignKey(x => x.FarmId).OnDelete(DeleteBehavior.Cascade);
     }

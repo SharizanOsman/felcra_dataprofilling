@@ -13,7 +13,9 @@ public sealed record FarmDto(
     int? Capacity,
     bool IsActive,
     IReadOnlyList<Guid> ProjectIds,
-    uint Version) : IHasId;
+    uint Version,
+    decimal? Latitude = null,
+    decimal? Longitude = null) : IHasId;
 
 public sealed class FarmRequest : IVersionedRequest
 {
@@ -23,6 +25,8 @@ public sealed class FarmRequest : IVersionedRequest
     public string? State { get; set; }
     public decimal? AreaHectares { get; set; }
     public int? Capacity { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public bool IsActive { get; set; } = true;
     public List<Guid> ProjectIds { get; set; } = [];
     public uint Version { get; set; }
@@ -35,6 +39,8 @@ public sealed class FarmRequest : IVersionedRequest
         State = dto.State,
         AreaHectares = dto.AreaHectares,
         Capacity = dto.Capacity,
+        Latitude = dto.Latitude,
+        Longitude = dto.Longitude,
         IsActive = dto.IsActive,
         ProjectIds = [.. dto.ProjectIds],
         Version = dto.Version,
@@ -49,9 +55,15 @@ public sealed class FarmRequestValidator : AbstractValidator<FarmRequest>
             .WithMessage("Code may only contain letters, digits, '-' and '_'.");
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Address).MaximumLength(500);
-        RuleFor(x => x.State).MaximumLength(100);
+        RuleFor(x => x.State).Must(s => string.IsNullOrEmpty(s) || MalaysianStates.All.Contains(s))
+            .WithMessage("Choose one of the Malaysian states or federal territories.");
         RuleFor(x => x.AreaHectares).InclusiveBetween(0, 1_000_000);
         RuleFor(x => x.Capacity).InclusiveBetween(0, 1_000_000);
+        // Latitude and longitude come together, inside Malaysia.
+        RuleFor(x => x.Latitude).NotNull().When(x => x.Longitude is not null).WithMessage("Enter the latitude too.")
+            .InclusiveBetween(0.5m, 7.5m).WithMessage("Latitude must be in Malaysia (0.5 to 7.5).");
+        RuleFor(x => x.Longitude).NotNull().When(x => x.Latitude is not null).WithMessage("Enter the longitude too.")
+            .InclusiveBetween(99.5m, 119.5m).WithMessage("Longitude must be in Malaysia (99.5 to 119.5).");
     }
 }
 
@@ -81,3 +93,17 @@ public sealed class HerdGroupRequestValidator : AbstractValidator<HerdGroupReque
         RuleFor(x => x.Description).MaximumLength(500);
     }
 }
+
+/// <summary>Malaysia's states and federal territories, spelled as on the farm map.</summary>
+public static class MalaysianStates
+{
+    public static readonly IReadOnlyList<string> All =
+    [
+        "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", "Pahang", "Perak", "Perlis", "Pulau Pinang",
+        "Sabah", "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", "Labuan", "Putrajaya",
+    ];
+}
+
+/// <summary>A farm on the map: its place and herd size.</summary>
+public sealed record FarmMapPointDto(
+    Guid FarmId, string Code, string Name, string? State, decimal? Latitude, decimal? Longitude, int ActiveAnimals, int? Capacity, bool IsActive);

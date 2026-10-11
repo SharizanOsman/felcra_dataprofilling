@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Felcra.Profiling.Api.Infrastructure;
 using Felcra.Profiling.Contracts.Farms;
+using Felcra.Profiling.Domain.Animals;
 using Felcra.Profiling.Domain.Farms;
 using Felcra.Profiling.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -16,7 +17,7 @@ internal static class FarmEndpoints
 {
     private static readonly Expression<Func<Farm, FarmDto>> ToDto = f => new FarmDto(
         f.Id, f.Code, f.Name, f.Address, f.State, f.AreaHectares, f.Capacity, f.IsActive,
-        f.Projects.Select(p => p.ProjectId).ToList(), f.Version);
+        f.Projects.Select(p => p.ProjectId).ToList(), f.Version, f.Latitude, f.Longitude);
 
     private static readonly Expression<Func<HerdGroup, HerdGroupDto>> ToGroupDto = g => new HerdGroupDto(
         g.Id, g.FarmId, g.Name, g.Description, g.IsActive, g.Version);
@@ -31,6 +32,12 @@ internal static class FarmEndpoints
         farms.MapGet("/", async (AppDbContext db, CancellationToken ct) =>
             TypedResults.Ok(await db.Farms.AsNoTracking().OrderBy(f => f.Name).Select(ToDto).ToListAsync(ct)));
 
+        // Farms with their location and herd size, for the map on the Farms page.
+        farms.MapGet("/map", async (AppDbContext db, CancellationToken ct) =>
+            TypedResults.Ok(await db.Farms.AsNoTracking().OrderBy(f => f.Name)
+                .Select(f => new FarmMapPointDto(f.Id, f.Code, f.Name, f.State, f.Latitude, f.Longitude,
+                    db.Animals.Count(a => a.FarmId == f.Id && a.Status == AnimalStatus.Active), f.Capacity, f.IsActive))
+                .ToListAsync(ct)));
         farms.MapGet("/{id:guid}", async Task<Results<Ok<FarmDto>, NotFound>> (Guid id, AppDbContext db, CancellationToken ct) =>
             await db.Farms.AsNoTracking().Where(f => f.Id == id).Select(ToDto).SingleOrDefaultAsync(ct) is { } farm
                 ? TypedResults.Ok(farm)
@@ -141,6 +148,8 @@ internal static class FarmEndpoints
         farm.State = request.State;
         farm.AreaHectares = request.AreaHectares;
         farm.Capacity = request.Capacity;
+        farm.Latitude = request.Latitude;
+        farm.Longitude = request.Longitude;
         farm.IsActive = request.IsActive;
     }
 

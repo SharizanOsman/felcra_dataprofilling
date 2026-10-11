@@ -13,6 +13,10 @@ public class Farm : AuditableEntity
     public string? State { get; set; }
     public decimal? AreaHectares { get; set; }
 
+    /// <summary>Location of the farm (WGS84 decimal degrees), for the map.</summary>
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+
     /// <summary>Planned grazing capacity in head of cattle.</summary>
     public int? Capacity { get; set; }
 
