@@ -44,23 +44,23 @@ public sealed class ResetPasswordRequest
 
 internal static class UserRules
 {
-    public static IRuleBuilderOptions<T, string> ValidPassword<T>(this IRuleBuilder<T, string> rule) => rule
+    public static IRuleBuilderOptions<TRequest, string> ValidPassword<TRequest>(this IRuleBuilder<TRequest, string> rule) => rule
         .NotEmpty()
         .MinimumLength(8)
-        .Matches("[A-Z]").WithMessage("Password must contain an uppercase letter.")
-        .Matches("[a-z]").WithMessage("Password must contain a lowercase letter.")
-        .Matches("[0-9]").WithMessage("Password must contain a digit.");
+        .Matches("[A-Z]").WithMessage(_ => T("Password must contain an uppercase letter."))
+        .Matches("[a-z]").WithMessage(_ => T("Password must contain a lowercase letter."))
+        .Matches("[0-9]").WithMessage(_ => T("Password must contain a digit."));
 
-    public static IRuleBuilderOptions<T, string> ValidRole<T>(this IRuleBuilder<T, string> rule) => rule
-        .Must(r => Roles.All.Contains(r)).WithMessage("Unknown role.");
+    public static IRuleBuilderOptions<TRequest, string> ValidRole<TRequest>(this IRuleBuilder<TRequest, string> rule) => rule
+        .Must(r => Roles.All.Contains(r)).WithMessage(_ => T("Unknown role."));
 
     /// <summary>Farm managers and field officers must be assigned to at least one farm.</summary>
-    public static void FarmsRequiredForFarmRoles<T>(this AbstractValidator<T> validator, Func<T, string> role, Func<T, List<Guid>> farms) =>
+    public static void FarmsRequiredForFarmRoles<TRequest>(this AbstractValidator<TRequest> validator, Func<TRequest, string> role, Func<TRequest, List<Guid>> farms) =>
         validator.RuleFor(x => farms(x)).NotEmpty()
             .When(x => role(x) != Roles.HqAdmin)
             .OverridePropertyName("FarmIds")
-            .WithName("Farms")
-            .WithMessage("Assign at least one farm to farm managers and field officers.");
+            .WithName(_ => T("Farms"))
+            .WithMessage(_ => T("Assign at least one farm to farm managers and field officers."));
 }
 
 public sealed class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>

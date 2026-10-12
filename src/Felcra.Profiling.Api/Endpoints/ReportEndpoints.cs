@@ -63,7 +63,7 @@ internal static class ReportEndpoints
         MonthlyReportJob job, IEmailSender email, ICurrentUser user, AppDbContext db, CancellationToken ct, Guid? farmId = null)
     {
         if (!email.IsConfigured)
-            return Invalid("Email", "E-mail is not configured on the server (Email:From and Email:Smtp:Host).");
+            return Invalid("Email", T("E-mail is not configured on the server (Email:From and Email:Smtp:Host)."));
         var me = await db.Users.AsNoTracking().Where(u => u.Id == user.UserId).Select(u => new { u.Email, u.FullName }).SingleAsync(ct);
         var message = await job.TestMessageAsync(me.Email!, me.FullName, farmId, ct);
         await email.SendAsync(message, ct);
@@ -83,7 +83,7 @@ internal static class ReportEndpoints
             "xlsx" or "excel" => (true, ReportFormat.Xlsx),
             _ => (false, ReportFormat.Pdf),
         };
-        return ok ? null : Invalid("format", "Format must be pdf or xlsx.");
+        return ok ? null : Invalid("format", T("Format must be pdf or xlsx."));
     }
 
     /// <summary>Defaults to last calendar month.</summary>
@@ -91,8 +91,8 @@ internal static class ReportEndpoints
     {
         var lastMonth = reports.LastMonth();
         (start, end) = (from ?? (to is { } t ? new DateOnly(t.Year, t.Month, 1) : lastMonth.From), to ?? (from is null ? lastMonth.To : reports.Today));
-        if (end < start) return Invalid("to", "The end date must be on or after the start date.");
-        if (end.DayNumber - start.DayNumber > MaxPeriodDays) return Invalid("from", "A report can cover at most 3 years.");
+        if (end < start) return Invalid("to", T("The end date must be on or after the start date."));
+        if (end.DayNumber - start.DayNumber > MaxPeriodDays) return Invalid("from", T("A report can cover at most 3 years."));
         return null;
     }
 

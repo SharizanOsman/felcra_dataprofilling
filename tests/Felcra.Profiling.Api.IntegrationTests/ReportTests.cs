@@ -209,6 +209,9 @@ public class ReportTests(ApiFactory factory)
     public async Task Monthly_reports_are_emailed_once_per_month()
     {
         var period = new DateOnly(2001, 1, 1);
+        // Each e-mail is written in the language its reader last used the apps in.
+        await factory.LoginAsync(ApiFactory.AdminEmail, language: "ms");
+        await factory.LoginAsync(ApiFactory.ManagerEmail, language: "en");
         using var scope = factory.Services.CreateScope();
         var job = scope.ServiceProvider.GetRequiredService<MonthlyReportJob>();
         var recipients = await job.RecipientsAsync(CancellationToken.None);
@@ -220,12 +223,16 @@ public class ReportTests(ApiFactory factory)
         Assert.False(await job.RunScheduledAsync(period, CancellationToken.None));
 
         var messages = Directory.GetFiles(factory.MailDirectory, "*.eml").Select(f => MimeMessage.Load(f))
-            .Where(m => (m.Subject ?? "").Contains("January 2001")).ToList();
+            .Where(m => (m.Subject ?? "").Contains("January 2001") || (m.Subject ?? "").Contains("Januari 2001")).ToList();
         Assert.Equal(recipients.Sum(r => r.IsHq ? 1 : r.FarmIds.Count), messages.Count);
         var toAdmin = messages.Single(m => m.To.Mailboxes.Single().Address == ApiFactory.AdminEmail);
-        Assert.Contains("All farms", toAdmin.Subject);
+        Assert.Contains("Semua ladang", toAdmin.Subject);
+        Assert.Contains("Januari 2001", toAdmin.Subject);
         Assert.Equal(3, toAdmin.Attachments.Count());
-        Assert.Contains("Active animals:", toAdmin.TextBody);
+        Assert.Contains("Haiwan aktif:", toAdmin.TextBody);
+        var toManager = messages.First(m => m.To.Mailboxes.Single().Address == ApiFactory.ManagerEmail);
+        Assert.Contains("January 2001", toManager.Subject);
+        Assert.Contains("Active animals:", toManager.TextBody);
 
         var hq = await factory.CreateAuthenticatedClientAsync(ApiFactory.AdminEmail);
         var status = await hq.GetFromJsonAsync<MonthlyReportStatusDto>("/api/reports/monthly");

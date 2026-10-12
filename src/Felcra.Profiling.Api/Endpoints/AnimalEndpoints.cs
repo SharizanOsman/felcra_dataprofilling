@@ -289,15 +289,15 @@ internal static class AnimalEndpoints
     {
         var errors = new Dictionary<string, string[]>();
         if (request.ProjectId is { } projectId && !await db.Projects.AnyAsync(p => p.Id == projectId, ct))
-            errors["ProjectId"] = ["Project does not exist."];
+            errors["ProjectId"] = [T("Project does not exist.")];
         if (request.BreedId is { } breedId && !await db.Breeds.AnyAsync(b => b.Id == breedId, ct))
-            errors["BreedId"] = ["Breed does not exist."];
+            errors["BreedId"] = [T("Breed does not exist.")];
         if (request.HerdGroupId is { } groupId && !await db.HerdGroups.AnyAsync(g => g.Id == groupId && g.FarmId == farmId, ct))
-            errors["HerdGroupId"] = ["Group does not belong to this farm."];
+            errors["HerdGroupId"] = [T("Group does not belong to this farm.")];
         if (request.DamId is { } damId && (damId == selfId || !await db.Animals.AnyAsync(a => a.Id == damId && a.Sex == Sex.Female, ct)))
-            errors["DamId"] = ["Dam must be another female animal."];
+            errors["DamId"] = [T("Dam must be another female animal.")];
         if (request.SireId is { } sireId && (sireId == selfId || !await db.Animals.AnyAsync(a => a.Id == sireId && a.Sex == Sex.Male, ct)))
-            errors["SireId"] = ["Sire must be another male animal."];
+            errors["SireId"] = [T("Sire must be another male animal.")];
         return errors.Count == 0 ? null : TypedResults.ValidationProblem(errors);
     }
 

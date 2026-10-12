@@ -3,35 +3,35 @@
 @inherits AdminPageBase
 @inject NavigationManager Navigation
 
-<PageHeader Title="Census sessions" Subtitle="Headcount, profiling and health programmes" Error="@LoadError">
+<PageHeader Title="@T("Census sessions")" Subtitle="@T("Headcount, profiling and health programmes")" Error="@LoadError">
     <Actions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="_lookups is null">New session</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="_lookups is null">@T("New session")</MudButton>
     </Actions>
 </PageHeader>
 
 <MudTable T="CensusSessionDto" Items="_sessions" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm"
           OnRowClick="@(e => Navigation.NavigateTo($"census/{e.Item!.Id}"))" RowStyle="cursor:pointer">
     <HeaderContent>
-        <MudTh>Session</MudTh>
-        <MudTh>Farm</MudTh>
-        <MudTh>Dates</MudTh>
-        <MudTh Style="text-align:right">On record</MudTh>
-        <MudTh Style="text-align:right">Counted</MudTh>
-        <MudTh Style="text-align:right">Selected</MudTh>
-        <MudTh>Status</MudTh>
+        <MudTh>@T("Session")</MudTh>
+        <MudTh>@T("Farm")</MudTh>
+        <MudTh>@T("Dates")</MudTh>
+        <MudTh Style="text-align:right">@T("On record")</MudTh>
+        <MudTh Style="text-align:right">@T("Counted")</MudTh>
+        <MudTh Style="text-align:right">@T("Selected")</MudTh>
+        <MudTh>@T("Status")</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Session">@context.Title</MudTd>
-        <MudTd DataLabel="Farm">@context.FarmCode</MudTd>
-        <MudTd DataLabel="Dates">@context.StartDate.ToString("dd MMM yyyy") – @context.EndDate.ToString("dd MMM yyyy")</MudTd>
-        <MudTd DataLabel="On record" Style="text-align:right">@RecordedTotal(context)</MudTd>
-        <MudTd DataLabel="Counted" Style="text-align:right">@context.Counted.Total</MudTd>
-        <MudTd DataLabel="Selected" Style="text-align:right">@context.SelectedCount</MudTd>
-        <MudTd DataLabel="Status">
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(context.IsClosed ? Color.Default : Color.Success)">@(context.IsClosed ? "Closed" : "Open")</MudChip>
+        <MudTd DataLabel="@T("Session")">@context.Title</MudTd>
+        <MudTd DataLabel="@T("Farm")">@context.FarmCode</MudTd>
+        <MudTd DataLabel="@T("Dates")">@context.StartDate.ToString("dd MMM yyyy") – @context.EndDate.ToString("dd MMM yyyy")</MudTd>
+        <MudTd DataLabel="@T("On record")" Style="text-align:right">@RecordedTotal(context)</MudTd>
+        <MudTd DataLabel="@T("Counted")" Style="text-align:right">@context.Counted.Total</MudTd>
+        <MudTd DataLabel="@T("Selected")" Style="text-align:right">@context.SelectedCount</MudTd>
+        <MudTd DataLabel="@T("Status")">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(context.IsClosed ? Color.Default : Color.Success)">@(context.IsClosed ? T("Closed") : T("In progress"))</MudChip>
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No census sessions yet.</MudText></NoRecordsContent>
+    <NoRecordsContent><MudText>@T("No census sessions yet.")</MudText></NoRecordsContent>
 </MudTable>
 
 @code {
@@ -54,7 +54,8 @@
     {
         var model = new CensusSessionRequest { FarmId = _lookups!.Farms.FirstOrDefault(f => f.IsActive)?.Id ?? Guid.Empty };
         CensusSessionDto? created = null;
-        var saved = await Dialogs.EditAsync("New census session", model,
+        var saved = await Dialogs.EditAsync(T("New census session"), model,
+
             m => @<CensusSessionFields Model="m" Lookups="_lookups!" IsNew="true" />,
             async m =>
             {

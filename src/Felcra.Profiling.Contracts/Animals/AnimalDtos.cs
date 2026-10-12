@@ -100,17 +100,17 @@ public sealed class AnimalRequestValidator : AbstractValidator<AnimalRequest>
 {
     public AnimalRequestValidator()
     {
-        RuleFor(x => x.FarmId).NotEmpty().WithMessage("Choose a farm.");
+        RuleFor(x => x.FarmId).NotEmpty().WithMessage(_ => T("Choose a farm."));
         RuleFor(x => x.TagNumber).MaximumLength(32);
         RuleFor(x => x.Category).IsInEnum();
         RuleFor(x => x.Sex).IsInEnum()
             .Must((request, sex) => sex == Animal.SexOf(request.Category))
-            .WithMessage("Sex does not match the category (bulls and male calves are male; dams and female calves are female).");
+            .WithMessage(_ => T("Sex does not match the category (bulls and male calves are male; dams and female calves are female)."));
         RuleFor(x => x.BirthDate)
             .LessThanOrEqualTo(_ => ValidationDates.LatestToday)
-            .WithMessage("Birth date cannot be in the future.");
+            .WithMessage(_ => T("Birth date cannot be in the future."));
         RuleFor(x => x.BirthDateMethod).NotNull().When(x => x.BirthDate.HasValue)
-            .WithMessage("Say whether the birth date is recorded or estimated.");
+            .WithMessage(_ => T("Say whether the birth date is recorded or estimated."));
         RuleFor(x => x.SireId).NotEqual(x => x.DamId).When(x => x.SireId.HasValue);
         RuleFor(x => x.Remarks).MaximumLength(1000);
     }
@@ -130,9 +130,9 @@ public sealed class ChangeStatusRequestValidator : AbstractValidator<ChangeStatu
     {
         RuleFor(x => x.Status).IsInEnum();
         RuleFor(x => x.Date).NotNull().When(x => x.Status != AnimalStatus.Active)
-            .LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage("Date cannot be in the future.");
+            .LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage(_ => T("Date cannot be in the future."));
         RuleFor(x => x.Reason).NotEmpty().When(x => x.Status is AnimalStatus.Dead or AnimalStatus.Culled)
-            .WithMessage("Give a reason for deaths and culling.");
+            .WithMessage(_ => T("Give a reason for deaths and culling."));
         RuleFor(x => x.Reason).MaximumLength(500);
     }
 }
@@ -151,7 +151,7 @@ public sealed class RetagRequestValidator : AbstractValidator<RetagRequest>
     public RetagRequestValidator()
     {
         RuleFor(x => x.TagNumber).MaximumLength(32);
-        RuleFor(x => x.Date).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage("Date cannot be in the future.");
+        RuleFor(x => x.Date).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage(_ => T("Date cannot be in the future."));
         RuleFor(x => x.Reason).MaximumLength(500);
     }
 }

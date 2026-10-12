@@ -1,5 +1,6 @@
 // Step 7 end-to-end: admin dashboard, growth, lactation and ration pages; field ration planner (incl. offline).
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import path from 'node:path';
 
 const root = process.argv[2] ?? 'http://localhost:5237';
@@ -10,7 +11,7 @@ const check = (name, ok, extra = '') => { results.push({ name, ok }); console.lo
 const errors = [];
 const money = async l => Number((await l.innerText()).replace(/[^0-9.]/g, ''));
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 try {
   // ---- Admin --------------------------------------------------------------------------------------
   const admin = await browser.newPage({ viewport: { width: 1400, height: 1000 } });

@@ -159,7 +159,8 @@ public sealed class SyncService(FieldData data, ApiClient api, IJSRuntime js, Au
 
         var photo = await data.PhotoAsync(item.Id);
         if (photo is null)
-            return new ApiResult<object>(null, "The photo is no longer on this phone.", new Dictionary<string, string[]>(), System.Net.HttpStatusCode.BadRequest);
+            return new ApiResult<object>(null, T("The photo is no longer on this phone.")
+, new Dictionary<string, string[]>(), System.Net.HttpStatusCode.BadRequest);
         return await api.PostFileAsync<object>(item.Path, new MemoryStream(Convert.FromBase64String(photo.Base64)), "photo.jpg", photo.ContentType,
             new Dictionary<string, string> { ["id"] = photo.Id.ToString() });
     }

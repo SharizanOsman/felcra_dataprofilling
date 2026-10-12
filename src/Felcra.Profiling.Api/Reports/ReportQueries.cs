@@ -22,7 +22,7 @@ internal sealed class ReportQueries(AppDbContext db, BreedingQueries breeding, A
     /// <summary>"All farms" or "PAGOH · FELCRA Berhad Kawasan Pagoh"; null when the farm is not visible to the user.</summary>
     public async Task<string?> FarmLabelAsync(Guid? farmId, CancellationToken ct)
     {
-        if (farmId is null) return "All farms";
+        if (farmId is null) return T("All farms");
         var farm = await db.Farms.AsNoTracking().Where(f => f.Id == farmId).Select(f => new { f.Code, f.Name }).SingleOrDefaultAsync(ct);
         return farm is null ? null : $"{farm.Code} · {farm.Name}";
     }
@@ -69,10 +69,10 @@ internal sealed class ReportQueries(AppDbContext db, BreedingQueries breeding, A
             : new CategoryCounts(session.RecordedBulls ?? 0, session.RecordedDams ?? 0, session.RecordedMaleCalves ?? 0, session.RecordedFemaleCalves ?? 0);
 
         return new CensusFormData(
-            Scope("Census and profiling form", $"{farm.Code} · {farm.Name}", ReportText.DateRange(session.StartDate, session.EndDate)),
+            Scope(T("Census and profiling form"), $"{farm.Code} · {farm.Name}", ReportText.DateRange(session.StartDate, session.EndDate)),
             farm.Code, farm.Name, farm.Address,
             string.Join(" & ", farm.Projects.Select(p => p.Project?.Code).Where(c => c is not null).Order()) is { Length: > 0 } projects ? projects : "–",
-            breeds.Count > 0 ? string.Join(" & ", breeds) : "Not recorded",
+            breeds.Count > 0 ? string.Join(" & ", breeds) : T("Not recorded"),
             session.Title, session.StartDate, session.EndDate, session.PicName, session.PicPosition, session.PicPhone, session.Notes,
             recorded,
             new CategoryCounts(Count(AnimalCategory.Bull), Count(AnimalCategory.Dam), Count(AnimalCategory.MaleCalf), Count(AnimalCategory.FemaleCalf)),
@@ -100,7 +100,7 @@ internal sealed class ReportQueries(AppDbContext db, BreedingQueries breeding, A
             .ToListAsync(ct);
 
         return new TreatmentReportData(
-            Scope("Health and treatment report", farmLabel, ReportText.DateRange(from, to)),
+            Scope(T("Health and treatment report"), farmLabel, ReportText.DateRange(from, to)),
             rows.Select(r => new TreatmentRow(
                 r.GivenOn, r.Code, Animal.FormatAnimalNo(r.AnimalNo), r.TagNumber, r.AnimalCategory, r.Product, ReportText.Humanize(r.ProductCategory),
                 r.Dose is { } d ? $"{d:0.##} {r.DoseUnit}".Trim() : null, r.Route is { } route ? ReportText.Humanize(route) : null,
@@ -134,12 +134,13 @@ internal sealed class ReportQueries(AppDbContext db, BreedingQueries breeding, A
             .ToListAsync(ct);
 
         return new PerformanceData(
-            Scope("Farm performance report", farmLabel, ReportText.DateRange(from, to)),
+            Scope(T("Farm performance report"), farmLabel, ReportText.DateRange(from, to)),
             herd, summary, growth, activity,
             exits.Select(e => new ExitRow(e.StatusDate, e.Code, Animal.FormatAnimalNo(e.AnimalNo), e.TagNumber, e.Category, e.Status, e.StatusReason)).ToList(),
             candidates.Count);
     }
 
     public async Task<CullingReportData> CullingAsync(Guid? farmId, string farmLabel, CancellationToken ct) =>
-        new(Scope("Culling candidates", farmLabel, $"As of {ReportText.Date(Today)}"), await breeding.CullingCandidatesAsync(farmId, ct));
+        new(Scope(T("Culling candidates"), farmLabel, T("As of {0}", ReportText.Date(Today))),
+ await breeding.CullingCandidatesAsync(farmId, ct));
 }

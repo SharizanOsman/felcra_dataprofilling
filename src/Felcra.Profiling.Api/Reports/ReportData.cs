@@ -85,15 +85,15 @@ internal sealed record PerformanceData(
 
 internal sealed record CullingReportData(ReportScope Scope, IReadOnlyList<CullingCandidateDto> Candidates);
 
-/// <summary>Wording shared by the PDF and Excel versions.</summary>
+/// <summary>Wording shared by the PDF and Excel versions, in the current language.</summary>
 internal static class ReportText
 {
     public static string Category(AnimalCategory category) => category switch
     {
-        AnimalCategory.Bull => "Bull (P)",
-        AnimalCategory.Dam => "Dam (I)",
-        AnimalCategory.MaleCalf => "Male calf (AJ)",
-        AnimalCategory.FemaleCalf => "Female calf (AB)",
+        AnimalCategory.Bull => T("Bull (P)"),
+        AnimalCategory.Dam => T("Dam (I)"),
+        AnimalCategory.MaleCalf => T("Male calf (AJ)"),
+        AnimalCategory.FemaleCalf => T("Female calf (AB)"),
         _ => category.ToString(),
     };
 
@@ -101,33 +101,37 @@ internal static class ReportText
     public static string Age(int? months) => months switch
     {
         null => "",
-        < 12 => $"{months} month{(months == 1 ? "" : "s")}",
+        < 12 => Months(months.Value),
         _ when months % 12 == 0 => Years(months.Value / 12),
-        _ => $"{Years(months.Value / 12)} {months % 12} month{(months % 12 == 1 ? "" : "s")}",
+        _ => $"{Years(months.Value / 12)} {Months(months.Value % 12)}",
     };
 
-    private static string Years(int years) => $"{years} year{(years == 1 ? "" : "s")}";
+    private static string Years(int years) => T(years == 1 ? "{0} year" : "{0} years", years);
 
-    // Invariant culture: "Sep", not "Sept" or a localised name, whatever the server's culture.
-    private static readonly System.Globalization.CultureInfo Invariant = System.Globalization.CultureInfo.InvariantCulture;
+    private static string Months(int months) => T(months == 1 ? "{0} month" : "{0} months", months);
 
-    public static string Date(DateOnly date) => date.ToString("d MMM yyyy", Invariant);
+    // English uses the invariant culture ("Sep", not "Sept", whatever the server's culture); Malay uses ms-MY ("Sep", "Okt").
+    private static System.Globalization.CultureInfo DateCulture => Language == Malay
+        ? System.Globalization.CultureInfo.GetCultureInfo("ms-MY")
+        : System.Globalization.CultureInfo.InvariantCulture;
 
-    public static string Month(DateOnly date) => date.ToString("MMMM yyyy", Invariant);
+    public static string Date(DateOnly date) => date.ToString("d MMM yyyy", DateCulture);
+
+    public static string Month(DateOnly date) => date.ToString("MMMM yyyy", DateCulture);
 
     /// <summary>Generation time in Malaysia time.</summary>
-    public static string Generated(DateTimeOffset at) => at.ToOffset(TimeSpan.FromHours(8)).ToString("d MMM yyyy HH:mm", Invariant) + " (MYT)";
+    public static string Generated(DateTimeOffset at) => at.ToOffset(TimeSpan.FromHours(8)).ToString("d MMM yyyy HH:mm", DateCulture) + " (MYT)";
 
     public static string DateRange(DateOnly from, DateOnly to) =>
         from == to ? Date(from)
-        : from.Year == to.Year && from.Month == to.Month ? $"{from.Day}–{to.Day} {to.ToString("MMM yyyy", Invariant)}"
+        : from.Year == to.Year && from.Month == to.Month ? $"{from.Day}–{to.Day} {to.ToString("MMM yyyy", DateCulture)}"
         : $"{Date(from)} – {Date(to)}";
 
-    /// <summary>Enum name as words, e.g. DiagnosticTest → "Diagnostic test".</summary>
-    public static string Humanize<T>(T value) where T : struct, Enum =>
-        System.Text.RegularExpressions.Regex.Replace(value.ToString(), "(?<=[a-z])(?=[A-Z])", " ") is var s && s.Length > 0
+    /// <summary>Enum name as words, e.g. DiagnosticTest → "Diagnostic test" (or its Malay).</summary>
+    public static string Humanize<TEnum>(TEnum value) where TEnum : struct, Enum =>
+        T(System.Text.RegularExpressions.Regex.Replace(value.ToString(), "(?<=[a-z])(?=[A-Z])", " ") is var s && s.Length > 0
             ? s[0] + s[1..].ToLowerInvariant()
-            : s;
+            : s);
 
     public static string FileSafe(string text) =>
         string.Concat(text.Select(c => char.IsLetterOrDigit(c) ? c : '-')).Trim('-').ToLowerInvariant();

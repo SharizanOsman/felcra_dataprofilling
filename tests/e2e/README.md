@@ -38,6 +38,11 @@ to `tests/e2e/out`.
 | `analytics-e2e.mjs` | Dashboard, growth, lactation, ration planner (admin and offline on the phone) | Pagoh imported, before other recording |
 | `reports-e2e.mjs` | Reports page downloads (PDF / Excel), census and breeding shortcuts, monthly e-mail test | Pagoh imported |
 | `account-e2e.mjs` | Change password in both apps | any data |
+| `language-map-e2e.mjs` | Bahasa Melayu default and the BM/EN switch in both apps; farm map, place and GPS search, location picker | seeded data, internet (OpenStreetMap) |
+
+The apps start in Bahasa Melayu; `english.mjs` makes every suite's browser start in English, since the checks
+look for English text.
+
 | `prod-smoke-e2e.mjs` | Production stack behind Caddy over HTTPS: dashboard, PDF, offline PWA, Web Push | `deploy/` stack, `NODE_TLS_REJECT_UNAUTHORIZED=0` for Caddy's local certificate |
 | `restore-drill.mjs` | Backup / restore drill helper (`before`, `after`, `check`) | `deploy/` stack |
 | `manual-shots.mjs` | Regenerates the user-manual screenshots (`docs/manual/images`) | Pagoh imported |

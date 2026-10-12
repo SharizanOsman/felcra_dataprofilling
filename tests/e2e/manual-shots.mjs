@@ -1,5 +1,6 @@
 // Screenshots for the user manuals (docs/manual/images), taken on the Pagoh demo data.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -28,7 +29,7 @@ await post(`/api/animals/${byTag('2321').id}/breeding-events`, { type: 2, eventD
 await post(`/api/animals/${byTag('2321').id}/breeding-events`, { type: 4, eventDate: day(70), pregnancyResult: 1, gestationDays: 50 });
 }
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 try {
   // ---- Admin portal (manager and HQ) ----
   const admin = await browser.newPage({ viewport: { width: 1366, height: 820 } });

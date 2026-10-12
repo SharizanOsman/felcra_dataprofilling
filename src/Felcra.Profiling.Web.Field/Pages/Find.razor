@@ -3,34 +3,34 @@
 @inject FieldData Data
 @inject NavigationManager Navigation
 
-<PageTitle>Find animal — FELCRA Field</PageTitle>
+<PageTitle>@T("Find animal — FELCRA Field")</PageTitle>
 
 @* Searches the phone's copy of the farm's animals, so it works offline. *@
-<MudTextField T="string" Value="_query" ValueChanged="SearchAsync" Label="Tag number or animal no." Variant="Variant.Outlined"
+<MudTextField T="string" Value="_query" ValueChanged="SearchAsync" Label="@T("Tag number or animal no.")" Variant="Variant.Outlined"
               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" DebounceInterval="250" Immediate="true"
               InputMode="InputMode.search" AutoFocus="true" Clearable="true" />
 
 @if (_noData)
 {
-    <MudAlert Severity="Severity.Warning" Class="mt-3">No animals on this phone yet. Connect to the internet once to download your farm's animals.</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="mt-3">@T("No animals on this phone yet. Connect to the internet once to download your farm's animals.")</MudAlert>
 }
 else if (_results is not null)
 {
     @if (_results.Count == 0)
     {
-        <MudText Class="mt-4">No animal matches "@_query".</MudText>
+        <MudText Class="mt-4">@T("No animal matches \"{0}\".", _query)</MudText>
     }
     else
     {
         @if (_results.Count > 1 && _results.Where(r => r.TagNumber is not null).GroupBy(r => r.TagNumber!.ToUpperInvariant()).Any(g => g.Count() > 1))
         {
-            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">Several animals share this tag. Check the category and age to pick the right one.</MudAlert>
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">@T("Several animals share this tag. Check the category and age to pick the right one.")</MudAlert>
         }
         <MudList T="string" Class="mt-2">
             @foreach (var a in _results)
             {
                 <MudListItem T="string" Href="@($"a/{a.Id}")">
-                    <strong>@(a.TagNumber is null ? "No tag" : $"Tag {a.TagNumber}")</strong> · @a.AnimalNo
+                    <strong>@(a.TagNumber is null ? T("No tag") : T("Tag {0}", a.TagNumber))</strong> · @a.AnimalNo
                     @if (a.Status != AnimalStatus.Active) { <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@AnimalText.Status(a.Status)</MudChip> }
                     <MudText Typo="Typo.caption" Style="display:block">
                         @AnimalText.Category(a.Category) · @AnimalText.Age(a.BirthDate, a.BirthDateMethod, _today)

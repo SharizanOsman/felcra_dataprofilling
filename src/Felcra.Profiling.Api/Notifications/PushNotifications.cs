@@ -160,6 +160,7 @@ internal sealed class ReminderNotificationJob(
             .GroupBy(uf => uf.UserId).ToDictionary(g => g.Key, g => g.Select(uf => uf.FarmId).ToHashSet());
         var today = breeding.Today;
         var tasks = (await breeding.RemindersAsync(null, 0, ct)).Where(r => Notified.Contains(r.Type)).ToList();
+        var languages = await db.Users.Where(u => subscribers.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Language, ct);
 
         var sent = 0;
         foreach (var userId in subscribers)
@@ -167,23 +168,26 @@ internal sealed class ReminderNotificationJob(
             var farms = farmsByUser.GetValueOrDefault(userId) ?? [];
             var mine = tasks.Where(t => farms.Contains(t.FarmId)).ToList();
             if (mine.Count == 0) continue;
+            using var language = Use(Parse(languages.GetValueOrDefault(userId)) ?? DefaultLanguage);
             sent += await SendToUserAsync(userId, Summarise(mine, today), ct);
         }
         return sent;
     }
 
+    /// <summary>The morning message, in the current language.</summary>
     internal static PushPayload Summarise(IReadOnlyList<ReminderDto> tasks, DateOnly today)
     {
         var parts = tasks.GroupBy(t => t.Type).OrderBy(g => g.Key).Select(g => g.Key switch
         {
-            ReminderType.PregnancyCheckDue => $"{g.Count()} pregnancy check{(g.Count() == 1 ? "" : "s")}",
-            ReminderType.CalvingDue => $"{g.Count()} calving{(g.Count() == 1 ? "" : "s")} due",
-            _ => $"{g.Count()} treatment{(g.Count() == 1 ? "" : "s")} due",
+            ReminderType.PregnancyCheckDue => T(g.Count() == 1 ? "{0} pregnancy check" : "{0} pregnancy checks", g.Count()),
+            ReminderType.CalvingDue => T(g.Count() == 1 ? "{0} calving due" : "{0} calvings due", g.Count()),
+            _ => T(g.Count() == 1 ? "{0} treatment due" : "{0} treatments due", g.Count()),
         });
         var overdue = tasks.Count(t => t.IsOverdueOn(today));
         return new PushPayload(
-            $"{tasks.Count} task{(tasks.Count == 1 ? "" : "s")} today",
-            string.Join(", ", parts) + (overdue > 0 ? $" · {overdue} overdue" : ""),
+            T(tasks.Count == 1 ? "{0} task today" : "{0} tasks today", tasks.Count),
+            string.Join(", ", parts) + (overdue > 0 ? " · " + T("{0} overdue", overdue) : ""),
+
             "/field/");
     }
 

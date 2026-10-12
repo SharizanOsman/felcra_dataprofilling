@@ -4,7 +4,7 @@
             <NotAuthorized>
                 @if (context.User.Identity?.IsAuthenticated == true)
                 {
-                    <MudAlert Severity="Severity.Warning" Class="ma-4">You do not have permission to view this page.</MudAlert>
+                    <MudAlert Severity="Severity.Warning" Class="ma-4">@T("You do not have permission to view this page.")</MudAlert>
                 }
                 else
                 {

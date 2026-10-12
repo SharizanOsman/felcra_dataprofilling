@@ -38,8 +38,8 @@ public abstract class RecordPageBase : ComponentBase
         if (Animal is null)
         {
             LoadError = Sync.IsOnline
-                ? "This animal is not on any of your farms."
-                : "This animal is not on this phone yet. Connect to the internet once to download your farm's animals.";
+                ? T("This animal is not on any of your farms.")
+                : T("This animal is not on this phone yet. Connect to the internet once to download your farm's animals.");
             return;
         }
 
@@ -56,7 +56,7 @@ public abstract class RecordPageBase : ComponentBase
         await Sync.EnqueueAsync(MakeItem(recordId, kind, JsonSerializer.Serialize(request, JsonSerializerOptions.Web), summary, date));
         Saving = false;
 
-        Snackbar.Add(Sync.IsOnline ? $"{summary} saved." : $"{summary} saved on this phone — it will be sent when you are back online.",
+        Snackbar.Add(Sync.IsOnline ? T("{0} saved.", summary) : T("{0} saved on this phone — it will be sent when you are back online.", summary),
             Severity.Success);
         Navigation.NavigateTo($"a/{Id}", replace: true);
     }

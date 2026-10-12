@@ -2,46 +2,46 @@
 @attribute [Authorize(Roles = Roles.HqAdmin)]
 @inherits AdminPageBase
 
-<PageHeader Title="Users" Subtitle="Accounts, roles and farm assignments" Error="@LoadError">
+<PageHeader Title="@T("Users")" Subtitle="@T("Accounts, roles and farm assignments")" Error="@LoadError">
     <Actions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">Add user</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AddAsync">@T("Add user")</MudButton>
     </Actions>
 </PageHeader>
 
 <MudTable Items="_users" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm"
           Filter="Matches">
     <ToolBarContent>
-        <MudTextField @bind-Value="_search" Placeholder="Search name or email" Adornment="Adornment.Start"
+        <MudTextField @bind-Value="_search" Placeholder="@T("Search name or email")" Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Clearable="true" Class="mt-0" />
     </ToolBarContent>
     <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Email</MudTh>
-        <MudTh>Role</MudTh>
-        <MudTh>Farms</MudTh>
-        <MudTh>Status</MudTh>
+        <MudTh>@T("Name")</MudTh>
+        <MudTh>@T("Email")</MudTh>
+        <MudTh>@T("Role")</MudTh>
+        <MudTh>@T("Farms")</MudTh>
+        <MudTh>@T("Status")</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name">@context.FullName</MudTd>
-        <MudTd DataLabel="Email">@context.Email</MudTd>
-        <MudTd DataLabel="Role">@RoleName(context.Role)</MudTd>
-        <MudTd DataLabel="Farms">@(context.Role == Roles.HqAdmin ? "All" : string.Join(", ", context.FarmIds.Select(FarmCode)))</MudTd>
-        <MudTd DataLabel="Status">
+        <MudTd DataLabel="@T("Name")">@context.FullName</MudTd>
+        <MudTd DataLabel="@T("Email")">@context.Email</MudTd>
+        <MudTd DataLabel="@T("Role")">@RoleName(context.Role)</MudTd>
+        <MudTd DataLabel="@T("Farms")">@(context.Role == Roles.HqAdmin ? T("All") : string.Join(", ", context.FarmIds.Select(FarmCode)))</MudTd>
+        <MudTd DataLabel="@T("Status")">
             <StatusChip Active="context.IsActive" />
             @if (context.IsLockedOut)
             {
-                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">Locked</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@T("Locked")</MudChip>
             }
         </MudTd>
         <MudTd Style="text-align:right">
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="Edit" />
-            <MudTooltip Text="Reset password">
-                <MudIconButton Icon="@Icons.Material.Filled.LockReset" Size="Size.Small" OnClick="() => ResetPasswordAsync(context)" aria-label="Reset password" />
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="@T("Edit")" />
+            <MudTooltip Text="@T("Reset password")">
+                <MudIconButton Icon="@Icons.Material.Filled.LockReset" Size="Size.Small" OnClick="() => ResetPasswordAsync(context)" aria-label="@T("Reset password")" />
             </MudTooltip>
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No users found.</MudText></NoRecordsContent>
+    <NoRecordsContent><MudText>@T("No users found.")</MudText></NoRecordsContent>
 </MudTable>
 
 @code {
@@ -68,50 +68,51 @@
 
     private static string RoleName(string role) => role switch
     {
-        Roles.HqAdmin => "HQ admin",
-        Roles.FarmManager => "Farm manager",
-        Roles.FieldOfficer => "Field officer",
+        Roles.HqAdmin => T("HQ admin"),
+        Roles.FarmManager => T("Farm manager"),
+        Roles.FieldOfficer => T("Field officer"),
         _ => role,
     };
 
     private async Task AddAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Add user", new CreateUserRequest(), CreateFields,
-            m => Api.PostAsync<UserDto>("api/users", m), ValidateCreate), "User added.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Add user"), new CreateUserRequest(), CreateFields,
+            m => Api.PostAsync<UserDto>("api/users", m), ValidateCreate), T("User added."));
 
     private async Task EditAsync(UserDto user) =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"Edit {user.FullName}", UpdateUserRequest.From(user), UpdateFields,
-            m => Api.PutAsync<UserDto>($"api/users/{user.Id}", m), ValidateUpdate), "User updated.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Edit {0}", user.FullName), UpdateUserRequest.From(user), UpdateFields,
+            m => Api.PutAsync<UserDto>($"api/users/{user.Id}", m), ValidateUpdate), T("User updated."));
+
 
     private async Task ResetPasswordAsync(UserDto user) =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"Reset password for {user.FullName}", new ResetPasswordRequest(), ResetFields,
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Reset password for {0}", user.FullName), new ResetPasswordRequest(), ResetFields,
             m => Api.PostAsync<UserDto>($"api/users/{user.Id}/reset-password", m), ValidateReset),
-            "Password reset. The user's existing sessions have been signed out.");
+            T("Password reset. The user's existing sessions have been signed out."));
 
     private RenderFragment<CreateUserRequest> CreateFields => m =>
         @<MudStack Spacing="2">
-            <MudTextField @bind-Value="m.FullName" For="@(() => m.FullName)" Label="Full name" />
-            <MudTextField @bind-Value="m.Email" For="@(() => m.Email)" Label="Email" InputType="InputType.Email" />
+            <MudTextField @bind-Value="m.FullName" For="@(() => m.FullName)" Label="@T("Full name")" />
+            <MudTextField @bind-Value="m.Email" For="@(() => m.Email)" Label="@T("Email")" InputType="InputType.Email" />
             @RoleSelect(m.Role, r => m.Role = r)
             @FarmSelect(m.FarmIds, ids => m.FarmIds = ids)
-            <MudTextField @bind-Value="m.Password" For="@(() => m.Password)" Label="Initial password" InputType="InputType.Password"
-                          HelperText="At least 8 characters with upper- and lowercase letters and a digit." />
+            <MudTextField @bind-Value="m.Password" For="@(() => m.Password)" Label="@T("Initial password")" InputType="InputType.Password"
+                          HelperText="@T("At least 8 characters with upper- and lowercase letters and a digit.")" />
         </MudStack>;
 
     private RenderFragment<UpdateUserRequest> UpdateFields => m =>
         @<MudStack Spacing="2">
-            <MudTextField @bind-Value="m.FullName" For="@(() => m.FullName)" Label="Full name" />
+            <MudTextField @bind-Value="m.FullName" For="@(() => m.FullName)" Label="@T("Full name")" />
             @RoleSelect(m.Role, r => m.Role = r)
             @FarmSelect(m.FarmIds, ids => m.FarmIds = ids)
-            <MudSwitch @bind-Value="m.IsActive" Label="Active (can sign in)" Color="Color.Primary" />
-            <MudText Typo="Typo.caption">Changing role, farms or status signs the user out of existing sessions.</MudText>
+            <MudSwitch @bind-Value="m.IsActive" Label="@T("Active (can sign in)")" Color="Color.Primary" />
+            <MudText Typo="Typo.caption">@T("Changing role, farms or status signs the user out of existing sessions.")</MudText>
         </MudStack>;
 
     private RenderFragment<ResetPasswordRequest> ResetFields => m =>
-        @<MudTextField @bind-Value="m.NewPassword" For="@(() => m.NewPassword)" Label="New password" InputType="InputType.Password"
-                       HelperText="At least 8 characters with upper- and lowercase letters and a digit." />;
+        @<MudTextField @bind-Value="m.NewPassword" For="@(() => m.NewPassword)" Label="@T("New password")" InputType="InputType.Password"
+                       HelperText="@T("At least 8 characters with upper- and lowercase letters and a digit.")" />;
 
     private RenderFragment RoleSelect(string value, Action<string> set) =>
-        @<MudSelect T="string" Value="value" ValueChanged="set" Label="Role">
+        @<MudSelect T="string" Value="value" ValueChanged="set" Label="@T("Role")">
             @foreach (var role in Roles.All)
             {
                 <MudSelectItem Value="role">@RoleName(role)</MudSelectItem>
@@ -119,9 +120,10 @@
         </MudSelect>;
 
     private RenderFragment FarmSelect(List<Guid> value, Action<List<Guid>> set) =>
-        @<MudSelect T="Guid" Label="Farms" MultiSelection="true" SelectedValues="value"
+        @<MudSelect T="Guid" Label="@T("Farms")" MultiSelection="true" SelectedValues="value"
                     SelectedValuesChanged="@(v => set(v.ToList()))" ToStringFunc="FarmCode"
-                    HelperText="Required for farm managers and field officers. Ignored for HQ admins.">
+                    HelperText="@T("Required for farm managers and field officers. Ignored for HQ admins.")">
+
             @foreach (var farm in _farms)
             {
                 <MudSelectItem Value="farm.Id">@farm.Code â€” @farm.Name</MudSelectItem>

@@ -1,5 +1,6 @@
 // Step 9: smoke test of the production stack behind Caddy (HTTPS): admin, reports, offline field app, push.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,7 +12,7 @@ const visible = async (l, timeout = 20000) => { try { await l.waitFor({ state: '
 const check = (name, ok, extra = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  ' + extra : ''}`); };
 const errors = [];
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true, args: ['--ignore-certificate-errors'] });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true, args: ['--ignore-certificate-errors'] }));
 try {
   // ---- Admin over HTTPS -----------------------------------------------------------------------------
   const admin = await (await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1400, height: 1000 }, acceptDownloads: true })).newPage();
@@ -30,10 +31,10 @@ try {
   // ---- Field app: installable / offline, then push ---------------------------------------------------
   // A persistent profile (not incognito-like): browsers disable the Push API in incognito windows.
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'felcra-field-'));
-  const context = await chromium.launchPersistentContext(profile, {
+  const context = inEnglish(await chromium.launchPersistentContext(profile, {
     channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true, args: ['--ignore-certificate-errors'], ignoreHTTPSErrors: true,
     viewport: { width: 400, height: 860 }, isMobile: true, hasTouch: true,
-  });
+  }));
   await context.grantPermissions(['notifications'], { origin: root });
   const page = context.pages()[0] ?? await context.newPage();
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED/.test(m.text())) errors.push(`field: ${m.text()}`); });

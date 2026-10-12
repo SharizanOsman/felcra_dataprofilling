@@ -73,9 +73,9 @@ public sealed class CensusSessionRequestValidator : AbstractValidator<CensusSess
 {
     public CensusSessionRequestValidator()
     {
-        RuleFor(x => x.FarmId).NotEmpty().WithMessage("Choose a farm.");
+        RuleFor(x => x.FarmId).NotEmpty().WithMessage(_ => T("Choose a farm."));
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.EndDate).GreaterThanOrEqualTo(x => x.StartDate).WithMessage("End date must be on or after the start date.");
+        RuleFor(x => x.EndDate).GreaterThanOrEqualTo(x => x.StartDate).WithMessage(_ => T("End date must be on or after the start date."));
         RuleFor(x => x.PicName).MaximumLength(200);
         RuleFor(x => x.PicPosition).MaximumLength(200);
         RuleFor(x => x.PicPhone).MaximumLength(50);
@@ -134,7 +134,7 @@ public sealed class CensusEntryRequestValidator : AbstractValidator<CensusEntryR
         RuleFor(x => x.AnimalId).NotEmpty();
         RuleFor(x => x.Category).IsInEnum();
         RuleFor(x => x.EstimatedAgeMonths).InclusiveBetween(0, 360);
-        RuleFor(x => x.WeightKg).InclusiveBetween(1, 1500).WithMessage("Weight must be between 1 and 1500 kg.");
+        RuleFor(x => x.WeightKg).InclusiveBetween(1, 1500).WithMessage(_ => T("Weight must be between 1 and 1500 kg."));
         // Scale not yet confirmed by FELCRA (URS open question 1); accept 1–9.
         RuleFor(x => x.BodyConditionScore).InclusiveBetween(1, 9);
         RuleFor(x => x.Remarks).MaximumLength(500);

@@ -23,6 +23,7 @@ src/
   Felcra.Profiling.Infrastructure/  EF Core, Identity, auditing, migrations, seeding
   Felcra.Profiling.Analytics/       Growth / lactation / ration models (pure C#, also runs in the browser)
   Felcra.Profiling.Contracts/       DTOs and validators shared by API and clients
+  Felcra.Profiling.Localization/    Bahasa Melayu / English text: T("…") and the Malay translations
   Felcra.Profiling.Api/             Web API; also serves both clients
   Felcra.Profiling.UI.Shared/       Shared Blazor components and client auth
   Felcra.Profiling.Web.Admin/       Admin portal (Blazor WASM)   -> /admin
@@ -185,6 +186,8 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Push:PublicKey` / `PrivateKey` | Web Push (VAPID) key pair for task notifications; generate with `dotnet Felcra.Profiling.Api.dll vapid-keys`. Notifications are off without them |
 | `Push:Subject` | Contact sent to push services, e.g. `mailto:it@felcra.com.my` |
 | `Push:Hour` | Hour (Malaysia time) from which the daily task notification is sent (default 7) |
+| `Geocoding:Enabled` | Place search on the farm map (default on). Off: farms are still placed by clicking the map or typing GPS coordinates |
+| `Geocoding:BaseUrl` / `UserAgent` / `Email` | Nominatim server for place search (default the public OpenStreetMap one, max. one request a second), the User-Agent sent with each request, and an optional contact e-mail its operators can use |
 
 ## Key design decisions
 
@@ -197,3 +200,12 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
   same library runs on the server and in the Blazor clients (offline ration planning), and charts are plain SVG.
 - Both Blazor clients are hosted by the API under `/admin` and `/field`; shared library assets live at `/_content`
   and are rewritten for each base path.
+- **Bahasa Melayu and English.** Every user-facing text is written in English and wrapped in `T("…")`
+  (`Felcra.Profiling.Localization`); `MalayText.*.cs` holds the Malay. Untranslated text falls back to English, and a
+  test fails when a `T("…")` has no Malay entry or its `{0}` placeholders differ. The apps start in Bahasa Melayu; the
+  BM/EN switch in the app bar saves the choice in the browser (shared by both apps) and reloads in that culture. The
+  apps send it as `Accept-Language`, so validation messages, errors and PDF/Excel reports come back in the same
+  language; the server also remembers each user's language for their monthly e-mail and morning notifications.
+- **Farm map** on OpenStreetMap (Leaflet, served from this site) with street and Esri satellite tiles. Place search
+  goes through the API (`/api/geocode`) to Nominatim, so the browser only loads map images from outside; GPS
+  coordinates, Google Maps links and degrees/minutes/seconds are read without any service.

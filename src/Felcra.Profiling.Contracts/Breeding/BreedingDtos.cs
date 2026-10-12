@@ -38,33 +38,33 @@ public sealed class BreedingEventRequestValidator : AbstractValidator<BreedingEv
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.Type).IsInEnum();
-        RuleFor(x => x.EventDate).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage("Date cannot be in the future.");
+        RuleFor(x => x.EventDate).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage(_ => T("Date cannot be in the future."));
         RuleFor(x => x.SemenCode).MaximumLength(50);
         RuleFor(x => x.Notes).MaximumLength(500);
 
         RuleFor(x => x.PregnancyResult).NotNull().When(x => x.Type == BreedingEventType.PregnancyCheck)
-            .WithMessage("Choose the result of the pregnancy check.");
+            .WithMessage(_ => T("Choose the result of the pregnancy check."));
         RuleFor(x => x.GestationDays).InclusiveBetween(20, 300)
             .When(x => x.Type == BreedingEventType.PregnancyCheck && x.PregnancyResult == PregnancyResult.Pregnant && x.GestationDays.HasValue)
-            .WithMessage("Gestation age must be between 20 and 300 days.");
+            .WithMessage(_ => T("Gestation age must be between 20 and 300 days."));
         RuleFor(x => x.SoundnessResult).NotNull().When(x => x.Type == BreedingEventType.BullSoundnessExam)
-            .WithMessage("Choose the outcome of the soundness exam.");
+            .WithMessage(_ => T("Choose the outcome of the soundness exam."));
 
         When(x => x.Type == BreedingEventType.Calving, () =>
         {
-            RuleFor(x => x.Calves.Count).LessThanOrEqualTo(3).OverridePropertyName("Calves").WithMessage("At most 3 calves per calving.");
+            RuleFor(x => x.Calves.Count).LessThanOrEqualTo(3).OverridePropertyName("Calves").WithMessage(_ => T("At most 3 calves per calving."));
             RuleFor(x => x.StillbornCount).InclusiveBetween(0, 3);
             RuleFor(x => x).Must(x => x.Calves.Count + (x.StillbornCount ?? 0) > 0)
-                .OverridePropertyName("Calves").WithMessage("Add the calf (or record it as stillborn).");
+                .OverridePropertyName("Calves").WithMessage(_ => T("Add the calf (or record it as stillborn)."));
             RuleForEach(x => x.Calves).ChildRules(calf =>
             {
                 calf.RuleFor(c => c.Id).NotEmpty();
                 calf.RuleFor(c => c.Sex).IsInEnum();
                 calf.RuleFor(c => c.TagNumber).MaximumLength(32);
-                calf.RuleFor(c => c.BirthWeightKg).InclusiveBetween(5, 80).WithMessage("Birth weight must be between 5 and 80 kg.");
+                calf.RuleFor(c => c.BirthWeightKg).InclusiveBetween(5, 80).WithMessage(_ => T("Birth weight must be between 5 and 80 kg."));
             });
         });
-        RuleFor(x => x.Calves).Empty().When(x => x.Type != BreedingEventType.Calving).WithMessage("Calves can only be added to a calving.");
+        RuleFor(x => x.Calves).Empty().When(x => x.Type != BreedingEventType.Calving).WithMessage(_ => T("Calves can only be added to a calving."));
     }
 }
 

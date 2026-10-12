@@ -26,11 +26,11 @@
     </div>
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">ðŸ—™</span>
+        Ralat tidak dijangka berlaku. / An unhandled error has occurred.
+        <a href="." class="reload">Muat semula / Reload</a>
+        <span class="dismiss">×</span>
     </div>
-    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_content/Felcra.Profiling.UI.Shared/felcra.js"></script>
     <script src="lib/html5-qrcode/html5-qrcode.min.js"></script>
@@ -38,6 +38,8 @@
     <script src="js/offline-db.js"></script>
     <script src="js/push.js"></script>
     <script src="js/register-sw.js"></script>
+    <!-- Last: starts Blazor in the chosen language once the other scripts are loaded. -->
+    <script src="_content/Felcra.Profiling.UI.Shared/start.js"></script>
 </body>
 
 </html>

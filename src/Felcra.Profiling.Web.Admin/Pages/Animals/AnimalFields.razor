@@ -2,35 +2,35 @@
 <MudStack Spacing="2">
     @if (IsNew)
     {
-        <MudSelect T="Guid" Value="Model.FarmId" ValueChanged="OnFarmChanged" Label="Farm" For="@(() => Model.FarmId)">
+        <MudSelect T="Guid" Value="Model.FarmId" ValueChanged="OnFarmChanged" Label="@T("Farm")" For="@(() => Model.FarmId)">
             @foreach (var farm in Lookups.Farms.Where(f => f.IsActive))
             {
                 <MudSelectItem Value="farm.Id">@farm.Code — @farm.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField @bind-Value="Model.TagNumber" For="@(() => Model.TagNumber)" Label="Ear tag number"
-                      HelperText="Leave empty if the animal has no tag yet." />
+        <MudTextField @bind-Value="Model.TagNumber" For="@(() => Model.TagNumber)" Label="@T("Ear tag number")"
+                      HelperText="@T("Leave empty if the animal has no tag yet.")" />
     }
-    <MudSelect T="AnimalCategory" Value="Model.Category" ValueChanged="OnCategoryChanged" Label="Category" For="@(() => Model.Category)">
+    <MudSelect T="AnimalCategory" Value="Model.Category" ValueChanged="OnCategoryChanged" Label="@T("Category")" For="@(() => Model.Category)">
         @foreach (var c in Enum.GetValues<AnimalCategory>())
         {
             <MudSelectItem Value="c">@AnimalText.Category(c)</MudSelectItem>
         }
     </MudSelect>
-    <MudSelect T="Guid?" @bind-Value="Model.BreedId" Label="Breed" Clearable="true" ToStringFunc="@(id => Lookups.BreedName(id) ?? "")">
+    <MudSelect T="Guid?" @bind-Value="Model.BreedId" Label="@T("Breed")" Clearable="true" ToStringFunc="@(id => Lookups.BreedName(id) ?? "")">
         @foreach (var b in Lookups.Breeds.Where(b => b.IsActive || b.Id == Model.BreedId))
         {
             <MudSelectItem T="Guid?" Value="b.Id">@b.Name</MudSelectItem>
         }
     </MudSelect>
     <MudStack Row="true">
-        <MudSelect T="Guid?" @bind-Value="Model.ProjectId" Label="Project" Clearable="true" ToStringFunc="@(id => Lookups.ProjectCode(id) ?? "")">
+        <MudSelect T="Guid?" @bind-Value="Model.ProjectId" Label="@T("Project")" Clearable="true" ToStringFunc="@(id => Lookups.ProjectCode(id) ?? "")">
             @foreach (var p in Lookups.Projects.Where(p => p.IsActive || p.Id == Model.ProjectId))
             {
                 <MudSelectItem T="Guid?" Value="p.Id">@p.Code</MudSelectItem>
             }
         </MudSelect>
-        <MudSelect T="Guid?" @bind-Value="Model.HerdGroupId" Label="Group / pen" Clearable="true"
+        <MudSelect T="Guid?" @bind-Value="Model.HerdGroupId" Label="@T("Group / pen")" Clearable="true"
                    ToStringFunc="@(id => Lookups.GroupName(Model.FarmId, id) ?? "")">
             @foreach (var g in Lookups.Groups(Model.FarmId).Where(g => g.IsActive || g.Id == Model.HerdGroupId))
             {
@@ -39,8 +39,8 @@
         </MudSelect>
     </MudStack>
     <MudStack Row="true">
-        <DateField Value="Model.BirthDate" ValueChanged="@(d => Model.BirthDate = d)" Label="Birth date" Max="DateOnly.FromDateTime(DateTime.Today)" />
-        <MudSelect T="AgeEstimationMethod?" @bind-Value="Model.BirthDateMethod" For="@(() => Model.BirthDateMethod)" Label="Birth date is" Clearable="true"
+        <DateField Value="Model.BirthDate" ValueChanged="@(d => Model.BirthDate = d)" Label="@T("Birth date")" Max="DateOnly.FromDateTime(DateTime.Today)" />
+        <MudSelect T="AgeEstimationMethod?" @bind-Value="Model.BirthDateMethod" For="@(() => Model.BirthDateMethod)" Label="@T("Birth date is")" Clearable="true"
                    ToStringFunc="@(m => m is null ? "" : EnumText.Humanize(m.Value))">
             @foreach (var m in Enum.GetValues<AgeEstimationMethod>())
             {
@@ -48,7 +48,7 @@
             }
         </MudSelect>
     </MudStack>
-    <MudTextField @bind-Value="Model.Remarks" For="@(() => Model.Remarks)" Label="Remarks" Lines="2" />
+    <MudTextField @bind-Value="Model.Remarks" For="@(() => Model.Remarks)" Label="@T("Remarks")" Lines="2" />
 </MudStack>
 
 @code {

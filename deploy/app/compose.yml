@@ -25,6 +25,7 @@ services:
       Push__PublicKey: ${PUSH_PUBLIC_KEY:-}
       Push__PrivateKey: ${PUSH_PRIVATE_KEY:-}
       Push__Subject: ${PUSH_SUBJECT:-mailto:admin@felcra.local}
+      Geocoding__Email: ${GEOCODING_EMAIL:-}
     volumes:
       - appdata:/app/data
     networks:

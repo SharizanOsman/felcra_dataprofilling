@@ -8,31 +8,31 @@
 @inject AuthClient Auth
 @inject ISnackbar Snackbar
 
-<PageTitle>Sync — FELCRA Field</PageTitle>
+<PageTitle>@T("Sync — FELCRA Field")</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
     <SyncIndicator />
     <div>
-        <MudText Typo="Typo.h6">@(Sync.IsOnline ? "Online" : "Offline")</MudText>
+        <MudText Typo="Typo.h6">@(Sync.IsOnline ? T("Online") : T("Offline"))</MudText>
         <MudText Typo="Typo.caption">
-            @Sync.AnimalCount animals on this phone · @(Sync.LastSyncedAt is { } last ? $"last synced {last.ToLocalTime():dd MMM HH:mm}" : "not synced yet")
+            @T("{0} animals on this phone", Sync.AnimalCount) · @(Sync.LastSyncedAt is { } last ? T("last synced {0:dd MMM HH:mm}", last.ToLocalTime()) : T("not synced yet"))
         </MudText>
     </div>
     <MudSpacer />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" OnClick="Sync.SyncNowAsync"
-               Disabled="@(!Sync.IsOnline || Sync.IsSyncing)">Sync now</MudButton>
+               Disabled="@(!Sync.IsOnline || Sync.IsSyncing)">@T("Sync now")</MudButton>
 </MudStack>
 
 @if (_items.Count == 0)
 {
-    <MudAlert Severity="Severity.Success">Everything recorded on this phone has been sent.</MudAlert>
+    <MudAlert Severity="Severity.Success">@T("Everything recorded on this phone has been sent.")</MudAlert>
 }
 else
 {
     @if (_items.Any(i => i.Error is not null))
     {
         <MudAlert Severity="Severity.Error" Class="mb-2" Dense="true">
-            The server did not accept some records. Check the reason; retry if it was fixed (e.g. the animal is active again) or discard.
+            @T("The server did not accept some records. Check the reason; retry if it was fixed (e.g. the animal is active again) or discard.")
         </MudAlert>
     }
     <MudList T="string">
@@ -43,7 +43,7 @@ else
                     <div style="flex:1">
                         <MudText Typo="Typo.body1"><strong>@item.Summary</strong></MudText>
                         <MudText Typo="Typo.caption" Style="display:block">
-                            @AnimalLabel(item.AnimalId) · @item.Date.ToString("dd MMM yyyy") · saved @item.QueuedAt.ToLocalTime().ToString("dd MMM HH:mm")
+                            @AnimalLabel(item.AnimalId) · @item.Date.ToString("dd MMM yyyy") · @T("saved {0:dd MMM HH:mm}", item.QueuedAt.ToLocalTime())
                         </MudText>
                         @if (item.Error is not null)
                         {
@@ -51,13 +51,13 @@ else
                         }
                         else
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Warning">Waiting to send@(item.Attempts > 0 ? $" ({item.Attempts} attempt{(item.Attempts > 1 ? "s" : "")})" : "")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Warning">@T("Waiting to send")@(item.Attempts > 0 ? " " + T(item.Attempts > 1 ? "({0} attempts)" : "({0} attempt)", item.Attempts) : "")</MudText>
                         }
                     </div>
                     @if (item.Error is not null)
                     {
-                        <MudIconButton Icon="@Icons.Material.Filled.Replay" OnClick="() => Sync.RetryAsync(item)" aria-label="Retry" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DiscardAsync(item)" aria-label="Discard" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Replay" OnClick="() => Sync.RetryAsync(item)" aria-label="@T("Retry")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DiscardAsync(item)" aria-label="@T("Discard")" />
                     }
                 </MudStack>
             </MudListItem>
@@ -73,12 +73,12 @@ else
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
         <MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
         <div style="flex:1">
-            <MudText Typo="Typo.subtitle2">Account</MudText>
+            <MudText Typo="Typo.subtitle2">@T("Account")</MudText>
             <AuthorizeView>
-                <MudText Typo="Typo.caption" Style="display:block">Signed in as @context.User.FindFirst(AppClaimTypes.FullName)?.Value</MudText>
+                <MudText Typo="Typo.caption" Style="display:block">@T("Signed in as {0}", context.User.FindFirst(AppClaimTypes.FullName)?.Value)</MudText>
             </AuthorizeView>
         </div>
-        <MudButton Variant="Variant.Outlined" Disabled="@(!Sync.IsOnline)" OnClick="ChangePasswordAsync">Change password</MudButton>
+        <MudButton Variant="Variant.Outlined" Disabled="@(!Sync.IsOnline)" OnClick="ChangePasswordAsync">@T("Change password")</MudButton>
     </MudStack>
 </MudPaper>
 
@@ -88,7 +88,7 @@ else
     private async Task ChangePasswordAsync()
     {
         if (await Dialogs.ChangePasswordAsync(Api, Auth))
-            Snackbar.Add("Password changed. Other devices signed in as you have been signed out.", Severity.Success);
+            Snackbar.Add(T("Password changed. Other devices signed in as you have been signed out."), Severity.Success);
     }
     private Dictionary<Guid, SyncAnimalDto> _animals = [];
 
@@ -105,12 +105,12 @@ else
     }
 
     private string AnimalLabel(Guid id) =>
-        _animals.TryGetValue(id, out var a) ? $"{(a.TagNumber is null ? "No tag" : $"Tag {a.TagNumber}")} · {a.AnimalNo}" : "Unknown animal";
+        _animals.TryGetValue(id, out var a) ? $"{(a.TagNumber is null ? T("No tag") : T("Tag {0}", a.TagNumber))} · {a.AnimalNo}" : T("Unknown animal");
 
     private async Task DiscardAsync(OutboxItem item)
     {
-        if (await Dialogs.ShowMessageBoxAsync("Discard record", $"Discard \"{item.Summary}\"? It has not been saved on the server.",
-                yesText: "Discard", cancelText: "Keep") == true)
+        if (await Dialogs.ShowMessageBoxAsync(T("Discard record"), T("Discard \"{0}\"? It has not been saved on the server.", item.Summary),
+                yesText: T("Discard"), cancelText: T("Keep")) == true)
             await Sync.DiscardAsync(item);
     }
 

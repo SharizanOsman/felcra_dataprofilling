@@ -107,14 +107,15 @@ public static class ReproductionCalculator
     {
         var reasons = new List<string>();
         if (ageMonths is { } months && months >= options.CullAgeYears * 12)
-            reasons.Add($"Aged {months / 12} years (≥ {options.CullAgeYears})");
+            reasons.Add(T("Aged {0} years (≥ {1})", months / 12, options.CullAgeYears));
         if (status.State != ReproductiveState.Pregnant && status.LastCalving is { } calved
             && today.DayNumber - calved.DayNumber > options.CullOpenDays)
-            reasons.Add($"Not pregnant {WholeMonths(calved, today)} months after last calving");
+            reasons.Add(T("Not pregnant {0} months after last calving", WholeMonths(calved, today)));
         if (status.ConsecutiveOpenChecks >= options.CullConsecutiveOpenChecks)
-            reasons.Add($"Empty at {status.ConsecutiveOpenChecks} pregnancy checks in a row");
+            reasons.Add(T("Empty at {0} pregnancy checks in a row", status.ConsecutiveOpenChecks));
         if (latestBcs is { } bcs && bcs < options.LowBcs)
-            reasons.Add($"Low body condition (BCS {bcs:0.#})");
+            reasons.Add(T("Low body condition (BCS {0:0.#})", bcs));
+
         return reasons;
     }
 

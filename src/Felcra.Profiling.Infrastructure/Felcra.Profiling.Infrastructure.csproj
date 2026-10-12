@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Felcra.Profiling.Application\Felcra.Profiling.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- T("…"): text in the user's language (see Felcra.Profiling.Localization). -->
+    <Using Include="Felcra.Profiling.Localization.Text" Static="true" />
+  </ItemGroup>
 </Project>

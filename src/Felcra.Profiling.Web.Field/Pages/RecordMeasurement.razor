@@ -24,7 +24,7 @@ else
                              HideSpinButtons="true" AutoFocus="true" Style="font-size:1.6rem" HelperText="@ValueHelp" />
             @if (_model.Type == MeasurementType.Weight)
             {
-                <MudSelect T="WeighingMethod?" @bind-Value="_model.Method" Label="Method" Variant="Variant.Outlined"
+                <MudSelect T="WeighingMethod?" @bind-Value="_model.Method" Label="@T("Method")" Variant="Variant.Outlined"
                            ToStringFunc="@(m => m is null ? "" : EnumText.Humanize(m.Value))">
                     @foreach (var m in Enum.GetValues<WeighingMethod>())
                     {
@@ -32,15 +32,15 @@ else
                     }
                 </MudSelect>
             }
-            <DateField Value="_model.MeasuredOn" ValueChanged="@(d => _model.MeasuredOn = d ?? _model.MeasuredOn)" Label="Date"
+            <DateField Value="_model.MeasuredOn" ValueChanged="@(d => _model.MeasuredOn = d ?? _model.MeasuredOn)" Label="@T("Date")"
                        Clearable="false" Max="DateOnly.FromDateTime(DateTime.Today)" />
-            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="Notes (optional)" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="@T("Notes (optional)")" Variant="Variant.Outlined" />
 
             @if (SaveError is not null) { <MudAlert Severity="Severity.Error" Dense="true">@SaveError</MudAlert> }
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="SubmitAsync"
                        Disabled="@(Saving || Animal.Status != AnimalStatus.Active)" Style="height:56px">
-                @(Saving ? "Saving…" : "Save")
+                @(Saving ? T("Saving…") : T("Save"))
             </MudButton>
         </MudStack>
     </MudForm>
@@ -55,20 +55,20 @@ else
 
     private string Title => _model.Type switch
     {
-        MeasurementType.BodyCondition => "Body condition score",
-        MeasurementType.MilkYield => "Milk yield",
-        _ => "Weight",
+        MeasurementType.BodyCondition => T("Body condition score"),
+        MeasurementType.MilkYield => T("Milk yield"),
+        _ => T("Weight"),
     };
 
     private string ValueLabel => _model.Type switch
     {
         MeasurementType.BodyCondition => "BCS",
-        MeasurementType.MilkYield => "Litres today",
-        _ => "Weight (kg)",
+        MeasurementType.MilkYield => T("Litres today"),
+        _ => T("Weight (kg)"),
     };
 
     // FELCRA has not yet confirmed the BCS scale (URS open question 1).
-    private string? ValueHelp => _model.Type == MeasurementType.BodyCondition ? "Score in half steps, e.g. 3 or 3.5" : null;
+    private string? ValueHelp => _model.Type == MeasurementType.BodyCondition ? T("Score in half steps, e.g. 3 or 3.5") : null;
 
     protected override Task OnAnimalLoadedAsync()
     {

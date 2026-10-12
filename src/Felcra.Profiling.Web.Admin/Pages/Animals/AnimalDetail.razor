@@ -5,17 +5,17 @@
 
 <MudBreadcrumbs Items="_breadcrumbs" Class="px-0 pt-0" />
 
-<PageHeader Title="@(_animal is null ? "Animal" : $"{_animal.AnimalNo}{(_animal.TagNumber is null ? "" : $" · tag {_animal.TagNumber}")}")"
+<PageHeader Title="@(_animal is null ? T("Animal") : _animal.AnimalNo + (_animal.TagNumber is null ? "" : " · " + T("tag {0}", _animal.TagNumber)))"
             Subtitle="@(_animal is null ? null : $"{AnimalText.Category(_animal.Category)} · {_animal.FarmCode}")" Error="@LoadError">
     <Actions>
         @if (_animal is not null)
         {
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditAsync">Edit</MudButton>
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Sell" OnClick="RetagAsync">Change tag</MudButton>
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="ChangeStatusAsync">Change status</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditAsync">@T("Edit")</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Sell" OnClick="RetagAsync">@T("Change tag")</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="ChangeStatusAsync">@T("Change status")</MudButton>
             @if (IsHq)
             {
-                <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteAsync">Delete</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteAsync">@T("Delete")</MudButton>
             }
         }
     </Actions>
@@ -25,47 +25,47 @@
 {
     @if (_breeding?.CullingReasons is { Count: > 0 } cullReasons)
     {
-        <MudAlert Severity="Severity.Warning" Class="mb-4">Culling candidate: @string.Join("; ", cullReasons)</MudAlert>
+        <MudAlert Severity="Severity.Warning" Class="mb-4">@T("Culling candidate: {0}", string.Join("; ", cullReasons))</MudAlert>
     }
     @if (_animal.DuplicateTagAnimalIds.Count > 0)
     {
         <MudAlert Severity="Severity.Warning" Class="mb-4">
-            Tag @_animal.TagNumber is also used by @_animal.DuplicateTagAnimalIds.Count other active animal(s) on this farm:
+            @T("Tag {0} is also used by {1} other active animal(s) on this farm:", _animal.TagNumber, _animal.DuplicateTagAnimalIds.Count)
             @foreach (var id in _animal.DuplicateTagAnimalIds)
             {
-                <MudLink Href="@($"animals/{id}")" Class="ml-2">open</MudLink>
+                <MudLink Href="@($"animals/{id}")" Class="ml-2">@T("open")</MudLink>
             }
-            . Use <strong>Change tag</strong> to give each animal a unique tag.
+            . @((MarkupString)T("Use {0} to give each animal a unique tag.", $"<strong>{T("Change tag")}</strong>"))
         </MudAlert>
     }
 
     <MudGrid>
         <MudItem xs="12" md="8">
             <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Profile</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@T("Profile")</MudText>
                 <MudSimpleTable Dense="true" Elevation="0">
                     <tbody>
-                        <tr><td style="width:180px">Status</td><td>
+                        <tr><td style="width:180px">@T("Status")</td><td>
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@AnimalText.StatusColor(_animal.Status)">@AnimalText.Status(_animal.Status)</MudChip>
-                            @if (_animal.StatusDate is not null) { <span>since @_animal.StatusDate?.ToString("dd MMM yyyy")</span> }
+                            @if (_animal.StatusDate is not null) { <span>@T("since {0:dd MMM yyyy}", _animal.StatusDate)</span> }
                             @if (_animal.StatusReason is not null) { <span> — @_animal.StatusReason</span> }
                         </td></tr>
-                        <tr><td>Ear tag</td><td><TagLabel Tag="@_animal.TagNumber" Duplicate="_animal.DuplicateTagAnimalIds.Count > 0" /></td></tr>
-                        <tr><td>Category / sex</td><td>@AnimalText.Category(_animal.Category) · @_animal.Sex</td></tr>
-                        <tr><td>Breed</td><td>@_lookups.BreedName(_animal.BreedId)</td></tr>
-                        <tr><td>Birth date</td><td>
+                        <tr><td>@T("Ear tag")</td><td><TagLabel Tag="@_animal.TagNumber" Duplicate="_animal.DuplicateTagAnimalIds.Count > 0" /></td></tr>
+                        <tr><td>@T("Category / sex")</td><td>@AnimalText.Category(_animal.Category) · @EnumText.Humanize(_animal.Sex)</td></tr>
+                        <tr><td>@T("Breed")</td><td>@_lookups.BreedName(_animal.BreedId)</td></tr>
+                        <tr><td>@T("Birth date")</td><td>
                             @_animal.BirthDate?.ToString("dd MMM yyyy")
                             @if (_animal.BirthDate is not null)
                             {
                                 <span>&nbsp;(@AnimalText.Age(_animal.BirthDate, _animal.BirthDateMethod, _today); @EnumText.Humanize(_animal.BirthDateMethod ?? AgeEstimationMethod.OwnerEstimate))</span>
                             }
                         </td></tr>
-                        <tr><td>Farm</td><td>@_animal.FarmCode</td></tr>
-                        <tr><td>Project</td><td>@_lookups.ProjectCode(_animal.ProjectId)</td></tr>
-                        <tr><td>Group / pen</td><td>@_lookups.GroupName(_animal.FarmId, _animal.HerdGroupId)</td></tr>
-                        <tr><td>Dam</td><td>@if (_animal.DamId is { } dam) { <MudLink Href="@($"animals/{dam}")">@_animal.DamLabel</MudLink> }</td></tr>
-                        <tr><td>Sire</td><td>@if (_animal.SireId is { } sire) { <MudLink Href="@($"animals/{sire}")">@_animal.SireLabel</MudLink> }</td></tr>
-                        <tr><td>Remarks</td><td>@_animal.Remarks</td></tr>
+                        <tr><td>@T("Farm")</td><td>@_animal.FarmCode</td></tr>
+                        <tr><td>@T("Project")</td><td>@_lookups.ProjectCode(_animal.ProjectId)</td></tr>
+                        <tr><td>@T("Group / pen")</td><td>@_lookups.GroupName(_animal.FarmId, _animal.HerdGroupId)</td></tr>
+                        <tr><td>@T("Dam")</td><td>@if (_animal.DamId is { } dam) { <MudLink Href="@($"animals/{dam}")">@_animal.DamLabel</MudLink> }</td></tr>
+                        <tr><td>@T("Sire")</td><td>@if (_animal.SireId is { } sire) { <MudLink Href="@($"animals/{sire}")">@_animal.SireLabel</MudLink> }</td></tr>
+                        <tr><td>@T("Remarks")</td><td>@_animal.Remarks</td></tr>
                     </tbody>
                 </MudSimpleTable>
             </MudPaper>
@@ -73,10 +73,10 @@
 
         <MudItem xs="12" md="4">
             <MudPaper Class="pa-4 d-flex flex-column align-center" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">QR label</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@T("QR label")</MudText>
                 <AnimalQrCode AnimalId="_animal.Id" Size="160" />
                 <MudText Typo="Typo.subtitle2" Class="mt-2">@_animal.AnimalNo</MudText>
-                <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Print" Href="@($"animals/labels?ids={_animal.Id}")">Print label</MudButton>
+                <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Print" Href="@($"animals/labels?ids={_animal.Id}")">@T("Print label")</MudButton>
             </MudPaper>
         </MudItem>
 
@@ -84,11 +84,11 @@
         {
             <MudItem xs="12">
                 <MudPaper Class="pa-4" Elevation="1">
-                    <MudText Typo="Typo.h6" GutterBottom="true">Field records</MudText>
+                    <MudText Typo="Typo.h6" GutterBottom="true">@T("Field records")</MudText>
                     <MudTabs Elevation="0" Rounded="true" TabPanelsClass="pt-2">
-                        <MudTabPanel Text="@($"Measurements ({_records.Measurements.Count})")">
+                        <MudTabPanel Text="@T("Measurements ({0})", _records.Measurements.Count)">
                             <MudSimpleTable Dense="true" Elevation="0">
-                                <thead><tr><th>Date</th><th>Measurement</th><th>Method</th><th>Notes</th><th>Recorded by</th><th></th></tr></thead>
+                                <thead><tr><th>@T("Date")</th><th>@T("Measurement")</th><th>@T("Method")</th><th>@T("Notes")</th><th>@T("Recorded by")</th><th></th></tr></thead>
                                 <tbody>
                                     @foreach (var m in _records.Measurements)
                                     {
@@ -99,15 +99,15 @@
                                             <td>@m.Notes</td>
                                             <td>@m.RecordedBy</td>
                                             <td style="text-align:right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
-                                                OnClick="@(() => DeleteRecordAsync($"api/measurements/{m.Id}", MeasurementText(m)))" aria-label="Delete" /></td>
+                                                OnClick="@(() => DeleteRecordAsync($"api/measurements/{m.Id}", MeasurementText(m)))" aria-label="@T("Delete")" /></td>
                                         </tr>
                                     }
                                 </tbody>
                             </MudSimpleTable>
                         </MudTabPanel>
-                        <MudTabPanel Text="@($"Treatments ({_records.Treatments.Count})")">
+                        <MudTabPanel Text="@T("Treatments ({0})", _records.Treatments.Count)">
                             <MudSimpleTable Dense="true" Elevation="0">
-                                <thead><tr><th>Date</th><th>Treatment</th><th>Dose</th><th>Batch</th><th>Next due</th><th>Withdrawal until</th><th>Recorded by</th><th></th></tr></thead>
+                                <thead><tr><th>@T("Date")</th><th>@T("Treatment")</th><th>@T("Dose")</th><th>@T("Batch")</th><th>@T("Next due")</th><th>@T("Withdrawal until")</th><th>@T("Recorded by")</th><th></th></tr></thead>
                                 <tbody>
                                     @foreach (var t in _records.Treatments)
                                     {
@@ -120,7 +120,7 @@
                                             <td>@t.WithdrawalUntil?.ToString("dd MMM yyyy")</td>
                                             <td>@t.RecordedBy</td>
                                             <td style="text-align:right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
-                                                OnClick="@(() => DeleteRecordAsync($"api/treatment-records/{t.Id}", t.ProductName))" aria-label="Delete" /></td>
+                                                OnClick="@(() => DeleteRecordAsync($"api/treatment-records/{t.Id}", t.ProductName))" aria-label="@T("Delete")" /></td>
                                         </tr>
                                     }
                                 </tbody>
@@ -128,21 +128,21 @@
                         </MudTabPanel>
                         @if (_breeding is not null)
                         {
-                            <MudTabPanel Text="@($"Breeding ({_breeding.Events.Count})")">
+                            <MudTabPanel Text="@T("Breeding ({0})", _breeding.Events.Count)">
                                 @if (_breeding.Reproduction is { } r)
                                 {
                                     <MudStack Row="true" Spacing="4" Wrap="Wrap.Wrap" Class="mb-3">
                                         <MudChip T="string" Color="@BreedingText.StateColor(r.State)" Variant="Variant.Outlined">
-                                            @(BreedingText.Status(r.State, r.ExpectedCalving, r.PregnancyCheckDue) ?? "No breeding records")
+                                            @(BreedingText.Status(r.State, r.ExpectedCalving, r.PregnancyCheckDue) ?? T("No breeding records"))
                                         </MudChip>
-                                        <MudText Typo="Typo.body2">Calvings: <strong>@r.CalvingCount</strong></MudText>
-                                        @if (r.LastCalving is { } lc) { <MudText Typo="Typo.body2">Last calving: <strong>@lc.ToString("dd MMM yyyy")</strong></MudText> }
-                                        @if (r.CalvingIntervalDays is { } ci) { <MudText Typo="Typo.body2">Calving interval: <strong>@ci days</strong></MudText> }
-                                        @if (r.DaysOpen is { } open) { <MudText Typo="Typo.body2">Days open: <strong>@open</strong></MudText> }
+                                        <MudText Typo="Typo.body2">@T("Calvings:") <strong>@r.CalvingCount</strong></MudText>
+                                        @if (r.LastCalving is { } lc) { <MudText Typo="Typo.body2">@T("Last calving:") <strong>@lc.ToString("dd MMM yyyy")</strong></MudText> }
+                                        @if (r.CalvingIntervalDays is { } ci) { <MudText Typo="Typo.body2">@T("Calving interval:") <strong>@T("{0} days", ci)</strong></MudText> }
+                                        @if (r.DaysOpen is { } open) { <MudText Typo="Typo.body2">@T("Days open:") <strong>@open</strong></MudText> }
                                     </MudStack>
                                 }
                                 <MudSimpleTable Dense="true" Elevation="0">
-                                    <thead><tr><th>Date</th><th>Event</th><th>Bull / semen</th><th>Calves</th><th>Notes</th><th>Recorded by</th><th></th></tr></thead>
+                                    <thead><tr><th>@T("Date")</th><th>@T("Event")</th><th>@T("Bull / semen")</th><th>@T("Calves")</th><th>@T("Notes")</th><th>@T("Recorded by")</th><th></th></tr></thead>
                                     <tbody>
                                         @foreach (var e in _breeding.Events)
                                         {
@@ -159,26 +159,26 @@
                                                 <td>@e.Notes</td>
                                                 <td>@e.RecordedBy</td>
                                                 <td style="text-align:right"><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
-                                                    OnClick="@(() => DeleteRecordAsync($"api/breeding-events/{e.Id}", BreedingText.Summary(e)))" aria-label="Delete" /></td>
+                                                    OnClick="@(() => DeleteRecordAsync($"api/breeding-events/{e.Id}", BreedingText.Summary(e)))" aria-label="@T("Delete")" /></td>
                                             </tr>
                                         }
                                     </tbody>
                                 </MudSimpleTable>
                                 @if (_breeding.Offspring.Count > 0)
                                 {
-                                    <MudText Typo="Typo.subtitle2" Class="mt-3">Offspring</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mt-3">@T("Offspring")</MudText>
                                     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                                         @foreach (var o in _breeding.Offspring)
                                         {
                                             <MudChip T="string" Href="@($"animals/{o.Id}")" Variant="Variant.Outlined">
-                                                @o.AnimalNo · @(o.TagNumber ?? "no tag") · @o.Sex · @o.BirthDate?.ToString("dd MMM yyyy")
+                                                @o.AnimalNo · @(o.TagNumber ?? T("no tag")) · @EnumText.Humanize(o.Sex) · @o.BirthDate?.ToString("dd MMM yyyy")
                                             </MudChip>
                                         }
                                     </MudStack>
                                 }
                             </MudTabPanel>
                         }
-                        <MudTabPanel Text="@($"Observations ({_records.Observations.Count})")">
+                        <MudTabPanel Text="@T("Observations ({0})", _records.Observations.Count)">
                             @foreach (var o in _records.Observations)
                             {
                                 <MudStack Row="true" AlignItems="AlignItems.Start" Class="py-2" Style="border-bottom:1px solid var(--mud-palette-lines-default)">
@@ -193,7 +193,7 @@
                                         </MudStack>
                                     </div>
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(() => DeleteRecordAsync($"api/observations/{o.Id}", "this observation"))" aria-label="Delete" />
+                                                   OnClick="@(() => DeleteRecordAsync($"api/observations/{o.Id}", T("this observation")))" aria-label="@T("Delete")" />
                                 </MudStack>
                             }
                         </MudTabPanel>
@@ -204,9 +204,9 @@
 
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Census history</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@T("Census history")</MudText>
                 <MudSimpleTable Dense="true" Elevation="0">
-                    <thead><tr><th>Session</th><th>Category</th><th style="text-align:right">Weight</th><th>BCS</th><th>Selected</th></tr></thead>
+                    <thead><tr><th>@T("Session")</th><th>@T("Category")</th><th style="text-align:right">@T("Weight")</th><th>BCS</th><th>@T("Selected")</th></tr></thead>
                     <tbody>
                         @foreach (var c in _animal.CensusHistory)
                         {
@@ -215,10 +215,10 @@
                                 <td>@AnimalText.Category(c.Category)</td>
                                 <td style="text-align:right">@AnimalText.Weight(c.WeightKg)</td>
                                 <td>@c.BodyConditionScore</td>
-                                <td>@(c.Selected ? "Yes" : "")</td>
+                                <td>@(c.Selected ? T("Yes") : "")</td>
                             </tr>
                         }
-                        @if (_animal.CensusHistory.Count == 0) { <tr><td colspan="5">Not yet counted in a census.</td></tr> }
+                        @if (_animal.CensusHistory.Count == 0) { <tr><td colspan="5">@T("Not yet counted in a census.")</td></tr> }
                     </tbody>
                 </MudSimpleTable>
             </MudPaper>
@@ -226,15 +226,15 @@
 
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Tag history</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@T("Tag history")</MudText>
                 <MudSimpleTable Dense="true" Elevation="0">
-                    <thead><tr><th>Tag</th><th>From</th><th>Until</th><th>Reason</th></tr></thead>
+                    <thead><tr><th>@T("Tag")</th><th>@T("From")</th><th>@T("Until")</th><th>@T("Reason")</th></tr></thead>
                     <tbody>
                         @foreach (var t in _animal.TagHistory)
                         {
                             <tr><td>@t.TagNumber</td><td>@t.AssignedOn.ToString("dd MMM yyyy")</td><td>@t.RemovedOn?.ToString("dd MMM yyyy")</td><td>@t.Reason</td></tr>
                         }
-                        @if (_animal.TagHistory.Count == 0) { <tr><td colspan="4">Never tagged.</td></tr> }
+                        @if (_animal.TagHistory.Count == 0) { <tr><td colspan="4">@T("Never tagged.")</td></tr> }
                     </tbody>
                 </MudSimpleTable>
             </MudPaper>
@@ -252,18 +252,18 @@
 
     private static string MeasurementText(MeasurementDto m) => m.Type switch
     {
-        MeasurementType.Weight => $"Weight {m.Value:0.#} kg",
-        MeasurementType.BodyCondition => $"BCS {m.Value:0.#}",
-        MeasurementType.MilkYield => $"Milk {m.Value:0.#} L",
+        MeasurementType.Weight => T("Weight {0:0.#} kg", m.Value),
+        MeasurementType.BodyCondition => T("BCS {0:0.#}", m.Value),
+        MeasurementType.MilkYield => T("Milk {0:0.#} L", m.Value),
         _ => m.Value.ToString(),
     };
 
     private async Task DeleteRecordAsync(string url, string what)
     {
         if (await Dialogs.ConfirmDeleteAsync(what))
-            await NotifyAsync(await Api.DeleteAsync(url), "Record deleted.");
+            await NotifyAsync(await Api.DeleteAsync(url), T("Record deleted."));
     }
-    private List<BreadcrumbItem> _breadcrumbs = [new("Animals", "animals")];
+    private List<BreadcrumbItem> _breadcrumbs = [new(T("Animals"), "animals")];
     private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
 
     private static readonly Func<object, string, Task<IEnumerable<string>>> ValidateAnimal = FormValidation.For(new AnimalRequestValidator());
@@ -276,49 +276,50 @@
         _animal = await Api.GetAsync<AnimalDto>($"api/animals/{Id}");
         _records = await Api.GetAsync<AnimalRecordsDto>($"api/animals/{Id}/records");
         _breeding = await Api.GetAsync<AnimalBreedingDto>($"api/animals/{Id}/breeding");
-        _breadcrumbs =[new("Animals", "animals"), new(_animal.AnimalNo, null, disabled: true)];
+        _breadcrumbs = [new(T("Animals"), "animals"), new(_animal.AnimalNo, null, disabled: true)];
     }
 
     private async Task EditAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"Edit {_animal!.AnimalNo}", AnimalRequest.From(_animal),
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Edit {0}", _animal!.AnimalNo), AnimalRequest.From(_animal),
             m => @<AnimalFields Model="m" Lookups="_lookups!" />,
-            m => Api.PutAsync<AnimalDto>($"api/animals/{Id}", m), ValidateAnimal), "Animal updated.");
+            m => Api.PutAsync<AnimalDto>($"api/animals/{Id}", m), ValidateAnimal), T("Animal updated."));
 
     private async Task RetagAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Change ear tag", new RetagRequest { TagNumber = _animal!.TagNumber, Version = _animal.Version },
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Change ear tag"), new RetagRequest { TagNumber = _animal!.TagNumber, Version = _animal.Version },
             m => @<MudStack Spacing="2">
-                <MudTextField @bind-Value="m.TagNumber" For="@(() => m.TagNumber)" Label="New tag number"
-                              HelperText="Leave empty if the tag was lost and not replaced." />
-                <DateField Value="m.Date" ValueChanged="@(d => m.Date = d ?? m.Date)" Label="Date" Clearable="false" Max="_today" />
-                <MudTextField @bind-Value="m.Reason" For="@(() => m.Reason)" Label="Reason" HelperText="e.g. Tag lost, Duplicate tag corrected" />
+                <MudTextField @bind-Value="m.TagNumber" For="@(() => m.TagNumber)" Label="@T("New tag number")"
+                              HelperText="@T("Leave empty if the tag was lost and not replaced.")" />
+                <DateField Value="m.Date" ValueChanged="@(d => m.Date = d ?? m.Date)" Label="@T("Date")" Clearable="false" Max="_today" />
+                <MudTextField @bind-Value="m.Reason" For="@(() => m.Reason)" Label="@T("Reason")" HelperText="@T("e.g. Tag lost, Duplicate tag corrected")" />
             </MudStack>,
-            m => Api.PostAsync<AnimalDto>($"api/animals/{Id}/retag", m), ValidateRetag), "Tag changed.");
+            m => Api.PostAsync<AnimalDto>($"api/animals/{Id}/retag", m), ValidateRetag), T("Tag changed."));
 
     private async Task ChangeStatusAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Change status",
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Change status"),
             new ChangeStatusRequest { Status = _animal!.Status == AnimalStatus.Active ? AnimalStatus.Sold : AnimalStatus.Active, Version = _animal.Version },
             m => @<MudStack Spacing="2">
-                <MudSelect @bind-Value="m.Status" For="@(() => m.Status)" Label="Status">
+                <MudSelect @bind-Value="m.Status" For="@(() => m.Status)" Label="@T("Status")">
                     @foreach (var s in Enum.GetValues<AnimalStatus>())
                     {
                         <MudSelectItem Value="s">@AnimalText.Status(s)</MudSelectItem>
                     }
                 </MudSelect>
-                <DateField Value="m.Date" ValueChanged="@(d => m.Date = d)" Label="Date" Max="_today" />
-                <MudTextField @bind-Value="m.Reason" For="@(() => m.Reason)" Label="Reason" Lines="2"
-                              HelperText="Required for deaths and culling, e.g. 'Not pregnant for 18 months'." />
+                <DateField Value="m.Date" ValueChanged="@(d => m.Date = d)" Label="@T("Date")" Max="_today" />
+                <MudTextField @bind-Value="m.Reason" For="@(() => m.Reason)" Label="@T("Reason")" Lines="2"
+                              HelperText="@T("Required for deaths and culling, e.g. 'Not pregnant for 18 months'.")" />
             </MudStack>,
-            m => Api.PostAsync<AnimalDto>($"api/animals/{Id}/status", m), ValidateStatus), "Status changed.");
+            m => Api.PostAsync<AnimalDto>($"api/animals/{Id}/status", m), ValidateStatus), T("Status changed."));
 
     private async Task DeleteAsync()
     {
-        if (!await Dialogs.ConfirmDeleteAsync($"animal {_animal!.AnimalNo} and its census entries")) return;
+        if (!await Dialogs.ConfirmDeleteAsync(T("animal {0} and its census entries", _animal!.AnimalNo))) return;
         var result = await Api.DeleteAsync($"api/animals/{Id}");
         if (result.Succeeded)
         {
-            Snackbar.Add("Animal deleted.", Severity.Success);
+            Snackbar.Add(T("Animal deleted."), Severity.Success);
             Navigation.NavigateTo("animals");
         }
-        else Snackbar.Add(result.FullError ?? "Delete failed.", Severity.Error);
+        else Snackbar.Add(result.FullError ?? T("Delete failed."), Severity.Error);
+
     }
 }

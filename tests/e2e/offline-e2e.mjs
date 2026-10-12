@@ -1,6 +1,7 @@
 // Step 5 end-to-end: field app working with no connection (published build, service worker active).
 // The browser is taken offline with Playwright; the server is checked directly from Node.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -31,7 +32,7 @@ for (const a of [target, ...batch, toReject]) {
 }
 
 // ---- Browser --------------------------------------------------------------------------------------
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const context = await browser.newContext({ viewport: { width: 400, height: 820 }, isMobile: true, hasTouch: true });
 const page = await context.newPage();
 page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED|Failed to fetch/.test(m.text())) errors.push(m.text()); });

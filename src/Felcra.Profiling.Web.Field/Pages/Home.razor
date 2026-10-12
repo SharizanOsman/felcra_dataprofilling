@@ -5,19 +5,19 @@
 @inject SyncService Sync
 @inject FieldData Data
 
-<PageTitle>FELCRA Field</PageTitle>
+<PageTitle>@T("FELCRA Field")</PageTitle>
 
 <AuthorizeView>
-    <MudText Typo="Typo.h6" Class="mb-3">Hello, @context.User.FindFirst(AppClaimTypes.FullName)?.Value</MudText>
+    <MudText Typo="Typo.h6" Class="mb-3">@T("Hello, {0}", context.User.FindFirst(AppClaimTypes.FullName)?.Value)</MudText>
 </AuthorizeView>
 
 <MudStack Spacing="3">
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" Href="scan"
-               StartIcon="@Icons.Material.Filled.QrCodeScanner" Style="height:72px;font-size:1.1rem">Scan ear tag</MudButton>
+               StartIcon="@Icons.Material.Filled.QrCodeScanner" Style="height:72px;font-size:1.1rem">@T("Scan ear tag")</MudButton>
     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" Href="find"
-               StartIcon="@Icons.Material.Filled.Search" Style="height:56px">Find by tag number</MudButton>
+               StartIcon="@Icons.Material.Filled.Search" Style="height:56px">@T("Find by tag number")</MudButton>
     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" Href="ration"
-               StartIcon="@Icons.Material.Filled.Grass" Style="height:56px">Ration planner</MudButton>
+               StartIcon="@Icons.Material.Filled.Grass" Style="height:56px">@T("Ration planner")</MudButton>
 </MudStack>
 
 <MudPaper Class="pa-3 mt-4" Elevation="0" Outlined="true">
@@ -27,27 +27,27 @@
             <MudText Typo="Typo.body2">
                 @if (Sync.AnimalCount == 0)
                 {
-                    <span>@(Sync.IsOnline ? "Downloading your farm's animals…" : "Connect to the internet once to download your farm's animals.")</span>
+                    <span>@(Sync.IsOnline ? T("Downloading your farm's animals…") : T("Connect to the internet once to download your farm's animals."))</span>
                 }
                 else
                 {
-                    <span>@Sync.AnimalCount animals on this phone</span>
+                    <span>@T("{0} animals on this phone", Sync.AnimalCount)</span>
                 }
             </MudText>
             <MudText Typo="Typo.caption">
-                @(Sync.LastSyncedAt is { } last ? $"Last synced {last.ToLocalTime():dd MMM HH:mm}" : "Not synced yet")
-                @if (Sync.PendingCount > 0) { <span> · @Sync.PendingCount waiting to send</span> }
-                @if (Sync.FailedCount > 0) { <span style="color:var(--mud-palette-error)"> · @Sync.FailedCount not accepted</span> }
+                @(Sync.LastSyncedAt is { } last ? T("Last synced {0:dd MMM HH:mm}", last.ToLocalTime()) : T("Not synced yet"))
+                @if (Sync.PendingCount > 0) { <span> · @T("{0} waiting to send", Sync.PendingCount)</span> }
+                @if (Sync.FailedCount > 0) { <span style="color:var(--mud-palette-error)"> · @T("{0} not accepted", Sync.FailedCount)</span> }
             </MudText>
         </div>
         <MudSpacer />
-        <MudButton Variant="Variant.Text" Href="sync">Details</MudButton>
+        <MudButton Variant="Variant.Text" Href="sync">@T("Details")</MudButton>
     </MudStack>
 </MudPaper>
 
 @if (_tasks.Count > 0)
 {
-    <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">Tasks (@_tasks.Count)</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">@T("Tasks ({0})", _tasks.Count)</MudText>
     <MudList T="string" Dense="true">
         @foreach (var task in _tasks.Take(_showAllTasks ? _tasks.Count : 6))
         {
@@ -56,28 +56,28 @@
                 <strong>@task.Title</strong>
                 @if (task.IsOverdueOn(_today))
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">overdue</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">@T("overdue")</MudChip>
                 }
                 <MudText Typo="Typo.caption" Style="display:block">
-                    @(task.TagNumber is null ? "No tag" : $"Tag {task.TagNumber}") · @task.AnimalNo · @(task.DueDate == _today ? "today" : task.DueDate.ToString("dd MMM"))
+                    @(task.TagNumber is null ? T("No tag") : T("Tag {0}", task.TagNumber)) · @task.AnimalNo · @(task.DueDate == _today ? T("today") : task.DueDate.ToString("dd MMM"))
                 </MudText>
             </MudListItem>
         }
     </MudList>
     @if (_tasks.Count > 6 && !_showAllTasks)
     {
-        <MudButton Variant="Variant.Text" OnClick="@(() => _showAllTasks = true)">Show all @_tasks.Count tasks</MudButton>
+        <MudButton Variant="Variant.Text" OnClick="@(() => _showAllTasks = true)">@T("Show all {0} tasks", _tasks.Count)</MudButton>
     }
 }
 
 @if (_recent.Count > 0)
 {
-    <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">Recently opened</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mt-5 mb-1">@T("Recently opened")</MudText>
     <MudList T="string" Dense="false">
         @foreach (var a in _recent)
         {
             <MudListItem T="string" Href="@($"a/{a.Id}")" Icon="@Icons.Material.Filled.Pets">
-                <strong>@(a.TagNumber is null ? "No tag" : $"Tag {a.TagNumber}")</strong>
+                <strong>@(a.TagNumber is null ? T("No tag") : T("Tag {0}", a.TagNumber))</strong>
                 <MudText Typo="Typo.caption" Style="display:block">@a.AnimalNo · @a.Category</MudText>
             </MudListItem>
         }

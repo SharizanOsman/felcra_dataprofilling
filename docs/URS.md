@@ -256,7 +256,7 @@ Census mode (fast sequential entry) · Ration view · Sync status.
 | NFR-04 | HTTPS everywhere; passwords hashed; tokens short-lived; role- and farm-based access enforced by the API. |
 | NFR-05 | Daily database backups kept 30 days, with an offsite copy; restore tested before go-live. |
 | NFR-06 | Audit trail retained for at least 7 years **[TBC]**. |
-| NFR-07 | UI in English, structured for adding Bahasa Melayu later. |
+| NFR-07 | UI, messages, reports, e-mails and notifications in Bahasa Melayu (default) and English, switchable by each user. |
 | NFR-08 | Personal data handled in line with PDPA 2010. |
 
 ## 9. Assumptions
@@ -274,7 +274,8 @@ Census mode (fast sequential entry) · Ration view · Sync status.
 4. Source of feed nutrient & price tables (MARDI?).
 5. Exact criteria for "selected" animals, to be turned into system rules.
 6. Initial number of users and farms (server sizing).
-7. Is a Bahasa Melayu UI needed for field officers at launch?
+7. ~~Is a Bahasa Melayu UI needed for field officers at launch?~~ Done: both apps, reports and messages are in
+   Bahasa Melayu (default) and English. FELCRA to review the Malay wording (`src/Felcra.Profiling.Localization`).
 8. Audit/record retention period required by FELCRA policy.
 9. The Pagoh report's summary table (P 11 / I 61 / AJ 28 / AB 40) does not match its own animal list, which adds up to
    P 13 / I 60 / AJ 31 / AB 36. Which is correct? (The system counts from the animal list.)
@@ -283,8 +284,8 @@ Census mode (fast sequential entry) · Ration view · Sync status.
     next census lets the system match animals automatically.
 12. Monthly report e-mail: FELCRA's SMTP server (host, port, account) and sender address, and whether anyone besides
     HQ admins and farm managers should receive it.
-13. Reports are in English (the original census form is in Malay). Is a Malay version of the census form needed for
-    submission to FFISB / FELCRA?
+13. ~~Reports are in English~~ Reports follow the user's language (Bahasa Melayu or English). Which wording does
+    FFISB / FELCRA expect on the census form submitted to them?
 14. Hosting: which VPS provider and size, the domain names (production and staging), who operates the server
     day to day, where off-site backups should go, and the IT contact for alerts and security reports.
 

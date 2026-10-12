@@ -6,6 +6,7 @@
     <Project Path="src/Felcra.Profiling.Contracts/Felcra.Profiling.Contracts.csproj" />
     <Project Path="src/Felcra.Profiling.Domain/Felcra.Profiling.Domain.csproj" />
     <Project Path="src/Felcra.Profiling.Infrastructure/Felcra.Profiling.Infrastructure.csproj" />
+    <Project Path="src/Felcra.Profiling.Localization/Felcra.Profiling.Localization.csproj" />
     <Project Path="src/Felcra.Profiling.UI.Shared/Felcra.Profiling.UI.Shared.csproj" />
     <Project Path="src/Felcra.Profiling.Web.Admin/Felcra.Profiling.Web.Admin.csproj" />
     <Project Path="src/Felcra.Profiling.Web.Field/Felcra.Profiling.Web.Field.csproj" />
@@ -15,5 +16,6 @@
     <Project Path="tests/Felcra.Profiling.Api.IntegrationTests/Felcra.Profiling.Api.IntegrationTests.csproj" />
     <Project Path="tests/Felcra.Profiling.Application.Tests/Felcra.Profiling.Application.Tests.csproj" />
     <Project Path="tests/Felcra.Profiling.Domain.Tests/Felcra.Profiling.Domain.Tests.csproj" />
+    <Project Path="tests/Felcra.Profiling.Localization.Tests/Felcra.Profiling.Localization.Tests.csproj" />
   </Folder>
 </Solution>

@@ -5,24 +5,24 @@
 
 <MudBreadcrumbs Items="_breadcrumbs" Class="px-0 pt-0" />
 
-<PageHeader Title="@(_session?.Title ?? "Census session")"
-            Subtitle="@(_session is null ? null : $"{_session.FarmCode} · {_session.StartDate:dd MMM yyyy} – {_session.EndDate:dd MMM yyyy}{(_session.IsClosed ? " · Closed" : "")}")"
+<PageHeader Title="@(_session?.Title ?? T("Census session"))"
+            Subtitle="@(_session is null ? null : $"{_session.FarmCode} · {_session.StartDate:dd MMM yyyy} – {_session.EndDate:dd MMM yyyy}{(_session.IsClosed ? " · " + T("Closed") : "")}")"
             Error="@LoadError">
     <Actions>
         @if (_session is not null)
         {
-            <MudMenu Label="Reports" StartIcon="@Icons.Material.Filled.Summarize" EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+            <MudMenu Label="@T("Reports")" StartIcon="@Icons.Material.Filled.Summarize" EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
                      Variant="Variant.Outlined" Disabled="@(Downloading is not null)">
-                <MudMenuItem Icon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/form?format=pdf"))">Census and profiling form (PDF)</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.TableView" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/form?format=xlsx"))">Census sheet (Excel)</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/selected?format=pdf"))">Selected animals (PDF)</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.TableView" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/selected?format=xlsx"))">Selected animals (Excel)</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/form?format=pdf"))">@T("Census and profiling form (PDF)")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.TableView" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/form?format=xlsx"))">@T("Census sheet (Excel)")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.PictureAsPdf" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/selected?format=pdf"))">@T("Selected animals (PDF)")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.TableView" OnClick="@(() => DownloadAsync($"api/reports/census-sessions/{Id}/selected?format=xlsx"))">@T("Selected animals (Excel)")</MudMenuItem>
             </MudMenu>
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditSessionAsync">Edit session</MudButton>
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditSessionAsync">@T("Edit session")</MudButton>
             @if (!_session.IsClosed)
             {
-                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddEntryAsync">Add animal</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="ImportAsync">Import sheet</MudButton>
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddEntryAsync">@T("Add animal")</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="ImportAsync">@T("Import sheet")</MudButton>
             }
         }
     </Actions>
@@ -33,12 +33,12 @@
     <MudGrid Class="mb-2">
         <MudItem xs="12" md="7">
             <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Population</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@T("Population")</MudText>
                 <MudSimpleTable Dense="true" Elevation="0">
-                    <thead><tr><th></th><th style="text-align:right">Bulls (P)</th><th style="text-align:right">Dams (I)</th><th style="text-align:right">Male calves (AJ)</th><th style="text-align:right">Female calves (AB)</th><th style="text-align:right">Total</th></tr></thead>
+                    <thead><tr><th></th><th style="text-align:right">@T("Bulls (P)")</th><th style="text-align:right">@T("Dams (I)")</th><th style="text-align:right">@T("Male calves (AJ)")</th><th style="text-align:right">@T("Female calves (AB)")</th><th style="text-align:right">@T("Total")</th></tr></thead>
                     <tbody>
                         <tr>
-                            <td>On record</td>
+                            <td>@T("On record")</td>
                             <td style="text-align:right">@_session.RecordedBulls</td>
                             <td style="text-align:right">@_session.RecordedDams</td>
                             <td style="text-align:right">@_session.RecordedMaleCalves</td>
@@ -46,7 +46,7 @@
                             <td style="text-align:right">@Census.RecordedTotal(_session)</td>
                         </tr>
                         <tr>
-                            <td>Counted</td>
+                            <td>@T("Counted")</td>
                             <td style="text-align:right">@Diff(_session.Counted.Bulls, _session.RecordedBulls)</td>
                             <td style="text-align:right">@Diff(_session.Counted.Dams, _session.RecordedDams)</td>
                             <td style="text-align:right">@Diff(_session.Counted.MaleCalves, _session.RecordedMaleCalves)</td>
@@ -55,14 +55,14 @@
                         </tr>
                     </tbody>
                 </MudSimpleTable>
-                <MudText Typo="Typo.body2" Class="mt-2">Selected: <strong>@_session.SelectedCount</strong></MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">@T("Selected:") <strong>@_session.SelectedCount</strong></MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" md="5">
             <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Programme</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@T("Programme")</MudText>
                 <MudText Typo="Typo.body2">PIC: @_session.PicName @(_session.PicPosition is null ? "" : $"({_session.PicPosition})") @_session.PicPhone</MudText>
-                <MudText Typo="Typo.body2" Class="mt-1">Treatments:</MudText>
+                <MudText Typo="Typo.body2" Class="mt-1">@T("Treatments:")</MudText>
                 <ul style="margin:0 0 0 1.2em">
                     @foreach (var t in _session.TreatmentProductIds)
                     {
@@ -76,48 +76,48 @@
 
     <MudTable Items="_entries" Hover="true" Dense="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm" Filter="Matches">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Animals counted (@_entries.Count)</MudText>
+            <MudText Typo="Typo.h6">@T("Animals counted ({0})", _entries.Count)</MudText>
             <MudSpacer />
-            <MudSwitch T="bool" @bind-Value="_selectedOnly" Label="Selected only" Color="Color.Primary" />
-            <MudTextField @bind-Value="_search" Placeholder="Tag or animal no." Adornment="Adornment.Start" Immediate="true"
+            <MudSwitch T="bool" @bind-Value="_selectedOnly" Label="@T("Selected only")" Color="Color.Primary" />
+            <MudTextField @bind-Value="_search" Placeholder="@T("Tag or animal no.")" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Style="max-width:220px" Class="mt-0" />
         </ToolBarContent>
         <HeaderContent>
-            <MudTh>Bil</MudTh>
-            <MudTh>Animal</MudTh>
-            <MudTh>Tag</MudTh>
-            <MudTh>Category</MudTh>
-            <MudTh>Age</MudTh>
-            <MudTh Style="text-align:right">Weight</MudTh>
+            <MudTh>@T("Bil")</MudTh>
+            <MudTh>@T("Animal")</MudTh>
+            <MudTh>@T("Tag")</MudTh>
+            <MudTh>@T("Category")</MudTh>
+            <MudTh>@T("Age")</MudTh>
+            <MudTh Style="text-align:right">@T("Weight")</MudTh>
             <MudTh>BCS</MudTh>
-            <MudTh>Project</MudTh>
-            <MudTh>Selected</MudTh>
-            <MudTh>Remarks</MudTh>
+            <MudTh>@T("Project")</MudTh>
+            <MudTh>@T("Selected")</MudTh>
+            <MudTh>@T("Remarks")</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Bil">@context.LineNo</MudTd>
-            <MudTd DataLabel="Animal"><MudLink Href="@($"animals/{context.AnimalId}")">@context.AnimalNo</MudLink></MudTd>
-            <MudTd DataLabel="Tag"><TagLabel Tag="@context.TagNumber" Duplicate="context.HasDuplicateTag" /></MudTd>
-            <MudTd DataLabel="Category">@AnimalText.Category(context.Category)</MudTd>
-            <MudTd DataLabel="Age">@AnimalText.Months(context.EstimatedAgeMonths)</MudTd>
-            <MudTd DataLabel="Weight" Style="text-align:right">@AnimalText.Weight(context.WeightKg)</MudTd>
+            <MudTd DataLabel="@T("Bil")">@context.LineNo</MudTd>
+            <MudTd DataLabel="@T("Animal")"><MudLink Href="@($"animals/{context.AnimalId}")">@context.AnimalNo</MudLink></MudTd>
+            <MudTd DataLabel="@T("Tag")"><TagLabel Tag="@context.TagNumber" Duplicate="context.HasDuplicateTag" /></MudTd>
+            <MudTd DataLabel="@T("Category")">@AnimalText.Category(context.Category)</MudTd>
+            <MudTd DataLabel="@T("Age")">@AnimalText.Months(context.EstimatedAgeMonths)</MudTd>
+            <MudTd DataLabel="@T("Weight")" Style="text-align:right">@AnimalText.Weight(context.WeightKg)</MudTd>
             <MudTd DataLabel="BCS">@context.BodyConditionScore</MudTd>
-            <MudTd DataLabel="Project">@context.ProjectCode</MudTd>
-            <MudTd DataLabel="Selected">
+            <MudTd DataLabel="@T("Project")">@context.ProjectCode</MudTd>
+            <MudTd DataLabel="@T("Selected")">
                 <MudCheckBox T="bool" Value="context.Selected" ValueChanged="@(v => ToggleSelectedAsync(context, v))"
                              Disabled="_session.IsClosed" Color="Color.Primary" Size="Size.Small" />
             </MudTd>
-            <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+            <MudTd DataLabel="@T("Remarks")">@context.Remarks</MudTd>
             <MudTd Style="text-align:right;white-space:nowrap">
                 @if (!_session.IsClosed)
                 {
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditEntryAsync(context)" aria-label="Edit" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteEntryAsync(context)" aria-label="Remove" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditEntryAsync(context)" aria-label="@T("Edit")" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteEntryAsync(context)" aria-label="@T("Remove")" />
                 }
             </MudTd>
         </RowTemplate>
-        <NoRecordsContent><MudText>No animals counted yet. Import the census sheet or add animals one by one.</MudText></NoRecordsContent>
+        <NoRecordsContent><MudText>@T("No animals counted yet. Import the census sheet or add animals one by one.")</MudText></NoRecordsContent>
     </MudTable>
 }
 
@@ -127,7 +127,7 @@
     private CensusSessionDto? _session;
     private List<CensusEntryDto> _entries = [];
     private Lookups? _lookups;
-    private List<BreadcrumbItem> _breadcrumbs = [new("Census", "census")];
+    private List<BreadcrumbItem> _breadcrumbs = [new(T("Census"), "census")];
     private string? _search;
     private bool _selectedOnly;
 
@@ -141,7 +141,7 @@
         _lookups ??= await Lookups.LoadAsync(Api);
         _session = await Api.GetAsync<CensusSessionDto>($"api/census-sessions/{Id}");
         _entries = await Api.GetAsync<List<CensusEntryDto>>(EntriesUrl);
-        _breadcrumbs = [new("Census", "census"), new(_session.Title, null, disabled: true)];
+        _breadcrumbs = [new(T("Census"), "census"), new(_session.Title, null, disabled: true)];
     }
 
     private bool Matches(CensusEntryDto e) =>
@@ -164,19 +164,19 @@
     };
 
     private async Task EditSessionAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Edit census session", CensusSessionRequest.From(_session!),
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Edit census session"), CensusSessionRequest.From(_session!),
             m => @<CensusSessionFields Model="m" Lookups="_lookups!" />,
-            m => Api.PutAsync<CensusSessionDto>($"api/census-sessions/{Id}", m), ValidateSession), "Session updated.");
+            m => Api.PutAsync<CensusSessionDto>($"api/census-sessions/{Id}", m), ValidateSession), T("Session updated."));
 
     private async Task ImportAsync()
     {
-        var dialog = await Dialogs.ShowAsync<ImportDialog>("Import census sheet",
+        var dialog = await Dialogs.ShowAsync<ImportDialog>(T("Import census sheet"),
             new DialogParameters<ImportDialog> { { d => d.SessionId, Id } },
             new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, CloseOnEscapeKey = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: ImportResultDto r })
         {
-            Snackbar.Add($"Imported: {r.AnimalsCreated} new animal(s), {r.AnimalsMatched} matched, {r.EntriesCreated + r.EntriesUpdated} census entries.", Severity.Success);
+            Snackbar.Add(T("Imported: {0} new animal(s), {1} matched, {2} census entries.", r.AnimalsCreated, r.AnimalsMatched, r.EntriesCreated + r.EntriesUpdated), Severity.Success);
             await ReloadAsync();
         }
     }
@@ -185,15 +185,15 @@
     {
         AnimalListItemDto? chosen = null;
         var model = new CensusEntryRequest();
-        await AfterSaveAsync(await Dialogs.EditAsync("Add animal to census", model,
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Add animal to census"), model,
             m => @<MudStack Spacing="2">
-                <MudAutocomplete T="AnimalListItemDto" Label="Animal (tag or animal no.)" SearchFunc="SearchAnimalsAsync"
-                                 ToStringFunc="@(a => a is null ? "" : $"{a.AnimalNo} · {a.TagNumber ?? "no tag"} · {AnimalText.Category(a.Category)}")"
+                <MudAutocomplete T="AnimalListItemDto" Label="@T("Animal (tag or animal no.)")" SearchFunc="SearchAnimalsAsync"
+                                 ToStringFunc="@(a => a is null ? "" : $"{a.AnimalNo} · {a.TagNumber ?? T("no tag")} · {AnimalText.Category(a.Category)}")"
                                  ValueChanged="@(a => { chosen = a; m.AnimalId = a?.Id ?? Guid.Empty; if (a is not null) m.Category = a.Category; })"
                                  MinCharacters="1" DebounceInterval="300" />
                 <EntryFields Model="m" />
             </MudStack>,
-            m => Api.PostAsync<CensusEntryDto>(EntriesUrl, m), ValidateEntry), "Animal added to the census.");
+            m => Api.PostAsync<CensusEntryDto>(EntriesUrl, m), ValidateEntry), T("Animal added to the census."));
     }
 
     private async Task<IEnumerable<AnimalListItemDto>> SearchAnimalsAsync(string text, CancellationToken ct)
@@ -204,9 +204,10 @@
     }
 
     private async Task EditEntryAsync(CensusEntryDto entry) =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"{entry.AnimalNo} · {entry.TagNumber ?? "no tag"}", CensusEntryRequest.From(entry),
+        await AfterSaveAsync(await Dialogs.EditAsync($"{entry.AnimalNo} · {entry.TagNumber ?? T("no tag")}", CensusEntryRequest.From(entry),
+
             m => @<EntryFields Model="m" />,
-            m => Api.PutAsync<CensusEntryDto>($"{EntriesUrl}/{entry.Id}", m), ValidateEntry), "Entry updated.");
+            m => Api.PutAsync<CensusEntryDto>($"{EntriesUrl}/{entry.Id}", m), ValidateEntry), T("Entry updated."));
 
     private async Task ToggleSelectedAsync(CensusEntryDto entry, bool selected)
     {
@@ -215,7 +216,7 @@
         var result = await Api.PutAsync<CensusEntryDto>($"{EntriesUrl}/{entry.Id}", request);
         if (!result.Succeeded)
         {
-            Snackbar.Add(result.FullError ?? "Could not update.", Severity.Error);
+            Snackbar.Add(result.FullError ?? T("Could not update."), Severity.Error);
             return;
         }
         _entries[_entries.IndexOf(entry)] = result.Value!;
@@ -224,7 +225,7 @@
 
     private async Task DeleteEntryAsync(CensusEntryDto entry)
     {
-        if (await Dialogs.ConfirmDeleteAsync($"{entry.AnimalNo} from this census (the animal itself is kept)"))
-            await NotifyAsync(await Api.DeleteAsync($"{EntriesUrl}/{entry.Id}"), "Removed from census.");
+        if (await Dialogs.ConfirmDeleteAsync(T("{0} from this census (the animal itself is kept)", entry.AnimalNo)))
+            await NotifyAsync(await Api.DeleteAsync($"{EntriesUrl}/{entry.Id}"), T("Removed from census."));
     }
 }

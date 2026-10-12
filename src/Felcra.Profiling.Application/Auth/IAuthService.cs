@@ -4,11 +4,14 @@ namespace Felcra.Profiling.Application.Auth;
 
 public interface IAuthService
 {
-    /// <summary>Returns tokens, or null when the credentials are invalid or the account is locked/inactive.</summary>
-    Task<TokenResponse?> LoginAsync(LoginRequest request, CancellationToken ct = default);
+    /// <summary>
+    /// Returns tokens, or null when the credentials are invalid or the account is locked/inactive.
+    /// <paramref name="language"/> ("ms"/"en", when the app said) is remembered for the user's e-mails and notifications.
+    /// </summary>
+    Task<TokenResponse?> LoginAsync(LoginRequest request, CancellationToken ct = default, string? language = null);
 
     /// <summary>Rotates a refresh token. Returns null when it is unknown, expired or revoked.</summary>
-    Task<TokenResponse?> RefreshAsync(string refreshToken, CancellationToken ct = default);
+    Task<TokenResponse?> RefreshAsync(string refreshToken, CancellationToken ct = default, string? language = null);
 
     Task LogoutAsync(string refreshToken, CancellationToken ct = default);
 

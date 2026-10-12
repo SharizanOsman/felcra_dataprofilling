@@ -1,0 +1,130 @@
+@* Search box for the farm map: farms (as you type), places by name and GPS coordinates (on Enter / the search button).
+   Place names come from OpenStreetMap through the server; its usage policy rules out searching on every keystroke. *@
+@inject ApiClient Api
+
+<div style="position:relative">
+    <MudTextField T="string" Value="_text" ValueChanged="OnTextChanged" Immediate="true"
+                  Placeholder="@Placeholder" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true"
+                  OnKeyDown="OnKeyDown" OnClearButtonClick="Clear" autocomplete="off" data-testid="place-search"
+                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" OnAdornmentClick="SearchAsync"
+                  AdornmentAriaLabel="@T("Search")" />
+    @if (_busy)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Style="position:absolute;left:0;right:0;bottom:0" />
+    }
+    @if (_open && (_results.Count > 0 || _message is not null))
+    {
+        <MudPaper Elevation="8" Class="py-1" Style="position:absolute;left:0;right:0;top:100%;z-index:1100;max-height:360px;overflow-y:auto">
+            @foreach (var result in _results)
+            {
+                <div class="place-result" role="button" tabindex="0" @onclick="() => ChooseAsync(result)" data-testid="place-result"
+                     @onkeydown="@(e => e.Key is "Enter" or " " ? ChooseAsync(result) : Task.CompletedTask)">
+                    <MudIcon Icon="@Icon(result)" Size="Size.Small" Color="@(result.FarmId is null ? Color.Info : Color.Primary)" />
+                    <div style="min-width:0">
+                        <div style="font-weight:500">@result.Title</div>
+                        @if (result.Detail is not null)
+                        {
+                            <div class="mud-text-secondary" style="font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@result.Detail</div>
+                        }
+                    </div>
+                </div>
+            }
+            @if (_message is not null)
+            {
+                <MudText Typo="Typo.caption" Class="px-3 py-1" Style="display:block" Color="@(_failed ? Color.Error : Color.Default)">@_message</MudText>
+            }
+        </MudPaper>
+    }
+</div>
+
+@code {
+    /// <summary>Farms to find by code, name or state as the user types (none in the farm form).</summary>
+    [Parameter] public IReadOnlyList<FarmMapPointDto> Farms { get; set; } = [];
+    [Parameter] public EventCallback<PlaceResult> OnSelected { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    private string? _text;
+    private List<PlaceResult> _results = [];
+    private string? _message;
+    private bool _failed;
+    private bool _busy;
+    private bool _open;
+
+    private void OnTextChanged(string? text)
+    {
+        _text = text;
+        _message = null;
+        _failed = false;
+        _results = MatchingFarms(text);
+        _open = !string.IsNullOrWhiteSpace(text);
+        if (_open && _results.Count == 0)
+            _message = T("Press Enter to search for places and GPS locations.");
+    }
+
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key switch
+    {
+        "Enter" => SearchAsync(),
+        "Escape" => Task.FromResult(_open = false),
+        _ => Task.CompletedTask,
+    };
+
+    private async Task SearchAsync()
+    {
+        var text = _text?.Trim();
+        if (string.IsNullOrEmpty(text) || _busy) return;
+        _busy = true;
+        _open = true;
+        _message = null;
+        var farms = MatchingFarms(text);
+        var found = await Api.TryGetAsync<List<GeoPlaceDto>>($"api/geocode/search?q={Uri.EscapeDataString(text)}");
+        _busy = false;
+
+        _failed = !found.Succeeded;
+        _results = [.. farms, .. (found.Value ?? []).Select(PlaceResult.From)];
+        if (_failed)
+        {
+            // Typed coordinates still work without the place service.
+            if (GeoCoordinates.TryParse(text, out var lat, out var lon))
+                _results.Add(new PlaceResult(T("GPS location"), $"{lat}, {lon}", lat, lon, null, null));
+            _message = found.Error;
+        }
+        else if (_results.Count == 0)
+        {
+            _message = T("Nothing found in Malaysia for \"{0}\". Try a town, village or district name, or paste GPS coordinates.", text);
+        }
+    }
+
+    private async Task ChooseAsync(PlaceResult result)
+    {
+        _open = false;
+        _text = result.Title;
+        await OnSelected.InvokeAsync(result);
+    }
+
+    private void Clear(MouseEventArgs _)
+    {
+        _text = null;
+        _results = [];
+        _message = null;
+        _open = false;
+    }
+
+    private List<PlaceResult> MatchingFarms(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || Farms.Count == 0) return [];
+        var t = text.Trim();
+        return Farms
+            .Where(f => f.Code.Contains(t, StringComparison.OrdinalIgnoreCase) || f.Name.Contains(t, StringComparison.OrdinalIgnoreCase)
+                        || (f.State?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Take(6)
+            .Select(f => new PlaceResult($"{f.Code} · {f.Name}",
+                f.Latitude is null ? T("No location yet") : string.Join(" · ", new[] { f.State, T("{0} active head", f.ActiveAnimals) }.Where(s => s is not null)),
+                f.Latitude, f.Longitude, f.FarmId, f.State))
+            .ToList();
+    }
+
+    private static string Icon(PlaceResult r) =>
+        r.FarmId is not null ? Icons.Material.Filled.Agriculture
+        : r.Type == "coordinates" ? Icons.Material.Filled.MyLocation
+        : Icons.Material.Filled.Place;
+}

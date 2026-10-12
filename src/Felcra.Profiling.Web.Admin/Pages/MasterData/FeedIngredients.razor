@@ -2,49 +2,49 @@
 @attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
 @inherits AdminPageBase
 
-<PageHeader Title="Feed ingredients" Subtitle="Nutrient composition (dry-matter basis) and price, used for least-cost rations" Error="@LoadError">
+<PageHeader Title="@T("Feed ingredients")" Subtitle="@T("Nutrient composition (dry-matter basis) and price, used for least-cost rations")" Error="@LoadError">
     <Actions>
         @if (IsHq)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">Add ingredient</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">@T("Add ingredient")</MudButton>
         }
     </Actions>
 </PageHeader>
 
 <MudTable Items="_items" Hover="true" Dense="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Md">
     <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Category</MudTh>
-        <MudTh Style="text-align:right">DM %</MudTh>
-        <MudTh Style="text-align:right">CP %</MudTh>
-        <MudTh Style="text-align:right">TDN %</MudTh>
-        <MudTh Style="text-align:right">ME (MJ/kg)</MudTh>
-        <MudTh Style="text-align:right">Ca %</MudTh>
-        <MudTh Style="text-align:right">P %</MudTh>
-        <MudTh Style="text-align:right">RM / kg</MudTh>
-        <MudTh>Status</MudTh>
+        <MudTh>@T("Name")</MudTh>
+        <MudTh>@T("Category")</MudTh>
+        <MudTh Style="text-align:right">@T("DM %")</MudTh>
+        <MudTh Style="text-align:right">@T("CP %")</MudTh>
+        <MudTh Style="text-align:right">@T("TDN %")</MudTh>
+        <MudTh Style="text-align:right">@T("ME (MJ/kg)")</MudTh>
+        <MudTh Style="text-align:right">@T("Ca %")</MudTh>
+        <MudTh Style="text-align:right">@T("P %")</MudTh>
+        <MudTh Style="text-align:right">@T("RM / kg")</MudTh>
+        <MudTh>@T("Status")</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Category">@EnumText.Humanize(context.Category)</MudTd>
-        <MudTd DataLabel="DM %" Style="text-align:right">@context.DryMatterPercent?.ToString("0.##")</MudTd>
-        <MudTd DataLabel="CP %" Style="text-align:right">@context.CrudeProteinPercent?.ToString("0.##")</MudTd>
-        <MudTd DataLabel="TDN %" Style="text-align:right">@context.TdnPercent?.ToString("0.##")</MudTd>
-        <MudTd DataLabel="ME (MJ/kg)" Style="text-align:right">@context.MetabolisableEnergy?.ToString("0.##")</MudTd>
-        <MudTd DataLabel="Ca %" Style="text-align:right">@context.CalciumPercent?.ToString("0.###")</MudTd>
-        <MudTd DataLabel="P %" Style="text-align:right">@context.PhosphorusPercent?.ToString("0.###")</MudTd>
-        <MudTd DataLabel="RM / kg" Style="text-align:right">@context.PricePerKg?.ToString("0.00##")</MudTd>
-        <MudTd DataLabel="Status"><StatusChip Active="context.IsActive" /></MudTd>
+        <MudTd DataLabel="@T("Name")">@context.Name</MudTd>
+        <MudTd DataLabel="@T("Category")">@EnumText.Humanize(context.Category)</MudTd>
+        <MudTd DataLabel="@T("DM %")" Style="text-align:right">@context.DryMatterPercent?.ToString("0.##")</MudTd>
+        <MudTd DataLabel="@T("CP %")" Style="text-align:right">@context.CrudeProteinPercent?.ToString("0.##")</MudTd>
+        <MudTd DataLabel="@T("TDN %")" Style="text-align:right">@context.TdnPercent?.ToString("0.##")</MudTd>
+        <MudTd DataLabel="@T("ME (MJ/kg)")" Style="text-align:right">@context.MetabolisableEnergy?.ToString("0.##")</MudTd>
+        <MudTd DataLabel="@T("Ca %")" Style="text-align:right">@context.CalciumPercent?.ToString("0.###")</MudTd>
+        <MudTd DataLabel="@T("P %")" Style="text-align:right">@context.PhosphorusPercent?.ToString("0.###")</MudTd>
+        <MudTd DataLabel="@T("RM / kg")" Style="text-align:right">@context.PricePerKg?.ToString("0.00##")</MudTd>
+        <MudTd DataLabel="@T("Status")"><StatusChip Active="context.IsActive" /></MudTd>
         <MudTd Style="text-align:right">
             @if (IsHq)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="Edit" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="Delete" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="@T("Edit")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="@T("Delete")" />
             }
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No feed ingredients yet.</MudText></NoRecordsContent>
+    <NoRecordsContent><MudText>@T("No feed ingredients yet.")</MudText></NoRecordsContent>
 </MudTable>
 
 @code {
@@ -55,41 +55,41 @@
     protected override async Task LoadAsync() => _items = await Api.GetAsync<List<FeedIngredientDto>>(Url);
 
     private async Task AddAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Add feed ingredient", new FeedIngredientRequest(), Fields,
-            m => Api.PostAsync<FeedIngredientDto>(Url, m), Validate), "Ingredient added.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Add feed ingredient"), new FeedIngredientRequest(), Fields,
+            m => Api.PostAsync<FeedIngredientDto>(Url, m), Validate), T("Ingredient added."));
 
     private async Task EditAsync(FeedIngredientDto item) =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"Edit {item.Name}", FeedIngredientRequest.From(item), Fields,
-            m => Api.PutAsync<FeedIngredientDto>($"{Url}/{item.Id}", m), Validate), "Ingredient updated.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Edit {0}", item.Name), FeedIngredientRequest.From(item), Fields,
+            m => Api.PutAsync<FeedIngredientDto>($"{Url}/{item.Id}", m), Validate), T("Ingredient updated."));
 
     private async Task DeleteAsync(FeedIngredientDto item)
     {
         if (await Dialogs.ConfirmDeleteAsync(item.Name))
-            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), "Ingredient deleted.");
+            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), T("Ingredient deleted."));
     }
 
     private RenderFragment<FeedIngredientRequest> Fields => m =>
         @<MudStack Spacing="2">
-            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" HelperText="e.g. Napier grass, Palm kernel cake" />
-            <MudSelect @bind-Value="m.Category" For="@(() => m.Category)" Label="Category">
+            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="@T("Name")" HelperText="@T("e.g. Napier grass, Palm kernel cake")" />
+            <MudSelect @bind-Value="m.Category" For="@(() => m.Category)" Label="@T("Category")">
                 @foreach (var c in Enum.GetValues<FeedCategory>())
                 {
                     <MudSelectItem Value="c">@EnumText.Humanize(c)</MudSelectItem>
                 }
             </MudSelect>
             <MudStack Row="true">
-                <MudNumericField @bind-Value="m.DryMatterPercent" For="@(() => m.DryMatterPercent)" Label="Dry matter %" />
-                <MudNumericField @bind-Value="m.CrudeProteinPercent" For="@(() => m.CrudeProteinPercent)" Label="Crude protein %" />
+                <MudNumericField @bind-Value="m.DryMatterPercent" For="@(() => m.DryMatterPercent)" Label="@T("Dry matter %")" />
+                <MudNumericField @bind-Value="m.CrudeProteinPercent" For="@(() => m.CrudeProteinPercent)" Label="@T("Crude protein %")" />
             </MudStack>
             <MudStack Row="true">
-                <MudNumericField @bind-Value="m.TdnPercent" For="@(() => m.TdnPercent)" Label="TDN %" />
-                <MudNumericField @bind-Value="m.MetabolisableEnergy" For="@(() => m.MetabolisableEnergy)" Label="ME (MJ/kg DM)" />
+                <MudNumericField @bind-Value="m.TdnPercent" For="@(() => m.TdnPercent)" Label="@T("TDN %")" />
+                <MudNumericField @bind-Value="m.MetabolisableEnergy" For="@(() => m.MetabolisableEnergy)" Label="@T("ME (MJ/kg DM)")" />
             </MudStack>
             <MudStack Row="true">
-                <MudNumericField @bind-Value="m.CalciumPercent" For="@(() => m.CalciumPercent)" Label="Calcium %" />
-                <MudNumericField @bind-Value="m.PhosphorusPercent" For="@(() => m.PhosphorusPercent)" Label="Phosphorus %" />
+                <MudNumericField @bind-Value="m.CalciumPercent" For="@(() => m.CalciumPercent)" Label="@T("Calcium %")" />
+                <MudNumericField @bind-Value="m.PhosphorusPercent" For="@(() => m.PhosphorusPercent)" Label="@T("Phosphorus %")" />
             </MudStack>
-            <MudNumericField @bind-Value="m.PricePerKg" For="@(() => m.PricePerKg)" Label="Price (RM per kg as fed)" />
-            <MudSwitch @bind-Value="m.IsActive" Label="Active" Color="Color.Primary" />
+            <MudNumericField @bind-Value="m.PricePerKg" For="@(() => m.PricePerKg)" Label="@T("Price (RM per kg as fed)")" />
+            <MudSwitch @bind-Value="m.IsActive" Label="@T("Active")" Color="Color.Primary" />
         </MudStack>;
 }

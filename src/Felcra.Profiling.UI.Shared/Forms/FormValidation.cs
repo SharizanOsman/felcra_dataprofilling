@@ -16,7 +16,7 @@ public static class FormValidation
 
 public static class EnumText
 {
-    /// <summary>"DiagnosticTest" → "Diagnostic test".</summary>
+    /// <summary>"DiagnosticTest" → "Diagnostic test" (or its Malay).</summary>
     public static string Humanize<TEnum>(TEnum value) where TEnum : struct, Enum
     {
         var name = value.ToString();
@@ -33,6 +33,7 @@ public static class EnumText
                 chars.Add(name[i]);
             }
         }
-        return new string([.. chars]);
+        return T(new string([.. chars]));
+
     }
 }

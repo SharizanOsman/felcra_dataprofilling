@@ -15,6 +15,9 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
 
+    /// <summary>Language the user last used the apps in ("ms" or "en"), for scheduled e-mails and notifications.</summary>
+    public string? Language { get; set; }
+
     public List<UserFarm> Farms { get; set; } = [];
 }
 

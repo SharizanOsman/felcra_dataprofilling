@@ -5,12 +5,14 @@ internal static class SecurityHeaders
     /// <summary>
     /// Everything is served from this site: the Blazor clients need 'wasm-unsafe-eval' to run WebAssembly,
     /// MudBlazor sets inline styles, photos and QR codes use blob: / data: URLs, and the scanner needs the camera.
+    /// The farm map shows OpenStreetMap street tiles and Esri satellite tiles (images only; place search goes
+    /// through this server).
     /// </summary>
     private const string ContentSecurityPolicy =
         "default-src 'self'; " +
         "script-src 'self' 'wasm-unsafe-eval'; " +
         "style-src 'self' 'unsafe-inline'; " +
-        "img-src 'self' data: blob:; " +
+        "img-src 'self' data: blob: https://tile.openstreetmap.org https://server.arcgisonline.com; " +
         "font-src 'self' data:; " +
         "connect-src 'self'; " +
         "media-src 'self' blob:; " +
@@ -29,7 +31,9 @@ internal static class SecurityHeaders
             headers.XFrameOptions = "DENY";
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
             headers["Cross-Origin-Opener-Policy"] = "same-origin";
-            headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=(), payment=(), usb=()";
+            // Geolocation: "Use my location" when placing a farm while standing on it.
+            headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=(self), payment=(), usb=()";
+
 
             var path = context.Request.Path;
             // The development-only API explorer loads its own scripts; everything else gets the strict policy.

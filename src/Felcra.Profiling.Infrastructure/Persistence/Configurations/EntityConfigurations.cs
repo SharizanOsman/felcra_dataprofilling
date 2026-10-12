@@ -104,6 +104,7 @@ internal sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Ap
     public void Configure(EntityTypeBuilder<ApplicationUser> b)
     {
         b.Property(x => x.FullName).HasMaxLength(200);
+        b.Property(x => x.Language).HasMaxLength(8);
         b.HasMany(x => x.Farms).WithOne().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }

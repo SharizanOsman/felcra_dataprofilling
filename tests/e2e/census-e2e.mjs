@@ -1,6 +1,7 @@
 // Step 3 end-to-end: import the real Pagoh census through the admin UI, then check animals,
 // duplicates, QR labels and the field app's QR landing page. Runs in headless Edge.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 
 const root = 'http://localhost:5237';
 const csvPath = process.argv[2];
@@ -9,7 +10,7 @@ const results = [];
 const visible = async (locator, timeout = 15000) => { try { await locator.waitFor({ state: 'visible', timeout }); return true; } catch { return false; } };
 const check = (name, ok, extra = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  ' + extra : ''}`); };
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const consoleErrors = [];
 
 async function login(app, email) {

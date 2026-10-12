@@ -21,7 +21,7 @@ internal sealed class AuthService(
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;
 
-    public async Task<TokenResponse?> LoginAsync(LoginRequest request, CancellationToken ct = default)
+    public async Task<TokenResponse?> LoginAsync(LoginRequest request, CancellationToken ct = default, string? language = null)
     {
         var user = await users.FindByEmailAsync(request.Email);
         if (user is null || !user.IsActive) return null;
@@ -34,10 +34,11 @@ internal sealed class AuthService(
         }
 
         await users.ResetAccessFailedCountAsync(user);
+        RememberLanguage(user, language);
         return await IssueTokensAsync(user, previous: null, ct);
     }
 
-    public async Task<TokenResponse?> RefreshAsync(string refreshToken, CancellationToken ct = default)
+    public async Task<TokenResponse?> RefreshAsync(string refreshToken, CancellationToken ct = default, string? language = null)
     {
         var now = clock.GetUtcNow();
         var hash = Hash(refreshToken);
@@ -62,7 +63,14 @@ internal sealed class AuthService(
         var user = await users.FindByIdAsync(stored.UserId.ToString());
         if (user is null || !user.IsActive) return null;
 
+        RememberLanguage(user, language);
         return await IssueTokensAsync(user, stored, ct);
+    }
+
+    // Saved with the new tokens. The apps refresh every few minutes, so a language switch is picked up quickly.
+    private static void RememberLanguage(ApplicationUser user, string? language)
+    {
+        if (language is not null && user.Language != language) user.Language = language;
     }
 
     public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)

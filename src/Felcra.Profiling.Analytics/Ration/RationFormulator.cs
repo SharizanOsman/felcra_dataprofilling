@@ -53,11 +53,11 @@ public static class RationFormulator
         var usable = new List<RationIngredient>();
         foreach (var i in candidates)
         {
-            if (i.PricePerKg is null) warnings.Add($"{i.Name} left out: no price.");
-            else if (i.DryMatterPercent is null or <= 0) warnings.Add($"{i.Name} left out: no dry matter %.");
+            if (i.PricePerKg is null) warnings.Add(T("{0} left out: no price.", i.Name));
+            else if (i.DryMatterPercent is null or <= 0) warnings.Add(T("{0} left out: no dry matter %.", i.Name));
             else usable.Add(i);
         }
-        if (usable.Count == 0) return Fail("No ingredients with a price and dry matter %.", warnings);
+        if (usable.Count == 0) return Fail(T("No ingredients with a price and dry matter %."), warnings);
 
         foreach (var (label, missing) in new[]
                  {
@@ -69,7 +69,7 @@ public static class RationFormulator
                  })
         {
             var names = missing.Select(i => i.Name).ToList();
-            if (names.Count > 0) warnings.Add($"No {label} value for {string.Join(", ", names)}; counted as 0.");
+            if (names.Count > 0) warnings.Add(T("No {0} value for {1}; counted as 0.", T(label), string.Join(", ", names)));
         }
 
         var dmi = targets.DryMatterIntakeKg;
@@ -121,14 +121,14 @@ public static class RationFormulator
 
         var nutrients = new List<NutrientLevel>
         {
-            new("Crude protein %", Level(i => i.CrudeProteinPercent), targets.CrudeProteinMinPercent, targets.CrudeProteinMaxPercent),
+            new(T("Crude protein %"), Level(i => i.CrudeProteinPercent), targets.CrudeProteinMinPercent, targets.CrudeProteinMaxPercent),
         };
         if (targets.TdnMinPercent is not null || usable.All(i => i.TdnPercent is not null))
-            nutrients.Add(new("TDN %", Level(i => i.TdnPercent), targets.TdnMinPercent, null));
+            nutrients.Add(new(T("TDN %"), Level(i => i.TdnPercent), targets.TdnMinPercent, null));
         if (targets.MetabolisableEnergyMin is not null || usable.All(i => i.MetabolisableEnergy is not null))
-            nutrients.Add(new("ME MJ/kg DM", Level(i => i.MetabolisableEnergy), targets.MetabolisableEnergyMin, null));
-        nutrients.Add(new("Calcium %", Level(i => i.CalciumPercent), targets.CalciumMinPercent, targets.CalciumMaxPercent));
-        nutrients.Add(new("Phosphorus %", Level(i => i.PhosphorusPercent), targets.PhosphorusMinPercent, null));
+            nutrients.Add(new(T("ME MJ/kg DM"), Level(i => i.MetabolisableEnergy), targets.MetabolisableEnergyMin, null));
+        nutrients.Add(new(T("Calcium %"), Level(i => i.CalciumPercent), targets.CalciumMinPercent, targets.CalciumMaxPercent));
+        nutrients.Add(new(T("Phosphorus %"), Level(i => i.PhosphorusPercent), targets.PhosphorusMinPercent, null));
 
         return new RationResult(true, lines, result.Objective, nutrients, warnings, null);
     }
@@ -140,18 +140,18 @@ public static class RationFormulator
         void Check(string nutrient, double? minimum, Func<RationIngredient, double?> value)
         {
             if (minimum is { } min && usable.Max(i => value(i) ?? 0) < min)
-                reasons.Add($"no ingredient reaches the {nutrient} target of {min:0.##}");
+                reasons.Add(T("no ingredient reaches the {0} target of {1:0.##}", T(nutrient), min));
         }
         Check("crude protein", targets.CrudeProteinMinPercent, i => i.CrudeProteinPercent);
         Check("TDN", targets.TdnMinPercent, i => i.TdnPercent);
         Check("ME", targets.MetabolisableEnergyMin, i => i.MetabolisableEnergy);
         Check("calcium", targets.CalciumMinPercent, i => i.CalciumPercent);
         Check("phosphorus", targets.PhosphorusMinPercent, i => i.PhosphorusPercent);
-        if (targets.ForageMinPercent is > 0 && !usable.Any(i => i.IsForage)) reasons.Add("no forage ingredient is selected");
+        if (targets.ForageMinPercent is > 0 && !usable.Any(i => i.IsForage)) reasons.Add(T("no forage ingredient is selected"));
 
         return reasons.Count > 0
-            ? $"No ration meets all targets: {string.Join("; ", reasons)}. Add suitable ingredients or relax the targets."
-            : "No ration meets all targets at once with these ingredients. Add ingredients (e.g. a protein feed or mineral) or relax a target or inclusion limit.";
+            ? T("No ration meets all targets: {0}. Add suitable ingredients or relax the targets.", string.Join("; ", reasons))
+            : T("No ration meets all targets at once with these ingredients. Add ingredients (e.g. a protein feed or mineral) or relax a target or inclusion limit.");
     }
 
     private static RationResult Fail(string problem, List<string> warnings) => new(false, [], 0, [], warnings, problem);
@@ -167,10 +167,11 @@ public static class RationPresets
 
     public static IReadOnlyList<Preset> All(double bodyWeightKg) =>
     [
-        new("maintenance", "Maintenance (dry dam / mature bull)", 2.0, Targets(bodyWeightKg, 2.0, cp: 7, tdn: 50, caMin: 0.20, pMin: 0.15, forage: 60)),
-        new("lactating", "Late pregnancy / lactating dam", 2.5, Targets(bodyWeightKg, 2.5, cp: 10.5, tdn: 58, caMin: 0.30, pMin: 0.20, forage: 50)),
-        new("growing", "Growing (≈0.5 kg/day)", 2.5, Targets(bodyWeightKg, 2.5, cp: 12, tdn: 62, caMin: 0.40, pMin: 0.22, forage: 40)),
-        new("finishing", "Finishing (≈1 kg/day)", 2.4, Targets(bodyWeightKg, 2.4, cp: 12, tdn: 70, caMin: 0.40, pMin: 0.25, forage: 15)),
+        new("maintenance", T("Maintenance (dry dam / mature bull)"), 2.0, Targets(bodyWeightKg, 2.0, cp: 7, tdn: 50, caMin: 0.20, pMin: 0.15, forage: 60)),
+        new("lactating", T("Late pregnancy / lactating dam"), 2.5, Targets(bodyWeightKg, 2.5, cp: 10.5, tdn: 58, caMin: 0.30, pMin: 0.20, forage: 50)),
+        new("growing", T("Growing (≈0.5 kg/day)"), 2.5, Targets(bodyWeightKg, 2.5, cp: 12, tdn: 62, caMin: 0.40, pMin: 0.22, forage: 40)),
+        new("finishing", T("Finishing (≈1 kg/day)"), 2.4,
+ Targets(bodyWeightKg, 2.4, cp: 12, tdn: 70, caMin: 0.40, pMin: 0.25, forage: 15)),
     ];
 
     private static RationTargets Targets(double bodyWeight, double dmiPercent, double cp, double tdn, double caMin, double pMin, double forage) =>

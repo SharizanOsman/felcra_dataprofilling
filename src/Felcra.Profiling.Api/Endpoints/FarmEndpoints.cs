@@ -170,6 +170,6 @@ internal static class FarmEndpoints
         var known = await db.Projects.CountAsync(p => ids.Contains(p.Id), ct);
         return known == ids.Count
             ? null
-            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["ProjectIds"] = ["One or more projects do not exist."] });
+            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["ProjectIds"] = [T("One or more projects do not exist.")] });
     }
 }

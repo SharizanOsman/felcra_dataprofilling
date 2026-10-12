@@ -8,7 +8,7 @@
         <MudIcon Icon="@(_state == PushState.On ? Icons.Material.Filled.NotificationsActive : Icons.Material.Filled.NotificationsOff)"
                  Color="@(_state == PushState.On ? Color.Primary : Color.Default)" />
         <div style="flex:1">
-            <MudText Typo="Typo.subtitle2">Task notifications</MudText>
+            <MudText Typo="Typo.subtitle2">@T("Task notifications")</MudText>
             <MudText Typo="Typo.caption" Style="display:block" data-testid="notification-state">@Description</MudText>
         </div>
     </MudStack>
@@ -18,12 +18,12 @@
             @if (_state == PushState.Off)
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.NotificationsActive"
-                           Disabled="@(_busy || !Sync.IsOnline)" OnClick="EnableAsync">Turn on</MudButton>
+                           Disabled="@(_busy || !Sync.IsOnline)" OnClick="EnableAsync">@T("Turn on")</MudButton>
             }
             else
             {
-                <MudButton Variant="Variant.Outlined" Disabled="@(_busy || !Sync.IsOnline)" OnClick="TestAsync">Send a test</MudButton>
-                <MudButton Variant="Variant.Text" Disabled="@(_busy || !Sync.IsOnline)" OnClick="DisableAsync">Turn off</MudButton>
+                <MudButton Variant="Variant.Outlined" Disabled="@(_busy || !Sync.IsOnline)" OnClick="TestAsync">@T("Send a test")</MudButton>
+                <MudButton Variant="Variant.Text" Disabled="@(_busy || !Sync.IsOnline)" OnClick="DisableAsync">@T("Turn off")</MudButton>
             }
         </MudStack>
     }
@@ -35,12 +35,13 @@
 
     private string Description => _state switch
     {
-        PushState.On => "On: a message each morning when pregnancy checks, calvings or treatments are due.",
-        PushState.Off => "Get a message each morning when pregnancy checks, calvings or treatments are due.",
-        PushState.Denied => "Blocked for this site. Allow notifications in the browser's site settings, then come back.",
-        PushState.NotConfigured => "Not available yet: notifications are not set up on the server.",
-        PushState.Unsupported => "Not supported in this browser. On iPhone, add the app to the Home Screen first (iOS 16.4 or later) and open it from there.",
-        _ => "Checking…",
+        PushState.On => T("On: a message each morning when pregnancy checks, calvings or treatments are due."),
+        PushState.Off => T("Get a message each morning when pregnancy checks, calvings or treatments are due."),
+        PushState.Denied => T("Blocked for this site. Allow notifications in the browser's site settings, then come back."),
+        PushState.NotConfigured => T("Not available yet: notifications are not set up on the server."),
+        PushState.Unsupported => T("Not supported in this browser. On iPhone, add the app to the Home Screen first (iOS 16.4 or later) and open it from there."),
+        _ => T("Checking…"),
+
     };
 
     protected override async Task OnInitializedAsync()
@@ -61,7 +62,7 @@
         try
         {
             var error = await Push.EnableAsync();
-            if (error is null) Snackbar.Add("Task notifications are on.", Severity.Success);
+            if (error is null) Snackbar.Add(T("Task notifications are on."), Severity.Success);
             else Snackbar.Add(error, Severity.Warning);
             _state = await Push.StateAsync();
         }
@@ -78,7 +79,7 @@
         {
             await Push.DisableAsync();
             _state = await Push.StateAsync();
-            Snackbar.Add("Task notifications are off.", Severity.Info);
+            Snackbar.Add(T("Task notifications are off."), Severity.Info);
         }
         finally
         {
@@ -92,8 +93,8 @@
         try
         {
             var result = await Push.SendTestAsync();
-            if (result.Value is { Sent: > 0 }) Snackbar.Add("Test sent. It should appear in a few seconds.", Severity.Success);
-            else Snackbar.Add(result.FullError ?? "This phone is not registered any more. Turn notifications off and on again.", Severity.Warning);
+            if (result.Value is { Sent: > 0 }) Snackbar.Add(T("Test sent. It should appear in a few seconds."), Severity.Success);
+            else Snackbar.Add(result.FullError ?? T("This phone is not registered any more. Turn notifications off and on again."), Severity.Warning);
         }
         finally
         {

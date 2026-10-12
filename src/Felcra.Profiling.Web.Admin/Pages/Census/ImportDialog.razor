@@ -5,25 +5,25 @@
     <DialogContent>
         <MudStack Spacing="3">
             <MudText Typo="Typo.body2">
-                Upload the census sheet as Excel (.xlsx) or CSV. The FFISB paper-form layout (BIL, NO. TAG, P / I / AJ / AB, UMUR, BERAT, CATATAN) is accepted as-is.
-                <MudLink OnClick="DownloadTemplateAsync" Class="ml-1">Download template</MudLink>
+                @T("Upload the census sheet as Excel (.xlsx) or CSV. The FFISB paper-form layout (BIL, NO. TAG, P / I / AJ / AB, UMUR, BERAT, CATATAN) is accepted as-is.")
+                <MudLink OnClick="DownloadTemplateAsync" Class="ml-1">@T("Download template")</MudLink>
             </MudText>
 
             <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
                 <MudFileUpload T="IBrowserFile" FilesChanged="OnFileSelected" Accept=".xlsx,.csv" MaxFileSize="@MaxBytes">
                     <CustomContent>
                         <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.UploadFile" OnClick="@context.OpenFilePickerAsync">
-                            Choose file
+                            @T("Choose file")
                         </MudButton>
                     </CustomContent>
                 </MudFileUpload>
-                <MudText>@(_fileName ?? "No file chosen")</MudText>
+                <MudText>@(_fileName ?? T("No file chosen"))</MudText>
                 <MudSpacer />
                 <MudSwitch T="bool" Value="_matchExisting" ValueChanged="OnMatchChanged" Color="Color.Primary"
-                           Label="Match existing animals by tag" />
+                           Label="@T("Match existing animals by tag")" />
             </MudStack>
             <MudText Typo="Typo.caption">
-                Turn matching off for a first registration (every row becomes a new animal). Turn it on to re-count animals already in the system.
+                @T("Turn matching off for a first registration (every row becomes a new animal). Turn it on to re-count animals already in the system.")
             </MudText>
 
             @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
@@ -32,27 +32,27 @@
             @if (_preview is not null)
             {
                 <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-                    <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">New animals: @_preview.AnimalsToCreate</MudChip>
-                    <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">Matched: @_preview.AnimalsToMatch</MudChip>
-                    <MudChip T="string" Color="Color.Error" Variant="Variant.Outlined">Errors: @_preview.RowsWithErrors</MudChip>
-                    <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined">Warnings: @_preview.RowsWithWarnings</MudChip>
+                    <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">@T("New animals: {0}", _preview.AnimalsToCreate)</MudChip>
+                    <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined">@T("Matched: {0}", _preview.AnimalsToMatch)</MudChip>
+                    <MudChip T="string" Color="Color.Error" Variant="Variant.Outlined">@T("Errors: {0}", _preview.RowsWithErrors)</MudChip>
+                    <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined">@T("Warnings: {0}", _preview.RowsWithWarnings)</MudChip>
                     <MudChip T="string" Variant="Variant.Text">
                         P @_preview.Counts.Bulls · I @_preview.Counts.Dams · AJ @_preview.Counts.MaleCalves · AB @_preview.Counts.FemaleCalves = @_preview.Counts.Total
                     </MudChip>
                 </MudStack>
-                <MudSwitch T="bool" @bind-Value="_problemsOnly" Label="Show only rows with errors or warnings" Color="Color.Primary" />
+                <MudSwitch T="bool" @bind-Value="_problemsOnly" Label="@T("Show only rows with errors or warnings")" Color="Color.Primary" />
                 <MudTable Items="VisibleRows" Dense="true" Hover="true" Elevation="0" Height="420px" FixedHeader="true" Breakpoint="Breakpoint.None">
                     <HeaderContent>
-                        <MudTh>Row</MudTh>
-                        <MudTh>Bil</MudTh>
-                        <MudTh>Tag</MudTh>
-                        <MudTh>Category</MudTh>
-                        <MudTh>Age</MudTh>
-                        <MudTh Style="text-align:right">Weight</MudTh>
-                        <MudTh>Project</MudTh>
-                        <MudTh>Sel.</MudTh>
-                        <MudTh>Action</MudTh>
-                        <MudTh>Messages</MudTh>
+                        <MudTh>@T("Row")</MudTh>
+                        <MudTh>@T("Bil")</MudTh>
+                        <MudTh>@T("Tag")</MudTh>
+                        <MudTh>@T("Category")</MudTh>
+                        <MudTh>@T("Age")</MudTh>
+                        <MudTh Style="text-align:right">@T("Weight")</MudTh>
+                        <MudTh>@T("Project")</MudTh>
+                        <MudTh>@T("Sel.")</MudTh>
+                        <MudTh>@T("Action")</MudTh>
+                        <MudTh>@T("Messages")</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd>@context.RowNumber</MudTd>
@@ -67,13 +67,13 @@
                             @switch (context.Action)
                             {
                                 case ImportRowAction.CreateAnimal:
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">New</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@T("New")</MudChip>
                                     break;
                                 case ImportRowAction.MatchExisting:
                                     <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@context.MatchedAnimalNo</MudChip>
                                     break;
                                 default:
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">Error</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text">@T("Error")</MudChip>
                                     break;
                             }
                         </MudTd>
@@ -87,9 +87,9 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => Dialog.Cancel())" Disabled="_busy">Cancel</MudButton>
+        <MudButton OnClick="@(() => Dialog.Cancel())" Disabled="_busy">@T("Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ImportAsync" Disabled="@(_busy || _preview is not { CanImport: true })">
-            Import @(_preview?.Rows.Count) rows
+            @T("Import {0} rows", _preview?.Rows.Count)
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -121,7 +121,8 @@
         _preview = null;
         if (file.Size > MaxBytes)
         {
-            _error = "The file is larger than 5 MB.";
+            _error = T("The file is larger than 5 MB.");
+
             return;
         }
 

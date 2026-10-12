@@ -7,7 +7,7 @@
 @inject RecentAnimals Recent
 
 @* Target of the QR code on ear-tag labels. Works offline from the phone's copy of the farm data. *@
-<PageTitle>Animal — FELCRA Field</PageTitle>
+<PageTitle>@T("Animal — FELCRA Field")</PageTitle>
 
 @if (_error is not null)
 {
@@ -27,39 +27,39 @@ else
     }
     @if (_breeding?.CullingReasons is { Count: > 0 } reasons)
     {
-        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">Culling candidate: @string.Join("; ", reasons)</MudAlert>
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@T("Culling candidate: {0}", string.Join("; ", reasons))</MudAlert>
     }
 
     @if (_animal.Status == AnimalStatus.Active)
     {
         <MudGrid Spacing="2" Class="mb-4">
-            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/weight")" Icon="@Icons.Material.Filled.MonitorWeight" Text="Weight" Detail="@LatestWeight" /></MudItem>
-            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/bcs")" Icon="@Icons.Material.Filled.FitnessCenter" Text="Body condition" Detail="@LatestBcs" /></MudItem>
-            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/treatment")" Icon="@Icons.Material.Filled.Vaccines" Text="Treatment" /></MudItem>
-            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/observation")" Icon="@Icons.Material.Filled.PhotoCamera" Text="Observation" /></MudItem>
+            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/weight")" Icon="@Icons.Material.Filled.MonitorWeight" Text="@T("Weight")" Detail="@LatestWeight" /></MudItem>
+            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/bcs")" Icon="@Icons.Material.Filled.FitnessCenter" Text="@T("Body condition")" Detail="@LatestBcs" /></MudItem>
+            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/treatment")" Icon="@Icons.Material.Filled.Vaccines" Text="@T("Treatment")" /></MudItem>
+            <MudItem xs="6"><ActionButton Href="@($"a/{Id}/observation")" Icon="@Icons.Material.Filled.PhotoCamera" Text="@T("Observation")" /></MudItem>
             @if (_animal.Sex == Sex.Female || _animal.Category == AnimalCategory.Bull)
             {
                 <MudItem xs="6"><ActionButton Href="@($"a/{Id}/breeding")" Icon="@Icons.Material.Filled.Favorite"
-                                              Text="@(_animal.Sex == Sex.Female ? "Breeding" : "Soundness exam")" /></MudItem>
+                                              Text="@(_animal.Sex == Sex.Female ? T("Breeding") : T("Soundness exam"))" /></MudItem>
             }
             @if (_animal.Category == AnimalCategory.Dam)
             {
-                <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/milk")" Icon="@Icons.Material.Filled.LocalDrink" Text="Milk yield" /></MudItem>
+                <MudItem xs="6"><ActionButton Href="@($"a/{Id}/measure/milk")" Icon="@Icons.Material.Filled.LocalDrink" Text="@T("Milk yield")" /></MudItem>
             }
         </MudGrid>
     }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-1">
-        <MudText Typo="Typo.subtitle1">History</MudText>
+        <MudText Typo="Typo.subtitle1">@T("History")</MudText>
         <MudSpacer />
         @if (_historyFromCache)
         {
-            <MudText Typo="Typo.caption" Color="Color.Secondary">Offline — showing history as last downloaded</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Offline — showing history as last downloaded")</MudText>
         }
     </MudStack>
     @if (_timeline.Count == 0)
     {
-        <MudText Typo="Typo.body2">@(_historyLoaded ? "Nothing recorded yet." : "History is shown when you are online.")</MudText>
+        <MudText Typo="Typo.body2">@(_historyLoaded ? T("Nothing recorded yet.") : T("History is shown when you are online."))</MudText>
     }
     <MudTimeline TimelinePosition="TimelinePosition.Start" Class="pt-0">
         @foreach (var item in _timeline)
@@ -70,7 +70,7 @@ else
                     @if (item.Pending is { } pending)
                     {
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(pending.Error is null ? Color.Warning : Color.Error)" Class="ml-1">
-                            @(pending.Error is null ? "Waiting to sync" : "Not accepted")
+                            @(pending.Error is null ? T("Waiting to sync") : T("Not accepted"))
                         </MudChip>
                     }
                 </MudText>
@@ -134,8 +134,8 @@ else
         if (_animal is null)
         {
             _error = Sync.IsOnline
-                ? "This animal is not on any of your farms."
-                : "This animal is not on this phone yet. Connect to the internet once to download your farm's animals.";
+                ? T("This animal is not on any of your farms.")
+                : T("This animal is not on this phone yet. Connect to the internet once to download your farm's animals.");
             return;
         }
 
@@ -172,7 +172,7 @@ else
     }
 
     private string? LatestWeight => _animal?.LatestWeightKg is { } w ? $"{w:0.#} kg · {_animal.LatestWeighedOn:dd MMM}" : null;
-    private string? LatestBcs => _animal?.LatestBcs is { } b ? $"BCS {b:0.#} · {_animal.LatestBcsOn:dd MMM}" : null;
+    private string? LatestBcs => _animal?.LatestBcs is { } b ? $"{T("BCS {0:0.#}", b)} · {_animal.LatestBcsOn:dd MMM}" : null;
 
     private List<TimelineItem> BuildTimeline()
     {
@@ -187,8 +187,8 @@ else
             items.AddRange(_records.Treatments.Select(t => new TimelineItem(
                 t.GivenOn, t.RecordedAt, t.ProductName,
                 Join(t.Dose is null ? null : $"{t.Dose:0.###} {t.DoseUnit}", t.Route is null ? null : EnumText.Humanize(t.Route.Value),
-                    t.NextDueOn is null ? null : $"next due {t.NextDueOn:dd MMM yyyy}",
-                    t.WithdrawalUntil is null ? null : $"no slaughter before {t.WithdrawalUntil:dd MMM yyyy}", t.Notes),
+                    t.NextDueOn is null ? null : T("next due {0:dd MMM yyyy}", t.NextDueOn),
+                    t.WithdrawalUntil is null ? null : T("no slaughter before {0:dd MMM yyyy}", t.WithdrawalUntil), t.Notes),
                 t.RecordedBy, Color.Secondary, [])));
             items.AddRange(_records.Observations.Select(o => new TimelineItem(
                 o.ObservedOn, o.RecordedAt, EnumText.Humanize(o.Category), o.Notes, o.RecordedBy, Color.Warning, o.PhotoIds)));
@@ -199,7 +199,7 @@ else
         {
             items.AddRange(_breeding.Events.Select(e => new TimelineItem(
                 e.EventDate, e.RecordedAt, BreedingText.Summary(e),
-                Join(e.SireLabel is null ? null : $"bull {e.SireLabel}", e.SemenCode is null ? null : $"semen {e.SemenCode}", e.Notes),
+                Join(e.SireLabel is null ? null : T("bull {0}", e.SireLabel), e.SemenCode is null ? null : T("semen {0}", e.SemenCode), e.Notes),
                 e.RecordedBy, Color.Tertiary, [])));
             sent.UnionWith(_breeding.Events.Select(e => e.Id));
         }
@@ -207,13 +207,13 @@ else
         if (_detail is not null)
         {
             items.AddRange(_detail.CensusHistory.Select(c => new TimelineItem(
-                c.SessionStartDate, default, $"Census: {c.SessionTitle}",
-                Join(AnimalText.Category(c.Category), AnimalText.Weight(c.WeightKg), c.Selected ? "selected" : null), null, Color.Info, [])));
+                c.SessionStartDate, default, T("Census: {0}", c.SessionTitle),
+                Join(AnimalText.Category(c.Category), AnimalText.Weight(c.WeightKg), c.Selected ? T("selected") : null), null, Color.Info, [])));
         }
 
         // Records still on the phone (not yet accepted by the server).
         items.AddRange(_pending.Where(p => !sent.Contains(p.Id)).Select(p => new TimelineItem(
-            p.Date, p.QueuedAt, p.Summary, null, "You", p.Error is null ? Color.Default : Color.Error, [], p)));
+            p.Date, p.QueuedAt, p.Summary, null, T("You"), p.Error is null ? Color.Default : Color.Error, [], p)));
 
         return items.OrderByDescending(i => i.Date).ThenByDescending(i => i.Order).ToList();
     }

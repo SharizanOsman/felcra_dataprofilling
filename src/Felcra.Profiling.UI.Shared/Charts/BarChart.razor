@@ -44,7 +44,7 @@
     [Parameter, EditorRequired] public IReadOnlyList<string> Labels { get; set; } = [];
     [Parameter, EditorRequired] public IReadOnlyList<BarSeries> Series { get; set; } = [];
     [Parameter] public string? Style { get; set; }
-    [Parameter] public string AriaLabel { get; set; } = "Bar chart";
+    [Parameter] public string AriaLabel { get; set; } = T("Bar chart");
 
     private AxisScale _y = AxisScale.For(0, 1);
     private double Slot => (Width - Left - Right) / Math.Max(1, Labels.Count);

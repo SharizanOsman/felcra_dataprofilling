@@ -14,7 +14,7 @@ public static class AccountDialogs
 
     /// <summary>Returns true when the password was changed (the new tokens are already stored).</summary>
     public static Task<bool> ChangePasswordAsync(this IDialogService dialogs, ApiClient api, AuthClient auth) =>
-        dialogs.EditAsync("Change password", new ChangePasswordRequest(),
+        dialogs.EditAsync(T("Change password"), new ChangePasswordRequest(),
             model => builder =>
             {
                 builder.OpenComponent<ChangePasswordFields>(0);

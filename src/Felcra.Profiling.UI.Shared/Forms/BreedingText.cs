@@ -9,10 +9,10 @@ public static class BreedingText
 {
     public static string EventType(BreedingEventType type) => type switch
     {
-        BreedingEventType.Insemination => "AI (insemination)",
-        BreedingEventType.NaturalService => "Natural service",
-        BreedingEventType.PregnancyCheck => "Pregnancy check",
-        BreedingEventType.BullSoundnessExam => "Bull soundness exam",
+        BreedingEventType.Insemination => T("AI (insemination)"),
+        BreedingEventType.NaturalService => T("Natural service"),
+        BreedingEventType.PregnancyCheck => T("Pregnancy check"),
+        BreedingEventType.BullSoundnessExam => T("Bull soundness exam"),
         _ => EnumText.Humanize(type),
     };
 
@@ -21,10 +21,15 @@ public static class BreedingText
         SoundnessResult? soundness) => type switch
     {
         BreedingEventType.PregnancyCheck when result is { } r =>
-            $"Pregnancy check — {EnumText.Humanize(r).ToLowerInvariant()}{(gestationDays is { } d ? $" ({d} days)" : "")}",
+            $"{T("Pregnancy check")} — {EnumText.Humanize(r).ToLowerInvariant()}{(gestationDays is { } d ? " " + T("({0} days)", d) : "")}",
         BreedingEventType.Calving =>
-            $"Calving — {calves} calf{(calves == 1 ? "" : "ves")}{(stillborn is > 0 ? $", {stillborn} stillborn" : "")}{(assisted == true ? ", assisted" : "")}",
-        BreedingEventType.BullSoundnessExam when soundness is { } s => $"Bull soundness exam — {EnumText.Humanize(s).ToLowerInvariant()}",
+            $"{T("Calving")} — " + string.Join(", ", new[]
+            {
+                T(calves == 1 ? "{0} calf" : "{0} calves", calves),
+                stillborn is > 0 ? T("{0} stillborn", stillborn) : null,
+                assisted == true ? T("assisted") : null,
+            }.OfType<string>()),
+        BreedingEventType.BullSoundnessExam when soundness is { } s => $"{T("Bull soundness exam")} — {EnumText.Humanize(s).ToLowerInvariant()}",
         _ => EventType(type),
     };
 
@@ -34,9 +39,9 @@ public static class BreedingText
     /// <summary>"Pregnant · due 12 Mar 2027", "Served — check due 2 Nov", "Open", or null when unknown.</summary>
     public static string? Status(ReproductiveState? state, DateOnly? expectedCalving, DateOnly? checkDue = null) => state switch
     {
-        ReproductiveState.Pregnant => expectedCalving is { } due ? $"Pregnant · calving due {due:dd MMM yyyy}" : "Pregnant",
-        ReproductiveState.Served => checkDue is { } check ? $"Served · pregnancy check due {check:dd MMM yyyy}" : "Served · waiting for pregnancy check",
-        ReproductiveState.Open => "Open (not pregnant)",
+        ReproductiveState.Pregnant => expectedCalving is { } due ? T("Pregnant · calving due {0:dd MMM yyyy}", due) : T("Pregnant"),
+        ReproductiveState.Served => checkDue is { } check ? T("Served · pregnancy check due {0:dd MMM yyyy}", check) : T("Served · waiting for pregnancy check"),
+        ReproductiveState.Open => T("Open (not pregnant)"),
         _ => null,
     };
 

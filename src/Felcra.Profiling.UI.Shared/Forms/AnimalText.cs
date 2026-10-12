@@ -6,13 +6,13 @@ namespace Felcra.Profiling.UI.Shared.Forms;
 /// <summary>Display text for animal values.</summary>
 public static class AnimalText
 {
-    /// <summary>"Dam (I)" — English name with the census-form code.</summary>
+    /// <summary>"Dam (I)" — name with the census-form code.</summary>
     public static string Category(AnimalCategory category) => category switch
     {
-        AnimalCategory.Bull => "Bull (P)",
-        AnimalCategory.Dam => "Dam (I)",
-        AnimalCategory.MaleCalf => "Male calf (AJ)",
-        AnimalCategory.FemaleCalf => "Female calf (AB)",
+        AnimalCategory.Bull => T("Bull (P)"),
+        AnimalCategory.Dam => T("Dam (I)"),
+        AnimalCategory.MaleCalf => T("Male calf (AJ)"),
+        AnimalCategory.FemaleCalf => T("Female calf (AB)"),
         _ => category.ToString(),
     };
 
@@ -28,9 +28,9 @@ public static class AnimalText
     public static string Months(int? months) => months switch
     {
         null => "",
-        < 12 => $"{months} mo",
-        _ when months % 12 == 0 => $"{months / 12} yr",
-        _ => $"{months / 12} yr {months % 12} mo",
+        < 12 => T("{0} mo", months),
+        _ when months % 12 == 0 => T("{0} yr", months / 12),
+        _ => T("{0} yr {1} mo", months / 12, months % 12),
     };
 
     /// <summary>Current age from the birth date, marked "~" when estimated.</summary>

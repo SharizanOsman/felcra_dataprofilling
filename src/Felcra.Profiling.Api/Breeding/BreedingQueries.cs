@@ -125,13 +125,13 @@ internal sealed class BreedingQueries(AppDbContext db, IOptions<BreedingOptions>
             var s = dam.Status;
             if (s.State == ReproductiveState.Served && s.PregnancyCheckDue is { } check && check <= horizon && check >= oldest)
                 reminders.Add(new(ReminderType.PregnancyCheckDue, dam.Id, no, dam.TagNumber, dam.FarmId, dam.FarmCode, check,
-                    "Pregnancy check due", $"Served {s.LastService:dd MMM yyyy}"));
+                    T("Pregnancy check due"), T("Served {0:dd MMM yyyy}", s.LastService)));
             if (s.State == ReproductiveState.Pregnant && s.ExpectedCalving is { } calving && calving <= horizon && calving >= oldest)
                 reminders.Add(new(ReminderType.CalvingDue, dam.Id, no, dam.TagNumber, dam.FarmId, dam.FarmCode, calving,
-                    "Calving due", "Watch for signs of calving; record the calf when born."));
+                    T("Calving due"), T("Watch for signs of calving; record the calf when born.")));
             if (dam.LatestBcs is { } bcs && bcs < _options.LowBcs)
                 reminders.Add(new(ReminderType.LowBodyCondition, dam.Id, no, dam.TagNumber, dam.FarmId, dam.FarmCode, today,
-                    $"Low body condition (BCS {bcs:0.#})", "Check feed and health; consider supplements."));
+                    T("Low body condition (BCS {0:0.#})", bcs), T("Check feed and health; consider supplements.")));
         }
 
         // Boosters / next doses that have not been given yet (no later record of the same product).
@@ -150,7 +150,7 @@ internal sealed class BreedingQueries(AppDbContext db, IOptions<BreedingOptions>
                 })
             .ToListAsync(ct);
         reminders.AddRange(due.Select(d => new ReminderDto(ReminderType.TreatmentDue, d.Id, Animal.FormatAnimalNo(d.AnimalNo), d.TagNumber,
-            d.FarmId, d.FarmCode, d.NextDueOn!.Value, $"{d.Product} due", $"Last given {d.GivenOn:dd MMM yyyy}")));
+            d.FarmId, d.FarmCode, d.NextDueOn!.Value, T("{0} due", d.Product), T("Last given {0:dd MMM yyyy}", d.GivenOn))));
 
         return reminders.OrderBy(r => r.DueDate).ThenBy(r => r.AnimalNo).ToList();
     }

@@ -67,7 +67,7 @@ internal sealed class UserAdminService(
         if (user is null) return UserCommandResult.Missing();
 
         if (id == actingUserId && (!request.IsActive || request.Role != Roles.HqAdmin))
-            return UserCommandResult.Invalid(nameof(request.Role), "You cannot deactivate your own account or remove your own HQ admin role.");
+            return UserCommandResult.Invalid(nameof(request.Role), T("You cannot deactivate your own account or remove your own HQ admin role."));
 
         var farmIds = request.Role == Roles.HqAdmin ? [] : request.FarmIds.Distinct().ToList();
         if (await FindUnknownFarmAsync(farmIds, ct) is { } error) return error;
@@ -141,7 +141,7 @@ internal sealed class UserAdminService(
     private async Task<UserCommandResult?> FindUnknownFarmAsync(List<Guid> farmIds, CancellationToken ct)
     {
         var known = await db.Farms.CountAsync(f => farmIds.Contains(f.Id), ct);
-        return known == farmIds.Count ? null : UserCommandResult.Invalid("FarmIds", "One or more farms do not exist.");
+        return known == farmIds.Count ? null : UserCommandResult.Invalid("FarmIds", T("One or more farms do not exist."));
     }
 
     /// <summary>Each user has exactly one role. Written directly (not via UserManager) for the reason above.</summary>

@@ -21,7 +21,11 @@ You need the address from your manager, e.g. `https://profiling.felcra.com.my/fi
 
 <img src="images/field-login.png" width="260" alt="Sign-in screen">
 
-Enter the e-mail and password from your manager and tap **Sign in**. The first time, the app downloads your farm's
+The app opens in Bahasa Melayu; tap **文A** at the top right to choose English (or back to Bahasa Melayu). The phone
+remembers the choice, and your morning task notification uses it too.
+
+Enter the e-mail and password from your manager and tap **Sign in**.
+ The first time, the app downloads your farm's
 animals; wait until the home screen shows **"140 animals on this phone"** (your farm's number). Do this where
 there is internet. You stay signed in for up to 30 days, even offline.
 

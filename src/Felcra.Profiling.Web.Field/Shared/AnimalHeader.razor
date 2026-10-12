@@ -1,16 +1,16 @@
 @* Who is being recorded: shown on every recording screen so the officer can confirm the animal. *@
 <MudPaper Class="pa-3 mb-3" Elevation="1" Style="border-left:4px solid var(--mud-palette-primary)">
-    <MudText Typo="Typo.h6">@(Animal.TagNumber is null ? "No ear tag" : $"Tag {Animal.TagNumber}") · @Animal.AnimalNo</MudText>
+    <MudText Typo="Typo.h6">@(Animal.TagNumber is null ? T("No ear tag") : T("Tag {0}", Animal.TagNumber)) · @Animal.AnimalNo</MudText>
     <MudText Typo="Typo.body2">
         @AnimalText.Category(Animal.Category) · @AnimalText.Age(Animal.BirthDate, Animal.BirthDateMethod, DateOnly.FromDateTime(DateTime.Today)) · @Animal.FarmCode
     </MudText>
     @if (DuplicateTag)
     {
-        <MudText Typo="Typo.caption" Color="Color.Warning">Another animal on this farm has the same tag — check before recording.</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Warning">@T("Another animal on this farm has the same tag — check before recording.")</MudText>
     }
     @if (Animal.Status != AnimalStatus.Active)
     {
-        <MudText Typo="Typo.caption" Color="Color.Error">This animal is @AnimalText.Status(Animal.Status).ToLowerInvariant(); nothing can be recorded.</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Error">@T("This animal is {0}; nothing can be recorded.", AnimalText.Status(Animal.Status).ToLowerInvariant())</MudText>
     }
 </MudPaper>
 

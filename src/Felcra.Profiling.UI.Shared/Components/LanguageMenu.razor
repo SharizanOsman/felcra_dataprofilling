@@ -1,0 +1,38 @@
+@* Bahasa Melayu / English switch. The choice is saved in this browser (both apps share it) and the app reloads in
+   that language: start.js passes it to Blazor as the application culture. *@
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+@if (Compact)
+{
+    <MudMenu Icon="@Icons.Material.Filled.Translate" Color="Color.Inherit" AriaLabel="@T("Language")"
+             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" data-testid="language-menu">
+        @Items
+    </MudMenu>
+}
+else
+{
+    <MudMenu Label="@Language.ToUpperInvariant()" StartIcon="@Icons.Material.Filled.Translate" Color="Color.Inherit" Variant="Variant.Text"
+             AriaLabel="@T("Language")" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" data-testid="language-menu">
+        @Items
+    </MudMenu>
+}
+
+@code {
+    /// <summary>Icon only, for the phone's narrow app bar.</summary>
+    [Parameter] public bool Compact { get; set; }
+
+    private RenderFragment Items => __builder =>
+    {
+        foreach (var language in Languages)
+        {
+            <MudMenuItem OnClick="@(() => ChooseAsync(language))" Icon="@(language == Language ? Icons.Material.Filled.Check : null)"
+                         lang="@language">@NativeName(language)</MudMenuItem>
+        }
+    };
+
+    private async Task ChooseAsync(string language)
+    {
+        if (language != Language) await JS.InvokeVoidAsync("felcra.setLanguage", language);
+    }
+}

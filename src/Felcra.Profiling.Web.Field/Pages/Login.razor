@@ -2,9 +2,9 @@
 @layout LoginLayout
 @attribute [AllowAnonymous]
 
-<PageTitle>Sign in — FELCRA Field</PageTitle>
+<PageTitle>@T("Sign in — FELCRA Field")</PageTitle>
 
-<LoginForm Title="FELCRA Field" Subtitle="Field officer app" ReturnUrl="@ReturnUrl" />
+<LoginForm Title="@T("FELCRA Field")" Subtitle="@T("Field officer app")" ReturnUrl="@ReturnUrl" />
 
 @code {
     [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }

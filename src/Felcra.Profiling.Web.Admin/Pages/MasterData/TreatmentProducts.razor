@@ -2,39 +2,39 @@
 @attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
 @inherits AdminPageBase
 
-<PageHeader Title="Treatments & vaccines" Subtitle="Medicines, vaccines, tests and procedures" Error="@LoadError">
+<PageHeader Title="@T("Treatments & vaccines")" Subtitle="@T("Medicines, vaccines, tests and procedures")" Error="@LoadError">
     <Actions>
         @if (IsHq)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">Add treatment</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">@T("Add treatment")</MudButton>
         }
     </Actions>
 </PageHeader>
 
 <MudTable Items="_items" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Category</MudTh>
-        <MudTh Style="text-align:right">Default dose</MudTh>
-        <MudTh Style="text-align:right">Withdrawal (days)</MudTh>
-        <MudTh>Status</MudTh>
+        <MudTh>@T("Name")</MudTh>
+        <MudTh>@T("Category")</MudTh>
+        <MudTh Style="text-align:right">@T("Default dose")</MudTh>
+        <MudTh Style="text-align:right">@T("Withdrawal (days)")</MudTh>
+        <MudTh>@T("Status")</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Category">@EnumText.Humanize(context.Category)</MudTd>
-        <MudTd DataLabel="Default dose" Style="text-align:right">@context.DefaultDose?.ToString("0.###") @context.Unit</MudTd>
-        <MudTd DataLabel="Withdrawal (days)" Style="text-align:right">@context.WithdrawalDays</MudTd>
-        <MudTd DataLabel="Status"><StatusChip Active="context.IsActive" /></MudTd>
+        <MudTd DataLabel="@T("Name")">@context.Name</MudTd>
+        <MudTd DataLabel="@T("Category")">@EnumText.Humanize(context.Category)</MudTd>
+        <MudTd DataLabel="@T("Default dose")" Style="text-align:right">@context.DefaultDose?.ToString("0.###") @context.Unit</MudTd>
+        <MudTd DataLabel="@T("Withdrawal (days)")" Style="text-align:right">@context.WithdrawalDays</MudTd>
+        <MudTd DataLabel="@T("Status")"><StatusChip Active="context.IsActive" /></MudTd>
         <MudTd Style="text-align:right">
             @if (IsHq)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="Edit" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="Delete" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="@T("Edit")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="@T("Delete")" />
             }
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No treatments yet.</MudText></NoRecordsContent>
+    <NoRecordsContent><MudText>@T("No treatments yet.")</MudText></NoRecordsContent>
 </MudTable>
 
 @code {
@@ -45,34 +45,34 @@
     protected override async Task LoadAsync() => _items = await Api.GetAsync<List<TreatmentProductDto>>(Url);
 
     private async Task AddAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Add treatment", new TreatmentProductRequest(), Fields,
-            m => Api.PostAsync<TreatmentProductDto>(Url, m), Validate), "Treatment added.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Add treatment"), new TreatmentProductRequest(), Fields,
+            m => Api.PostAsync<TreatmentProductDto>(Url, m), Validate), T("Treatment added."));
 
     private async Task EditAsync(TreatmentProductDto item) =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"Edit {item.Name}", TreatmentProductRequest.From(item), Fields,
-            m => Api.PutAsync<TreatmentProductDto>($"{Url}/{item.Id}", m), Validate), "Treatment updated.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Edit {0}", item.Name), TreatmentProductRequest.From(item), Fields,
+            m => Api.PutAsync<TreatmentProductDto>($"{Url}/{item.Id}", m), Validate), T("Treatment updated."));
 
     private async Task DeleteAsync(TreatmentProductDto item)
     {
         if (await Dialogs.ConfirmDeleteAsync(item.Name))
-            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), "Treatment deleted.");
+            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), T("Treatment deleted."));
     }
 
     private RenderFragment<TreatmentProductRequest> Fields => m =>
         @<MudStack Spacing="2">
-            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" HelperText="e.g. FMD vaccine (booster)" />
-            <MudSelect @bind-Value="m.Category" For="@(() => m.Category)" Label="Category">
+            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="@T("Name")" HelperText="@T("e.g. FMD vaccine (booster)")" />
+            <MudSelect @bind-Value="m.Category" For="@(() => m.Category)" Label="@T("Category")">
                 @foreach (var c in Enum.GetValues<TreatmentCategory>())
                 {
                     <MudSelectItem Value="c">@EnumText.Humanize(c)</MudSelectItem>
                 }
             </MudSelect>
             <MudStack Row="true">
-                <MudNumericField @bind-Value="m.DefaultDose" For="@(() => m.DefaultDose)" Label="Default dose" />
-                <MudTextField @bind-Value="m.Unit" For="@(() => m.Unit)" Label="Unit" HelperText="e.g. ml" />
+                <MudNumericField @bind-Value="m.DefaultDose" For="@(() => m.DefaultDose)" Label="@T("Default dose")" />
+                <MudTextField @bind-Value="m.Unit" For="@(() => m.Unit)" Label="@T("Unit")" HelperText="@T("e.g. ml")" />
             </MudStack>
-            <MudNumericField @bind-Value="m.WithdrawalDays" For="@(() => m.WithdrawalDays)" Label="Meat withdrawal period (days)" />
-            <MudTextField @bind-Value="m.Notes" For="@(() => m.Notes)" Label="Notes" Lines="2" />
-            <MudSwitch @bind-Value="m.IsActive" Label="Active" Color="Color.Primary" />
+            <MudNumericField @bind-Value="m.WithdrawalDays" For="@(() => m.WithdrawalDays)" Label="@T("Meat withdrawal period (days)")" />
+            <MudTextField @bind-Value="m.Notes" For="@(() => m.Notes)" Label="@T("Notes")" Lines="2" />
+            <MudSwitch @bind-Value="m.IsActive" Label="@T("Active")" Color="Color.Primary" />
         </MudStack>;
 }

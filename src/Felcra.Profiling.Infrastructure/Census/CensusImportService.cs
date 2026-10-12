@@ -119,13 +119,13 @@ internal sealed class CensusImportService(AppDbContext db) : ICensusImportServic
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return (null, "The file could not be read. Upload an Excel (.xlsx) or CSV file.");
+            return (null, T("The file could not be read. Upload an Excel (.xlsx) or CSV file."));
         }
-        if (sheet.Count == 0) return (null, "The file is empty.");
+        if (sheet.Count == 0) return (null, T("The file is empty."));
 
         var parsed = CensusSheetParser.Parse(sheet);
         if (parsed.FatalError is not null) return (null, parsed.FatalError);
-        if (parsed.Rows.Count == 0) return (null, "No animal rows were found below the header.");
+        if (parsed.Rows.Count == 0) return (null, T("No animal rows were found below the header."));
 
         var projects = await db.Projects.Where(p => p.IsActive).ToDictionaryAsync(p => p.Code.ToUpperInvariant(), ct);
         var farmProjectIds = await db.FarmProjects.Where(fp => fp.FarmId == session.FarmId).Select(fp => fp.ProjectId).ToListAsync(ct);
@@ -163,7 +163,7 @@ internal sealed class CensusImportService(AppDbContext db) : ICensusImportServic
                 }
                 else
                 {
-                    warnings.Add($"Unknown project '{projectText}'; ignored.");
+                    warnings.Add(T("Unknown project '{0}'; ignored.", projectText));
                 }
             }
 
@@ -178,19 +178,19 @@ internal sealed class CensusImportService(AppDbContext db) : ICensusImportServic
                 {
                     match = existing[0];
                     if (inSession.Contains(match.Id))
-                        warnings.Add("Already counted in this session; the entry will be updated.");
+                        warnings.Add(T("Already counted in this session; the entry will be updated."));
                 }
                 else if (matchExisting && existing.Count > 0)
                 {
                     errors.Add(existing.Count > 1
-                        ? $"Tag {tag} is used by {existing.Count} animals ({string.Join(", ", existing.Select(a => Animal.FormatAnimalNo(a.AnimalNo)))}); give them distinct tags first, or import without matching."
-                        : $"Tag {tag} appears {inFile} times in this file but matches one existing animal; fix the file or import without matching.");
+                        ? T("Tag {0} is used by {1} animals ({2}); give them distinct tags first, or import without matching.", tag, existing.Count, string.Join(", ", existing.Select(a => Animal.FormatAnimalNo(a.AnimalNo))))
+                        : T("Tag {0} appears {1} times in this file but matches one existing animal; fix the file or import without matching.", tag, inFile));
                 }
                 else
                 {
-                    if (inFile > 1) warnings.Add($"Tag {tag} appears {inFile} times in this file; each row becomes a separate animal.");
+                    if (inFile > 1) warnings.Add(T("Tag {0} appears {1} times in this file; each row becomes a separate animal.", tag, inFile));
                     if (existing.Count > 0)
-                        warnings.Add($"Tag {tag} is already used by {string.Join(", ", existing.Select(a => Animal.FormatAnimalNo(a.AnimalNo)))}; another animal with this tag will be registered.");
+                        warnings.Add(T("Tag {0} is already used by {1}; another animal with this tag will be registered.", tag, string.Join(", ", existing.Select(a => Animal.FormatAnimalNo(a.AnimalNo)))));
                 }
             }
 
@@ -247,8 +247,9 @@ internal sealed class CensusImportService(AppDbContext db) : ICensusImportServic
     public byte[] CreateTemplate()
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add("Census");
-        string[] headers = ["Line", "Tag No", "P", "I", "AJ", "AB", "Age", "Weight (kg)", "BCS", "Project", "Remarks", "Selected"];
+        // Headers in the user's language; the importer reads both (the Malay ones are the paper form's).
+        var sheet = workbook.Worksheets.Add(T("Census"));
+        string[] headers = [T("Line"), T("Tag No"), "P", "I", "AJ", "AB", T("Age"), T("Weight (kg)"), "BCS", T("Project"), T("Remarks"), T("Selected")];
         for (var i = 0; i < headers.Length; i++) sheet.Cell(1, i + 1).Value = headers[i];
         sheet.Row(1).Style.Font.Bold = true;
         sheet.Row(1).Style.Fill.BackgroundColor = XLColor.FromHtml("#E8F5E9");
@@ -259,18 +260,18 @@ internal sealed class CensusImportService(AppDbContext db) : ICensusImportServic
         sheet.Columns().AdjustToContents();
         sheet.SheetView.FreezeRows(1);
 
-        var help = workbook.Worksheets.Add("Instructions");
+        var help = workbook.Worksheets.Add(T("Instructions"));
         string[] lines =
         [
-            "One row per animal. Delete the example row before importing.",
-            "Tag No: ear-tag number. Leave empty (or write NO. TAG) for untagged animals.",
-            "Category: put / in exactly one of P (bull / pejantan), I (dam / induk), AJ (male calf / anak jantan), AB (female calf / anak betina).",
-            "Age: e.g. '1 Tahun 6 Bulan', '8 Bulan', '1.5 years'. Used to estimate the birth date.",
-            "Weight (kg): number, e.g. 119 or '119 Kg'.",
-            "BCS: body condition score (optional).",
-            "Project: project code such as EPP5 or RP4 (may also be written in Remarks, as on the paper form).",
-            "Selected: put / (or Y) for animals selected in this programme.",
-            "Malay headers from the paper form (Bil, No. Tag, Jenis, Umur, Berat, Catatan, Dipilih) are also accepted.",
+            T("One row per animal. Delete the example row before importing."),
+            T("Tag No: ear-tag number. Leave empty (or write NO. TAG) for untagged animals."),
+            T("Category: put / in exactly one of P (bull / pejantan), I (dam / induk), AJ (male calf / anak jantan), AB (female calf / anak betina)."),
+            T("Age: e.g. '1 Tahun 6 Bulan', '8 Bulan', '1.5 years'. Used to estimate the birth date."),
+            T("Weight (kg): number, e.g. 119 or '119 Kg'."),
+            T("BCS: body condition score (optional)."),
+            T("Project: project code such as EPP5 or RP4 (may also be written in Remarks, as on the paper form)."),
+            T("Selected: put / (or Y) for animals selected in this programme."),
+            T("Malay headers from the paper form (Bil, No. Tag, Jenis, Umur, Berat, Catatan, Dipilih) are also accepted."),
         ];
         for (var i = 0; i < lines.Length; i++) help.Cell(i + 1, 1).Value = lines[i];
         help.Column(1).Width = 120;

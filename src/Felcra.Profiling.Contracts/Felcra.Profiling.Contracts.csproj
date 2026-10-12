@@ -7,6 +7,11 @@
   <ItemGroup>
     <!-- For shared enums only; Domain has no dependencies so it is safe to ship to the browser. -->
     <ProjectReference Include="..\Felcra.Profiling.Domain\Felcra.Profiling.Domain.csproj" />
+    <ProjectReference Include="..\Felcra.Profiling.Localization\Felcra.Profiling.Localization.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- T("…"): text in the user's language (see Felcra.Profiling.Localization). -->
+    <Using Include="Felcra.Profiling.Localization.Text" Static="true" />
+  </ItemGroup>
 </Project>

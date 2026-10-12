@@ -41,8 +41,8 @@ public abstract class AdminPageBase : ComponentBase
         catch (HttpRequestException ex)
         {
             LoadError = ex.StatusCode is System.Net.HttpStatusCode.NotFound
-                ? "This record was not found or you do not have access to it."
-                : "Could not load data from the server. Please try again.";
+                ? T("This record was not found or you do not have access to it.")
+                : T("Could not load data from the server. Please try again.");
         }
         finally
         {
@@ -51,7 +51,7 @@ public abstract class AdminPageBase : ComponentBase
     }
 
     /// <summary>Shows a snackbar for a delete (or other non-dialog) call and reloads on success.</summary>
-    protected async Task NotifyAsync<T>(ApiResult<T> result, string successMessage)
+    protected async Task NotifyAsync<TValue>(ApiResult<TValue> result, string successMessage)
     {
         if (result.Succeeded)
         {
@@ -60,7 +60,7 @@ public abstract class AdminPageBase : ComponentBase
         }
         else
         {
-            Snackbar.Add(result.FullError ?? "Something went wrong.", Severity.Error);
+            Snackbar.Add(result.FullError ?? T("Something went wrong."), Severity.Error);
         }
     }
 
@@ -80,7 +80,8 @@ public abstract class AdminPageBase : ComponentBase
             if (result.Value is { } file)
                 await JS.InvokeVoidAsync("felcra.downloadFile", file.FileName, file.ContentType, Convert.ToBase64String(file.Content));
             else
-                Snackbar.Add(result.FullError ?? "The file could not be downloaded.", Severity.Error);
+                Snackbar.Add(result.FullError ?? T("The file could not be downloaded."), Severity.Error);
+
         }
         finally
         {

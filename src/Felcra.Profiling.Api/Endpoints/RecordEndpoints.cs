@@ -1,5 +1,6 @@
 using Felcra.Profiling.Api.Infrastructure;
 using Felcra.Profiling.Application.Abstractions;
+using Felcra.Profiling.Contracts.Common;
 using Felcra.Profiling.Contracts.Records;
 using Felcra.Profiling.Domain.Animals;
 using Felcra.Profiling.Domain.Common;
@@ -95,16 +96,16 @@ internal static class RecordEndpoints
         if (animal.Status != AnimalStatus.Active)
             return (null, TypedResults.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["Animal"] = [$"{Animal.FormatAnimalNo(animal.AnimalNo)} is {animal.Status.ToString().ToLowerInvariant()}; records can only be added for active animals."],
+                ["Animal"] = [T("{0} is {1}; records can only be added for active animals.", Animal.FormatAnimalNo(animal.AnimalNo), T(ValidationText.FieldName(animal.Status.ToString())).ToLowerInvariant())],
             }));
         return (animal, null);
     }
 
     /// <summary>Same ID already stored: return it if it is for the same animal (a retry), else conflict.</summary>
-    private static async Task<IResult?> ExistingAsync<T>(AppDbContext db, Guid id, Guid animalId, Func<T, Task<object>> toDto, CancellationToken ct)
-        where T : AuditableEntity
+    private static async Task<IResult?> ExistingAsync<TRecord>(AppDbContext db, Guid id, Guid animalId, Func<TRecord, Task<object>> toDto, CancellationToken ct)
+        where TRecord : AuditableEntity
     {
-        var existing = await db.Set<T>().AsNoTracking().IgnoreQueryFilters([QueryFilters.SoftDelete]).SingleOrDefaultAsync(e => e.Id == id, ct);
+        var existing = await db.Set<TRecord>().AsNoTracking().IgnoreQueryFilters([QueryFilters.SoftDelete]).SingleOrDefaultAsync(e => e.Id == id, ct);
         if (existing is null) return null;
         var sameAnimal = existing switch
         {
@@ -115,7 +116,7 @@ internal static class RecordEndpoints
         };
         return sameAnimal
             ? TypedResults.Ok(await toDto(existing))
-            : TypedResults.Problem("A record with this ID already exists.", statusCode: StatusCodes.Status409Conflict);
+            : TypedResults.Problem(T("A record with this ID already exists."), statusCode: StatusCodes.Status409Conflict);
     }
 
     private static async Task<IResult> AddMeasurement(Guid animalId, MeasurementRequest request, AppDbContext db, CancellationToken ct)
@@ -152,9 +153,9 @@ internal static class RecordEndpoints
                 async t => ToDto(t, product?.Name ?? "?", await RecorderNamesAsync(db, [t.CreatedBy], ct)), ct) is { } existing)
             return existing;
         if (product is null)
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["TreatmentProductId"] = ["Treatment does not exist."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["TreatmentProductId"] = [T("Treatment does not exist.")] });
         if (request.CensusSessionId is { } sessionId && !await db.CensusSessions.AnyAsync(s => s.Id == sessionId && s.FarmId == animal!.FarmId, ct))
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["CensusSessionId"] = ["Programme is not on this animal's farm."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["CensusSessionId"] = [T("Programme is not on this animal's farm.")] });
 
         var record = new TreatmentRecord
         {
@@ -191,7 +192,7 @@ internal static class RecordEndpoints
         var photoIds = request.PhotoIds.Distinct().ToList();
         var photos = await db.Photos.Where(p => photoIds.Contains(p.Id) && p.AnimalId == animalId && p.ObservationId == null).ToListAsync(ct);
         if (photos.Count != photoIds.Count)
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["PhotoIds"] = ["One or more photos were not uploaded for this animal."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["PhotoIds"] = [T("One or more photos were not uploaded for this animal.")] });
 
         var observation = new Observation
         {
@@ -222,16 +223,16 @@ internal static class RecordEndpoints
         {
             return existing.AnimalId == animalId
                 ? TypedResults.Ok(new PhotoDto(existing.Id, existing.ContentType, existing.SizeBytes))
-                : TypedResults.Problem("A photo with this ID already exists.", statusCode: StatusCodes.Status409Conflict);
+                : TypedResults.Problem(T("A photo with this ID already exists."), statusCode: StatusCodes.Status409Conflict);
         }
         if (file.Length == 0 || file.Length > MaxPhotoBytes)
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["File"] = ["Photos must be between 1 byte and 8 MB."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["File"] = [T("Photos must be between 1 byte and 8 MB.")] });
 
         await using var stream = file.OpenReadStream();
         var header = new byte[12];
         var read = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false, ct);
         if (ImageType(header.AsSpan(0, read)) is not var (contentType, extension))
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["File"] = ["Only JPEG, PNG or WebP photos are accepted."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["File"] = [T("Only JPEG, PNG or WebP photos are accepted.")] });
 
         stream.Position = 0;
         var key = await store.SaveAsync(stream, extension, ct);

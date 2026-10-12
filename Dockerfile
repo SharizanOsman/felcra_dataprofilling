@@ -4,6 +4,7 @@ WORKDIR /src
 
 # Restore first so package downloads are cached between source changes.
 COPY Directory.Build.props Directory.Packages.props ./
+COPY src/Felcra.Profiling.Localization/*.csproj src/Felcra.Profiling.Localization/
 COPY src/Felcra.Profiling.Domain/*.csproj src/Felcra.Profiling.Domain/
 COPY src/Felcra.Profiling.Contracts/*.csproj src/Felcra.Profiling.Contracts/
 COPY src/Felcra.Profiling.Application/*.csproj src/Felcra.Profiling.Application/

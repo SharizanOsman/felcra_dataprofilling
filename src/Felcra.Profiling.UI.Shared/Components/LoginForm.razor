@@ -11,9 +11,9 @@
     <MudCardContent>
         <EditForm Model="_model" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />
-            <MudTextField @bind-Value="_model.Email" Label="Email" InputType="InputType.Email"
+            <MudTextField @bind-Value="_model.Email" Label="@T("Email")" InputType="InputType.Email"
                           Variant="Variant.Outlined" Required="true" autocomplete="username" Class="mb-3" />
-            <MudTextField @bind-Value="_model.Password" Label="Password" InputType="InputType.Password"
+            <MudTextField @bind-Value="_model.Password" Label="@T("Password")" InputType="InputType.Password"
                           Variant="Variant.Outlined" Required="true" autocomplete="current-password" Class="mb-3" />
             @if (_error is not null)
             {
@@ -21,7 +21,7 @@
             }
             <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
                        FullWidth="true" Size="Size.Large" Disabled="_busy">
-                @(_busy ? "Signing in…" : "Sign in")
+                @(_busy ? T("Signing in…") : T("Sign in"))
             </MudButton>
         </EditForm>
     </MudCardContent>

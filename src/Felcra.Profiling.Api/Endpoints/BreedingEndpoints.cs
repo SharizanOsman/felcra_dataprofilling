@@ -83,7 +83,7 @@ internal static class BreedingEndpoints
         if (await db.BreedingEvents.AsNoTracking().IgnoreQueryFilters([QueryFilters.SoftDelete]).SingleOrDefaultAsync(e => e.Id == request.Id, ct) is { } existing)
         {
             if (existing.AnimalId != animalId)
-                return TypedResults.Problem("A record with this ID already exists.", statusCode: StatusCodes.Status409Conflict);
+                return TypedResults.Problem(T("A record with this ID already exists."), statusCode: StatusCodes.Status409Conflict);
             var calves = await db.Animals.AsNoTracking().Where(a => a.BirthEventId == existing.Id).Select(a => a.Id).ToListAsync(ct);
             return TypedResults.Ok(ToDto(existing, await SireLabelsAsync(db, [existing.SireId], ct),
                 await RecordEndpoints.RecorderNamesAsync(db, [existing.CreatedBy], ct), calves));
@@ -91,10 +91,10 @@ internal static class BreedingEndpoints
 
         if (BreedingEvent.IsFemaleEvent(request.Type) != (animal!.Sex == Sex.Female))
             return Invalid("Type", request.Type == BreedingEventType.BullSoundnessExam
-                ? "Soundness exams are for bulls."
-                : "Breeding events other than soundness exams are recorded on the female.");
+                ? T("Soundness exams are for bulls.")
+                : T("Breeding events other than soundness exams are recorded on the female."));
         if (request.SireId is { } sireId && !await db.Animals.AnyAsync(a => a.Id == sireId && a.Sex == Sex.Male, ct))
-            return Invalid("SireId", "The sire must be a male animal.");
+            return Invalid("SireId", T("The sire must be a male animal."));
 
         var breedingEvent = new BreedingEvent
         {
@@ -131,7 +131,7 @@ internal static class BreedingEndpoints
             foreach (var calfRequest in request.Calves)
             {
                 if (await db.Animals.IgnoreQueryFilters([QueryFilters.SoftDelete]).AnyAsync(a => a.Id == calfRequest.Id, ct))
-                    return TypedResults.Problem("A calf with this ID already exists.", statusCode: StatusCodes.Status409Conflict);
+                    return TypedResults.Problem(T("A calf with this ID already exists."), statusCode: StatusCodes.Status409Conflict);
 
                 var calf = new Animal
                 {
@@ -173,7 +173,7 @@ internal static class BreedingEndpoints
         var breedingEvent = await db.BreedingEvents.SingleOrDefaultAsync(e => e.Id == id, ct);
         if (breedingEvent is null) return TypedResults.NotFound();
         if (await db.Animals.AnyAsync(a => a.BirthEventId == id, ct))
-            return TypedResults.Problem("This calving registered calves. Delete the calves first if the calving was recorded by mistake.",
+            return TypedResults.Problem(T("This calving registered calves. Delete the calves first if the calving was recorded by mistake."),
                 statusCode: StatusCodes.Status409Conflict);
 
         db.BreedingEvents.Remove(breedingEvent);

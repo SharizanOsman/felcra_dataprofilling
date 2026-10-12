@@ -1,5 +1,6 @@
 // Step 8 end-to-end: Reports page downloads (PDF / Excel), census and breeding page shortcuts, monthly e-mail panel.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -14,7 +15,7 @@ const today = new Date();
 const ym = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 const lastMonth = ym(new Date(today.getFullYear(), today.getMonth() - 1, 1));
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const login = async email => {
   const page = await (await browser.newContext({ viewport: { width: 1400, height: 1000 }, acceptDownloads: true })).newPage();
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });

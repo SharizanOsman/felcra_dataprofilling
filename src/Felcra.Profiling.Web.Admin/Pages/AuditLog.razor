@@ -2,45 +2,47 @@
 @attribute [Authorize(Roles = Roles.HqAdmin)]
 @inherits AdminPageBase
 
-<PageHeader Title="Audit log" Subtitle="Every change to farms, master data and users" Error="@LoadError" />
+<PageHeader Title="@T("Audit log")" Subtitle="@T("Every change to farms, master data and users")" Error="@LoadError" />
 
 <MudTable @ref="_table" T="AuditLogDto" ServerData="LoadPageAsync" Dense="true" Hover="true" Elevation="1"
           Breakpoint="Breakpoint.Sm" RowsPerPage="50">
     <ToolBarContent>
         <MudStack Row="true" Spacing="3" Style="width:100%" Wrap="Wrap.Wrap">
-            <MudSelect T="string" Value="_entityType" ValueChanged="OnEntityTypeChanged" Label="Record type" Clearable="true" Style="min-width:200px">
+            <MudSelect T="string" Value="_entityType" ValueChanged="OnEntityTypeChanged" Label="@T("Record type")" Clearable="true" Style="min-width:200px"
+                       ToStringFunc="@(t => t is null ? "" : EntityName(t))">
                 @foreach (var type in EntityTypes)
                 {
-                    <MudSelectItem Value="type">@type</MudSelectItem>
+                    <MudSelectItem Value="type">@EntityName(type)</MudSelectItem>
                 }
             </MudSelect>
-            <MudTextField T="string" Value="_userName" ValueChanged="OnUserChanged" Label="User" Clearable="true"
+            <MudTextField T="string" Value="_userName" ValueChanged="OnUserChanged" Label="@T("User")" Clearable="true"
                           DebounceInterval="400" Style="min-width:200px" />
         </MudStack>
     </ToolBarContent>
     <HeaderContent>
-        <MudTh>When</MudTh>
-        <MudTh>User</MudTh>
-        <MudTh>Action</MudTh>
-        <MudTh>Record</MudTh>
-        <MudTh>Changes</MudTh>
+        <MudTh>@T("When")</MudTh>
+        <MudTh>@T("User")</MudTh>
+        <MudTh>@T("Action")</MudTh>
+        <MudTh>@T("Record")</MudTh>
+        <MudTh>@T("Changes")</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="When">@context.Timestamp.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudTd>
-        <MudTd DataLabel="User">@(context.UserName ?? "system")</MudTd>
-        <MudTd DataLabel="Action">
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ActionColor(context.Action)">@context.Action</MudChip>
+        <MudTd DataLabel="@T("When")">@context.Timestamp.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudTd>
+        <MudTd DataLabel="@T("User")">@(context.UserName ?? T("system"))</MudTd>
+        <MudTd DataLabel="@T("Action")">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ActionColor(context.Action)">@T(context.Action)</MudChip>
         </MudTd>
-        <MudTd DataLabel="Record">@context.EntityType <MudText Typo="Typo.caption" Color="Color.Secondary">@context.EntityId.ToString()[..8]</MudText></MudTd>
-        <MudTd DataLabel="Changes" Style="max-width:520px">
+        <MudTd DataLabel="@T("Record")">@EntityName(context.EntityType) <MudText
+ Typo="Typo.caption" Color="Color.Secondary">@context.EntityId.ToString()[..8]</MudText></MudTd>
+        <MudTd DataLabel="@T("Changes")" Style="max-width:520px">
             @foreach (var (field, change) in ParseChanges(context.Changes))
             {
                 <div><strong>@field</strong>: @change</div>
             }
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No changes recorded.</MudText></NoRecordsContent>
-    <PagerContent><MudTablePager PageSizeOptions="[25, 50, 100]" /></PagerContent>
+    <NoRecordsContent><MudText>@T("No changes recorded.")</MudText></NoRecordsContent>
+    <PagerContent><MudTablePager PageSizeOptions="[25, 50, 100]" RowsPerPageString="@T("Rows per page:")" InfoFormat="@T("{first_item}-{last_item} of {all_items}")" /></PagerContent>
 </MudTable>
 
 @code {
@@ -75,7 +77,11 @@
         await _table.ReloadServerData();
     }
 
+    /// <summary>"HerdGroup" → "Herd group" (or its Malay).</summary>
+    private static string EntityName(string type) => T(ValidationText.FieldName(type));
+
     private static Color ActionColor(string action) => action switch
+
     {
         "Created" => Color.Success,
         "Deleted" => Color.Error,
