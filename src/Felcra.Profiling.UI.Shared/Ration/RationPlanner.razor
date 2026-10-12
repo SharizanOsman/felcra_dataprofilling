@@ -6,35 +6,35 @@
 <MudGrid Spacing="3">
     <MudItem xs="12" md="@(Compact ? 12 : 5)">
         <MudPaper Class="pa-3" Elevation="@(Compact ? 0 : 1)" Outlined="@Compact">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">Animals</MudText>
-            <MudSelect T="string" Label="Animal class" @bind-Value="_presetKey" @bind-Value:after="ApplyPreset" Dense="true" Class="mb-2">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">@T("Animals")</MudText>
+            <MudSelect T="string" Label="@T("Animal class")" @bind-Value="_presetKey" @bind-Value:after="ApplyPreset" Dense="true" Class="mb-2">
                 @foreach (var preset in RationPresets.All(_bodyWeight))
                 {
                     <MudSelectItem Value="@preset.Key">@preset.Name</MudSelectItem>
                 }
             </MudSelect>
             <MudStack Row="true" Spacing="2">
-                <MudNumericField T="double" Label="Body weight (kg)" @bind-Value="_bodyWeight" @bind-Value:after="ApplyPreset" Variant="Variant.Text" HideSpinButtons="true" />
-                <MudNumericField T="int" Label="Number of animals" @bind-Value="_headCount" Variant="Variant.Text" HideSpinButtons="true" />
+                <MudNumericField T="double" Label="@T("Body weight (kg)")" @bind-Value="_bodyWeight" @bind-Value:after="ApplyPreset" Variant="Variant.Text" HideSpinButtons="true" />
+                <MudNumericField T="int" Label="@T("Number of animals")" @bind-Value="_headCount" Variant="Variant.Text" HideSpinButtons="true" />
             </MudStack>
 
-            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-1">Daily targets per animal</MudText>
+            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-1">@T("Daily targets per animal")</MudText>
             <MudText Typo="Typo.caption" Style="display:block" Class="mb-2">
-                Filled in from the animal class; change them to suit. Nutrients are % of the ration's dry matter (DM).
+                @T("Filled in from the animal class; change them to suit. Nutrients are % of the ration's dry matter (DM).")
             </MudText>
             <MudGrid Spacing="1">
-                <MudItem xs="6"><MudNumericField T="double" Label="DM intake (kg)" @bind-Value="_dmi" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
-                <MudItem xs="6"><MudNumericField T="double" Label="Crude protein min %" @bind-Value="_cpMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
-                <MudItem xs="6"><MudNumericField T="double?" Label="TDN min %" @bind-Value="_tdnMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
-                <MudItem xs="6"><MudNumericField T="double?" Label="Forage min % of DM" @bind-Value="_forageMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
-                <MudItem xs="6"><MudNumericField T="double?" Label="Calcium min %" @bind-Value="_caMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
-                <MudItem xs="6"><MudNumericField T="double?" Label="Phosphorus min %" @bind-Value="_pMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
+                <MudItem xs="6"><MudNumericField T="double" Label="@T("DM intake (kg)")" @bind-Value="_dmi" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
+                <MudItem xs="6"><MudNumericField T="double" Label="@T("Crude protein min %")" @bind-Value="_cpMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
+                <MudItem xs="6"><MudNumericField T="double?" Label="@T("TDN min %")" @bind-Value="_tdnMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
+                <MudItem xs="6"><MudNumericField T="double?" Label="@T("Forage min % of DM")" @bind-Value="_forageMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
+                <MudItem xs="6"><MudNumericField T="double?" Label="@T("Calcium min %")" @bind-Value="_caMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
+                <MudItem xs="6"><MudNumericField T="double?" Label="@T("Phosphorus min %")" @bind-Value="_pMin" @bind-Value:after="Calculate" HideSpinButtons="true" /></MudItem>
             </MudGrid>
 
-            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-1">Ingredients (@_selected.Count of @Feeds.Count)</MudText>
+            <MudText Typo="Typo.subtitle1" Class="mt-4 mb-1">@T("Ingredients ({0} of {1})", _selected.Count, Feeds.Count)</MudText>
             @if (Feeds.Count == 0)
             {
-                <MudAlert Severity="Severity.Info" Dense="true">No feed ingredients yet. They are set up under Master data → Feed ingredients.</MudAlert>
+                <MudAlert Severity="Severity.Info" Dense="true">@T("No feed ingredients yet. They are set up under Master data → Feed ingredients.")</MudAlert>
             }
             @foreach (var feed in Feeds)
             {
@@ -45,27 +45,27 @@
                     <div style="flex:1;min-width:0">
                         <MudText Typo="Typo.body2">@feed.Name</MudText>
                         <MudText Typo="Typo.caption" Style="display:block">
-                            @(usable ? $"RM {feed.PricePerKg:0.00}/kg · DM {feed.DryMatterPercent:0.#}% · CP {feed.CrudeProteinPercent:0.#}%" : "Needs a price and DM % to be used")
+                            @(usable ? $"RM {feed.PricePerKg:0.00}/kg · DM {feed.DryMatterPercent:0.#}% · CP {feed.CrudeProteinPercent:0.#}%" : T("Needs a price and DM % to be used"))
                         </MudText>
                     </div>
                     @if (_selected.Contains(feed.Id))
                     {
                         <MudNumericField T="double?" Value="@_maxInclusion.GetValueOrDefault(feed.Id)" ValueChanged="@(v => SetMax(feed.Id, v))"
-                                         Placeholder="max %" Variant="Variant.Text" HideSpinButtons="true" Margin="Margin.Dense" Style="max-width:72px"
-                                         aria-label="@($"{feed.Name} maximum % of DM")" />
+                                         Placeholder="@T("max %")" Variant="Variant.Text" HideSpinButtons="true" Margin="Margin.Dense" Style="max-width:72px"
+                                         aria-label="@T("{0} maximum % of DM", feed.Name)" />
                     }
                 </MudStack>
             }
-            <MudText Typo="Typo.caption" Style="display:block" Class="mt-1">"max %" limits an ingredient's share of the ration's dry matter (optional).</MudText>
+            <MudText Typo="Typo.caption" Style="display:block" Class="mt-1">@T("\"max %\" limits an ingredient's share of the ration's dry matter (optional).")</MudText>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" md="@(Compact ? 12 : 7)">
         <MudPaper Class="pa-3" Elevation="@(Compact ? 0 : 1)" Outlined="@Compact" data-testid="ration-result">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">Least-cost ration</MudText>
+            <MudText Typo="Typo.subtitle1" Class="mb-2">@T("Least-cost ration")</MudText>
             @if (_result is null)
             {
-                <MudText Typo="Typo.body2">Choose ingredients and targets.</MudText>
+                <MudText Typo="Typo.body2">@T("Choose ingredients and targets.")</MudText>
             }
             else if (!_result.Feasible)
             {
@@ -75,32 +75,32 @@
             {
                 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="4" Class="mb-3">
                     <div>
-                        <MudText Typo="Typo.caption">Cost per animal per day</MudText>
+                        <MudText Typo="Typo.caption">@T("Cost per animal per day")</MudText>
                         <MudText Typo="Typo.h5" data-testid="ration-cost">RM @_result.CostPerDay.ToString("0.00")</MudText>
                     </div>
                     @if (_headCount > 1)
                     {
                         <div>
-                            <MudText Typo="Typo.caption">@_headCount animals per day</MudText>
+                            <MudText Typo="Typo.caption">@T("{0} animals per day", _headCount)</MudText>
                             <MudText Typo="Typo.h5">RM @((_result.CostPerDay * _headCount).ToString("0.00"))</MudText>
                         </div>
                     }
                     <div>
-                        <MudText Typo="Typo.caption">@(_headCount > 1 ? $"{_headCount} animals" : "Per animal"), 30 days</MudText>
+                        <MudText Typo="Typo.caption">@(_headCount > 1 ? T("{0} animals, 30 days", _headCount) : T("Per animal, 30 days"))</MudText>
                         <MudText Typo="Typo.h5">RM @((_result.CostPerDay * Math.Max(1, _headCount) * 30).ToString("#,0"))</MudText>
                     </div>
                 </MudStack>
 
                 <MudSimpleTable Dense="true" Elevation="0" Class="mb-3">
                     <thead>
-                        <tr><th>Ingredient</th><th style="text-align:right">kg as fed / day</th><th style="text-align:right">% of DM</th><th style="text-align:right">RM / day</th></tr>
+                        <tr><th>@T("Ingredient")</th><th style="text-align:right">@T("kg as fed / day")</th><th style="text-align:right">@T("% of DM")</th><th style="text-align:right">@T("RM / day")</th></tr>
                     </thead>
                     <tbody>
                         @foreach (var line in _result.Lines)
                         {
                             <tr>
                                 <td>@line.Name</td>
-                                <td style="text-align:right">@line.AsFedKg.ToString("0.00")@(_headCount > 1 ? $" ({line.AsFedKg * _headCount:0.#} total)" : "")</td>
+                                <td style="text-align:right">@line.AsFedKg.ToString("0.00")@(_headCount > 1 ? " " + T("({0:0.#} total)", line.AsFedKg * _headCount) : "")</td>
                                 <td style="text-align:right">@line.PercentOfDryMatter.ToString("0.#")</td>
                                 <td style="text-align:right">@line.Cost.ToString("0.00")</td>
                             </tr>
@@ -108,9 +108,9 @@
                     </tbody>
                 </MudSimpleTable>
 
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Nutrients supplied</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-1">@T("Nutrients supplied")</MudText>
                 <MudSimpleTable Dense="true" Elevation="0">
-                    <thead><tr><th>Nutrient</th><th style="text-align:right">Ration</th><th style="text-align:right">Target</th></tr></thead>
+                    <thead><tr><th>@T("Nutrient")</th><th style="text-align:right">@T("Ration")</th><th style="text-align:right">@T("Target")</th></tr></thead>
                     <tbody>
                         @foreach (var n in _result.Nutrients)
                         {
@@ -130,8 +130,8 @@
                 </MudAlert>
             }
             <MudText Typo="Typo.caption" Style="display:block" Class="mt-3">
-                Targets are starting guidance for tropical beef cattle and should be confirmed by a nutritionist.
-                Results are only as good as the feed values and prices in Master data.
+                @T("Targets are starting guidance for tropical beef cattle and should be confirmed by a nutritionist. Results are only as good as the feed values and prices in Master data.")
+
             </MudText>
         </MudPaper>
     </MudItem>

@@ -3,14 +3,14 @@
 @inherits AdminPageBase
 @inject NavigationManager Navigation
 
-<PageHeader Title="Animals" Subtitle="Animal register for all assigned farms" Error="@LoadError">
+<PageHeader Title="@T("Animals")" Subtitle="@T("Animal register for all assigned farms")" Error="@LoadError">
     <Actions>
         @if (IsHq)
         {
-            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.RestoreFromTrash" Href="animals/deleted">Deleted animals</MudButton>
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.RestoreFromTrash" Href="animals/deleted">@T("Deleted animals")</MudButton>
         }
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCode2" OnClick="PrintLabels">Print QR labels</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="_lookups is null">Register animal</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.QrCode2" OnClick="PrintLabels">@T("Print QR labels")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="_lookups is null">@T("Register animal")</MudButton>
     </Actions>
 </PageHeader>
 
@@ -18,11 +18,11 @@
           Breakpoint="Breakpoint.Sm" RowsPerPage="50" OnRowClick="@(e => Navigation.NavigateTo($"animals/{e.Item!.Id}"))" RowStyle="cursor:pointer">
     <ToolBarContent>
         <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Style="width:100%">
-            <MudTextField T="string" Value="_search" ValueChanged="OnSearch" Placeholder="Tag or animal no." DebounceInterval="350"
+            <MudTextField T="string" Value="_search" ValueChanged="OnSearch" Placeholder="@T("Tag or animal no.")" DebounceInterval="350"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Style="max-width:220px" />
             @if (_lookups is { Farms.Count: > 1 })
             {
-                <MudSelect T="Guid?" Value="_farmId" ValueChanged="OnFarm" Label="Farm" Clearable="true" Style="max-width:180px"
+                <MudSelect T="Guid?" Value="_farmId" ValueChanged="OnFarm" Label="@T("Farm")" Clearable="true" Style="max-width:180px"
                            ToStringFunc="@(id => id is null ? "" : _lookups.FarmCode(id.Value))">
                     @foreach (var f in _lookups.Farms)
                     {
@@ -30,52 +30,52 @@
                     }
                 </MudSelect>
             }
-            <MudSelect T="AnimalCategory?" Value="_category" ValueChanged="OnCategory" Label="Category" Clearable="true" Style="max-width:190px"
+            <MudSelect T="AnimalCategory?" Value="_category" ValueChanged="OnCategory" Label="@T("Category")" Clearable="true" Style="max-width:190px"
                        ToStringFunc="@(c => c is null ? "" : AnimalText.Category(c.Value))">
                 @foreach (var c in Enum.GetValues<AnimalCategory>())
                 {
                     <MudSelectItem T="AnimalCategory?" Value="c">@AnimalText.Category(c)</MudSelectItem>
                 }
             </MudSelect>
-            <MudSelect T="AnimalStatus?" Value="_status" ValueChanged="OnStatus" Label="Status" Clearable="true" Style="max-width:150px"
-                       ToStringFunc="@(s => s is null ? "All" : AnimalText.Status(s.Value))">
+            <MudSelect T="AnimalStatus?" Value="_status" ValueChanged="OnStatus" Label="@T("Status")" Clearable="true" Style="max-width:150px"
+                       ToStringFunc="@(s => s is null ? T("All") : AnimalText.Status(s.Value))">
                 @foreach (var s in Enum.GetValues<AnimalStatus>())
                 {
                     <MudSelectItem T="AnimalStatus?" Value="s">@AnimalText.Status(s)</MudSelectItem>
                 }
             </MudSelect>
-            <MudSwitch T="bool" Value="_untaggedOnly" ValueChanged="OnUntagged" Label="Untagged" Color="Color.Warning" />
-            <MudSwitch T="bool" Value="_duplicatesOnly" ValueChanged="OnDuplicates" Label="Duplicate tags" Color="Color.Error" />
+            <MudSwitch T="bool" Value="_untaggedOnly" ValueChanged="OnUntagged" Label="@T("Untagged")" Color="Color.Warning" />
+            <MudSwitch T="bool" Value="_duplicatesOnly" ValueChanged="OnDuplicates" Label="@T("Duplicate tags")" Color="Color.Error" />
         </MudStack>
     </ToolBarContent>
     <HeaderContent>
-        <MudTh>Animal no.</MudTh>
-        <MudTh>Tag</MudTh>
-        <MudTh>Category</MudTh>
-        <MudTh>Age</MudTh>
-        <MudTh>Breed</MudTh>
-        <MudTh>Farm</MudTh>
-        <MudTh>Project</MudTh>
-        <MudTh>Group</MudTh>
-        <MudTh Style="text-align:right">Latest weight</MudTh>
-        <MudTh>Status</MudTh>
+        <MudTh>@T("Animal no.")</MudTh>
+        <MudTh>@T("Tag")</MudTh>
+        <MudTh>@T("Category")</MudTh>
+        <MudTh>@T("Age")</MudTh>
+        <MudTh>@T("Breed")</MudTh>
+        <MudTh>@T("Farm")</MudTh>
+        <MudTh>@T("Project")</MudTh>
+        <MudTh>@T("Group")</MudTh>
+        <MudTh Style="text-align:right">@T("Latest weight")</MudTh>
+        <MudTh>@T("Status")</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Animal no.">@context.AnimalNo</MudTd>
-        <MudTd DataLabel="Tag"><TagLabel Tag="@context.TagNumber" Duplicate="context.HasDuplicateTag" /></MudTd>
-        <MudTd DataLabel="Category">@AnimalText.Category(context.Category)</MudTd>
-        <MudTd DataLabel="Age">@AnimalText.Age(context.BirthDate, context.BirthDateMethod, _today)</MudTd>
-        <MudTd DataLabel="Breed">@context.BreedName</MudTd>
-        <MudTd DataLabel="Farm">@context.FarmCode</MudTd>
-        <MudTd DataLabel="Project">@context.ProjectCode</MudTd>
-        <MudTd DataLabel="Group">@context.HerdGroupName</MudTd>
-        <MudTd DataLabel="Latest weight" Style="text-align:right">@AnimalText.Weight(context.LatestWeightKg)</MudTd>
-        <MudTd DataLabel="Status">
+        <MudTd DataLabel="@T("Animal no.")">@context.AnimalNo</MudTd>
+        <MudTd DataLabel="@T("Tag")"><TagLabel Tag="@context.TagNumber" Duplicate="context.HasDuplicateTag" /></MudTd>
+        <MudTd DataLabel="@T("Category")">@AnimalText.Category(context.Category)</MudTd>
+        <MudTd DataLabel="@T("Age")">@AnimalText.Age(context.BirthDate, context.BirthDateMethod, _today)</MudTd>
+        <MudTd DataLabel="@T("Breed")">@context.BreedName</MudTd>
+        <MudTd DataLabel="@T("Farm")">@context.FarmCode</MudTd>
+        <MudTd DataLabel="@T("Project")">@context.ProjectCode</MudTd>
+        <MudTd DataLabel="@T("Group")">@context.HerdGroupName</MudTd>
+        <MudTd DataLabel="@T("Latest weight")" Style="text-align:right">@AnimalText.Weight(context.LatestWeightKg)</MudTd>
+        <MudTd DataLabel="@T("Status")">
             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@AnimalText.StatusColor(context.Status)">@AnimalText.Status(context.Status)</MudChip>
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No animals match the filters.</MudText></NoRecordsContent>
-    <PagerContent><MudTablePager PageSizeOptions="[25, 50, 100, 200]" /></PagerContent>
+    <NoRecordsContent><MudText>@T("No animals match the filters.")</MudText></NoRecordsContent>
+    <PagerContent><MudTablePager PageSizeOptions="[25, 50, 100, 200]" RowsPerPageString="@T("Rows per page:")" InfoFormat="@T("{first_item}-{last_item} of {all_items}")" /></PagerContent>
 </MudTable>
 
 @code {
@@ -123,12 +123,12 @@
     private async Task AddAsync()
     {
         var model = new AnimalRequest { FarmId = _farmId ?? _lookups!.Farms.FirstOrDefault(f => f.IsActive)?.Id ?? Guid.Empty };
-        var saved = await Dialogs.EditAsync("Register animal", model,
+        var saved = await Dialogs.EditAsync(T("Register animal"), model,
             m => @<AnimalFields Model="m" Lookups="_lookups!" IsNew="true" />,
             m => Api.PostAsync<AnimalDto>("api/animals", m), Validate);
         if (saved)
         {
-            Snackbar.Add("Animal registered.", Severity.Success);
+            Snackbar.Add(T("Animal registered."), Severity.Success);
             await _table.ReloadServerData();
         }
     }

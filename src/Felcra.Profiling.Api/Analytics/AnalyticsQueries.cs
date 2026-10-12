@@ -83,7 +83,7 @@ internal sealed class AnalyticsQueries(AppDbContext db, BreedingQueries breeding
             curves.Add(new GrowthCurveDto(sex,
                 fit is null ? null : new GompertzDto(Math.Round(fit.Curve.A, 1), fit.Curve.B, fit.Curve.K, Math.Round(fit.Curve.BirthWeight, 1),
                     Math.Round(fit.Curve.InflectionAgeDays), Math.Round(fit.Quality.RSquared, 3), Math.Round(fit.Quality.Rmse, 1), fit.Quality.Points),
-                fit is null ? $"Not enough weighings with a known age to fit a curve (need at least {GompertzModel.MinimumPoints})." : null,
+                fit is null ? T("Not enough weighings with a known age to fit a curve (need at least {0}).", GompertzModel.MinimumPoints) : null,
                 curve, rows));
         }
 
@@ -100,7 +100,7 @@ internal sealed class AnalyticsQueries(AppDbContext db, BreedingQueries breeding
             .ToListAsync(ct);
         if (milk.Count == 0)
             return new LactationAnalysisDto(0, 0, null,
-                "No milk yields recorded yet. Record daily milk yield for dams in the field app to see lactation curves.", [], []);
+                T("No milk yields recorded yet. Record daily milk yield for dams in the field app to see lactation curves."), [], []);
 
         var animalIds = milk.Select(m => m.AnimalId).Distinct().ToList();
         var calvings = (await db.BreedingEvents.AsNoTracking()
@@ -136,7 +136,7 @@ internal sealed class AnalyticsQueries(AppDbContext db, BreedingQueries breeding
                 .Select(d => new CurvePointDto(d, Math.Round(Math.Max(0, herd.Curve.YieldAt(d)), 2), 0)).ToList();
 
         return new LactationAnalysisDto(milk.Count, points.Count - usable.Count, ToDto(herd),
-            herd is null ? $"Not enough test days linked to a calving to fit a curve (need at least {AliSchaefferModel.MinimumPoints})." : null,
+            herd is null ? T("Not enough test days linked to a calving to fit a curve (need at least {0}).", AliSchaefferModel.MinimumPoints) : null,
             curve, perAnimal);
     }
 

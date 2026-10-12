@@ -28,6 +28,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>Captures push notifications the API sends.</summary>
     internal FakePushSender Push { get; } = new();
 
+    /// <summary>Answers map place searches without calling OpenStreetMap.</summary>
+    internal FakeGeocoder Geocoder { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -51,7 +54,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Push:PublicKey", publicKey);
         builder.UseSetting("Push:PrivateKey", privateKey);
         builder.UseSetting("Push:Hour", "24");
-        builder.ConfigureTestServices(services => services.AddSingleton<Notifications.IPushSender>(Push));
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddSingleton<Notifications.IPushSender>(Push);
+            services.AddSingleton<Geocoding.IGeocoder>(Geocoder);
+        });
+
     }
 
     public async Task InitializeAsync()
@@ -66,16 +74,19 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _db.DisposeAsync();
     }
 
-    public async Task<TokenResponse> LoginAsync(string email, string password = Password)
+    /// <param name="language">Sent as Accept-Language, like the apps do ("ms"/"en"); the server remembers it for e-mails and notifications.</param>
+    public async Task<TokenResponse> LoginAsync(string email, string password = Password, string? language = null)
     {
-        var response = await CreateClient().PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+        var client = CreateClient();
+        if (language is not null) client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(language);
+        var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<TokenResponse>())!;
     }
 
-    public async Task<HttpClient> CreateAuthenticatedClientAsync(string email)
+    public async Task<HttpClient> CreateAuthenticatedClientAsync(string email, string? language = null)
     {
-        var tokens = await LoginAsync(email);
+        var tokens = await LoginAsync(email, language: language);
         var client = CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
         return client;

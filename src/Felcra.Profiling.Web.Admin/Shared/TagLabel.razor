@@ -1,14 +1,14 @@
 @* Ear tag with warnings for untagged animals and tags shared with other animals. *@
 @if (Tag is null)
 {
-    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">No tag</MudChip>
+    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@T("No tag")</MudChip>
 }
 else
 {
     <span>@Tag</span>
     @if (Duplicate)
     {
-        <MudTooltip Text="Another active animal on this farm has the same tag">
+        <MudTooltip Text="@T("Another active animal on this farm has the same tag")">
             <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" Style="vertical-align:middle" />
         </MudTooltip>
     }

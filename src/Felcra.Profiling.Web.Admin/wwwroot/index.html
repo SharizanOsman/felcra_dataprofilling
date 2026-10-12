@@ -4,10 +4,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FELCRA Cattle Profiling â€” Admin</title>
+    <title>FELCRA Cattle Profiling — Admin</title>
     <base href="/admin/" />
     <link href="_content/Felcra.Profiling.UI.Shared/fonts.css" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="lib/leaflet/leaflet.css" rel="stylesheet" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="icon-192.png" />
 </head>
@@ -22,13 +23,17 @@
     </div>
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">ðŸ—™</span>
+        Ralat tidak dijangka berlaku. / An unhandled error has occurred.
+        <a href="." class="reload">Muat semula / Reload</a>
+        <span class="dismiss">×</span>
     </div>
-    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_content/Felcra.Profiling.UI.Shared/felcra.js"></script>
+    <script src="lib/leaflet/leaflet.js"></script>
+
+    <!-- Last: starts Blazor in the chosen language once the other scripts are loaded. -->
+    <script src="_content/Felcra.Profiling.UI.Shared/start.js"></script>
 </body>
 
 </html>

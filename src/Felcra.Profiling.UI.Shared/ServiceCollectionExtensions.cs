@@ -1,3 +1,4 @@
+using Felcra.Profiling.Contracts.Common;
 using Felcra.Profiling.UI.Shared.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFelcraClient(
         this IServiceCollection services, Uri apiBaseAddress, ClientAuthOptions authOptions, bool mobile = false)
     {
+        ValidationText.Configure();
         services.AddMudServices(config =>
         {
             if (!mobile) return;
@@ -27,7 +29,9 @@ public static class ServiceCollectionExtensions
             config.SnackbarConfiguration.PreventDuplicates = true;
         });
 
+        services.AddTransient<MudLocalizer, MalayMudLocalizer>();
         services.AddSingleton(authOptions);
+
         services.AddSingleton(TimeProvider.System);
         // Singletons (one per browser tab in WASM): IHttpClientFactory resolves message handlers in
         // their own DI scope, and they must share token state with the UI.
@@ -36,11 +40,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthStateProvider>());
         services.AddSingleton<AuthClient>();
         services.AddTransient<BearerTokenHandler>();
+        services.AddTransient<Api.LanguageHandler>();
         services.AddAuthorizationCore();
         services.AddCascadingAuthenticationState();
 
-        services.AddHttpClient(AuthClient.AnonymousClient, c => c.BaseAddress = apiBaseAddress);
-        services.AddHttpClient(ApiClient, c => c.BaseAddress = apiBaseAddress).AddHttpMessageHandler<BearerTokenHandler>();
+        services.AddHttpClient(AuthClient.AnonymousClient, c => c.BaseAddress = apiBaseAddress).AddHttpMessageHandler<Api.LanguageHandler>();
+        services.AddHttpClient(ApiClient, c => c.BaseAddress = apiBaseAddress)
+            .AddHttpMessageHandler<Api.LanguageHandler>().AddHttpMessageHandler<BearerTokenHandler>();
         services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient(ApiClient));
         services.AddScoped<Api.ApiClient>();
 

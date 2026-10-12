@@ -34,7 +34,7 @@ public sealed class PushClient(IJSRuntime js, ApiClient api)
     public async Task<string?> EnableAsync()
     {
         var config = await api.GetAsync<PushConfigDto>("api/push/config");
-        if (config.PublicKey is null) return "Notifications are not set up on the server.";
+        if (config.PublicKey is null) return T("Notifications are not set up on the server.");
         Subscription? subscription;
         try
         {
@@ -42,9 +42,9 @@ public sealed class PushClient(IJSRuntime js, ApiClient api)
         }
         catch (JSException ex)
         {
-            return $"This browser could not turn on notifications ({ex.Message}).";
+            return T("This browser could not turn on notifications ({0}).", ex.Message);
         }
-        if (subscription is null) return "Notifications were not allowed. You can allow them in the browser's site settings.";
+        if (subscription is null) return T("Notifications were not allowed. You can allow them in the browser's site settings.");
 
         var result = await api.PostAsync<object>("api/push/subscriptions",
             new PushSubscriptionRequest { Endpoint = subscription.Endpoint, P256dh = subscription.P256dh, Auth = subscription.Auth });

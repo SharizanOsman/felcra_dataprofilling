@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
 @inherits RecordPageBase
 
-<PageTitle>Treatment — FELCRA Field</PageTitle>
+<PageTitle>@T("Treatment — FELCRA Field")</PageTitle>
 
 @if (LoadError is not null)
 {
@@ -15,36 +15,36 @@ else if (Animal is null || _products is null)
 else
 {
     <AnimalHeader Animal="Animal" DuplicateTag="DuplicateTag" />
-    <MudText Typo="Typo.h6" Class="mb-2">Treatment / vaccination</MudText>
+    <MudText Typo="Typo.h6" Class="mb-2">@T("Treatment / vaccination")</MudText>
 
     <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
         <MudStack Spacing="3">
             <MudSelect T="Guid" Value="_model.TreatmentProductId" ValueChanged="OnProductChanged" For="@(() => _model.TreatmentProductId)"
-                       Label="Treatment" Variant="Variant.Outlined" ToStringFunc="@(id => _products.FirstOrDefault(p => p.Id == id)?.Name ?? "")">
+                       Label="@T("Treatment")" Variant="Variant.Outlined" ToStringFunc="@(id => _products.FirstOrDefault(p => p.Id == id)?.Name ?? "")">
                 @foreach (var p in _products.OrderBy(p => p.Category).ThenBy(p => p.Name))
                 {
                     <MudSelectItem Value="p.Id">@p.Name <MudText Typo="Typo.caption" Inline="true">· @EnumText.Humanize(p.Category)</MudText></MudSelectItem>
                 }
             </MudSelect>
             <MudStack Row="true">
-                <MudNumericField T="decimal?" @bind-Value="_model.Dose" For="@(() => _model.Dose)" Label="Dose" Variant="Variant.Outlined"
+                <MudNumericField T="decimal?" @bind-Value="_model.Dose" For="@(() => _model.Dose)" Label="@T("Dose")" Variant="Variant.Outlined"
                                  InputMode="@(InputMode.@decimal)" HideSpinButtons="true" />
-                <MudTextField @bind-Value="_model.DoseUnit" For="@(() => _model.DoseUnit)" Label="Unit" Variant="Variant.Outlined" Style="max-width:110px" />
+                <MudTextField @bind-Value="_model.DoseUnit" For="@(() => _model.DoseUnit)" Label="@T("Unit")" Variant="Variant.Outlined" Style="max-width:110px" />
             </MudStack>
-            <MudSelect T="AdministrationRoute?" @bind-Value="_model.Route" Label="Route" Variant="Variant.Outlined" Clearable="true"
+            <MudSelect T="AdministrationRoute?" @bind-Value="_model.Route" Label="@T("Route")" Variant="Variant.Outlined" Clearable="true"
                        ToStringFunc="@(r => r is null ? "" : EnumText.Humanize(r.Value))">
                 @foreach (var r in Enum.GetValues<AdministrationRoute>())
                 {
                     <MudSelectItem T="AdministrationRoute?" Value="r">@EnumText.Humanize(r)</MudSelectItem>
                 }
             </MudSelect>
-            <DateField Value="_model.GivenOn" ValueChanged="@(d => _model.GivenOn = d ?? _model.GivenOn)" Label="Date given" Clearable="false"
+            <DateField Value="_model.GivenOn" ValueChanged="@(d => _model.GivenOn = d ?? _model.GivenOn)" Label="@T("Date given")" Clearable="false"
                        Max="DateOnly.FromDateTime(DateTime.Today)" />
-            <MudTextField @bind-Value="_model.BatchNumber" For="@(() => _model.BatchNumber)" Label="Batch / lot number" Variant="Variant.Outlined" />
-            <DateField Value="_model.NextDueOn" ValueChanged="@(d => _model.NextDueOn = d)" Label="Next dose due (optional)" />
+            <MudTextField @bind-Value="_model.BatchNumber" For="@(() => _model.BatchNumber)" Label="@T("Batch / lot number")" Variant="Variant.Outlined" />
+            <DateField Value="_model.NextDueOn" ValueChanged="@(d => _model.NextDueOn = d)" Label="@T("Next dose due (optional)")" />
             @if (_sessions.Count > 0)
             {
-                <MudSelect T="Guid?" @bind-Value="_model.CensusSessionId" Label="Part of programme (optional)" Variant="Variant.Outlined" Clearable="true"
+                <MudSelect T="Guid?" @bind-Value="_model.CensusSessionId" Label="@T("Part of programme (optional)")" Variant="Variant.Outlined" Clearable="true"
                            ToStringFunc="@(id => _sessions.FirstOrDefault(s => s.Id == id)?.Title ?? "")">
                     @foreach (var s in _sessions)
                     {
@@ -52,17 +52,17 @@ else
                     }
                 </MudSelect>
             }
-            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="Notes (optional)" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="@T("Notes (optional)")" Variant="Variant.Outlined" />
 
             @if (_withdrawal is not null)
             {
-                <MudAlert Severity="Severity.Info" Dense="true">Meat withdrawal: no slaughter before @_withdrawal.</MudAlert>
+                <MudAlert Severity="Severity.Info" Dense="true">@T("Meat withdrawal: no slaughter before {0}.", _withdrawal)</MudAlert>
             }
             @if (SaveError is not null) { <MudAlert Severity="Severity.Error" Dense="true">@SaveError</MudAlert> }
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="SubmitAsync"
                        Disabled="@(Saving || Animal.Status != AnimalStatus.Active)" Style="height:56px">
-                @(Saving ? "Saving…" : "Save")
+                @(Saving ? T("Saving…") : T("Save"))
             </MudButton>
         </MudStack>
     </MudForm>

@@ -9,6 +9,14 @@ HQ administrators see the same screens for all farms, plus the set-up screens in
 Sign in with your e-mail and password. Your name at the top right opens **Change password**; the icon next to it
 signs out. The menu on the left lists the screens below.
 
+**Language.** The apps open in Bahasa Melayu. The **BM / EN** button at the top right (文A) switches to English and
+back; the choice is kept on that computer or phone, for both the admin portal and the field app. Reports you
+download, error messages and your monthly report e-mail follow the language you last used.
+
+**Farm map.** *Farms* shows your farms on a street or satellite map; pin size is the number of active head. The
+search box finds a farm by code, name or state as you type, and places or GPS coordinates when you press Enter
+(e.g. `Kluang`, `2.148, 102.771` or a Google Maps link). Click a pin to open the farm.
+
 ## 1. Dashboard
 
 ![Dashboard](images/admin-dashboard.png)

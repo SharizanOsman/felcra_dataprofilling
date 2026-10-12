@@ -1,6 +1,7 @@
 // Step 4 end-to-end: field app on a phone-sized screen. The QR scanner is fed a fake camera
 // showing a real ear-tag label, so the actual decode path is exercised.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -19,7 +20,7 @@ const auth = { Authorization: `Bearer ${login.accessToken}` };
 const target = (await (await api('/api/animals?search=232&pageSize=5', { headers: auth })).json()).items.find(a => a.tagNumber === '232');
 console.log('target', target.animalNo, 'tag', target.tagNumber);
 
-const helper = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const helper = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const adminPage = await (await helper.newContext({ viewport: { width: 1200, height: 900 } })).newPage();
 await adminPage.goto(`${root}/admin/login`);
 await adminPage.getByLabel('Email').fill('admin@felcra.local');
@@ -38,10 +39,10 @@ fs.writeFileSync(video, Buffer.concat(Array(60).fill(frame)));
 await helper.close();
 
 // ---- 2. Field app with the fake camera --------------------------------------------------------------
-const browser = await chromium.launch({
+const browser = inEnglish(await chromium.launch({
   channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true,
   args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${video}`],
-});
+}));
 const context = await browser.newContext({ viewport: { width: 400, height: 820 }, isMobile: true, hasTouch: true, permissions: ['camera'] });
 const page = await context.newPage();
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });

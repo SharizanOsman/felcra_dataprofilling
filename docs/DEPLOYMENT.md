@@ -154,6 +154,13 @@ Records made on phones after the backup and not yet synced are sent again by the
 
 ## 8. Settings reference
 
+**Outbound internet for the farm map.** The server calls `https://nominatim.openstreetmap.org` for place search on
+the farm map, and users' browsers load map images from `https://tile.openstreetmap.org` (street) and
+`https://server.arcgisonline.com` (satellite); the Content-Security-Policy allows exactly these. If a firewall
+blocks them, the map shows no background and place search reports that it is unavailable, but farms can still be
+placed by typing GPS coordinates. Set `Geocoding__Email` to an IT contact address so the OpenStreetMap operators can
+reach FELCRA before blocking heavy use; for high volumes run your own Nominatim and set `Geocoding__BaseUrl`.
+
 The stack passes `deploy/app/*.env` values to the API as environment variables (`Section__Key`). See the
 configuration table in the [README](../README.md#configuration). Production defaults are in
 `src/Felcra.Profiling.Api/appsettings.Production.json` (data under `/app/data`, migrations at start-up,

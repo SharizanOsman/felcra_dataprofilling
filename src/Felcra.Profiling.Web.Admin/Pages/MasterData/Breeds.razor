@@ -2,37 +2,37 @@
 @attribute [Authorize(Roles = $"{Roles.HqAdmin},{Roles.FarmManager}")]
 @inherits AdminPageBase
 
-<PageHeader Title="Breeds" Error="@LoadError">
+<PageHeader Title="@T("Breeds")" Error="@LoadError">
     <Actions>
         @if (IsHq)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">Add breed</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">@T("Add breed")</MudButton>
         }
     </Actions>
 </PageHeader>
 
 <MudTable Items="_items" Hover="true" Loading="IsLoading" Elevation="1" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
-        <MudTh>Code</MudTh>
-        <MudTh>Name</MudTh>
-        <MudTh>Description</MudTh>
-        <MudTh>Status</MudTh>
+        <MudTh>@T("Code")</MudTh>
+        <MudTh>@T("Name")</MudTh>
+        <MudTh>@T("Description")</MudTh>
+        <MudTh>@T("Status")</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Code">@context.Code</MudTd>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Description">@context.Description</MudTd>
-        <MudTd DataLabel="Status"><StatusChip Active="context.IsActive" /></MudTd>
+        <MudTd DataLabel="@T("Code")">@context.Code</MudTd>
+        <MudTd DataLabel="@T("Name")">@context.Name</MudTd>
+        <MudTd DataLabel="@T("Description")">@context.Description</MudTd>
+        <MudTd DataLabel="@T("Status")"><StatusChip Active="context.IsActive" /></MudTd>
         <MudTd Style="text-align:right">
             @if (IsHq)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="Edit" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="Delete" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditAsync(context)" aria-label="@T("Edit")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteAsync(context)" aria-label="@T("Delete")" />
             }
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText>No breeds yet.</MudText></NoRecordsContent>
+    <NoRecordsContent><MudText>@T("No breeds yet.")</MudText></NoRecordsContent>
 </MudTable>
 
 @code {
@@ -43,24 +43,24 @@
     protected override async Task LoadAsync() => _items = await Api.GetAsync<List<BreedDto>>(Url);
 
     private async Task AddAsync() =>
-        await AfterSaveAsync(await Dialogs.EditAsync("Add breed", new BreedRequest(), Fields,
-            m => Api.PostAsync<BreedDto>(Url, m), Validate), "Breed added.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Add breed"), new BreedRequest(), Fields,
+            m => Api.PostAsync<BreedDto>(Url, m), Validate), T("Breed added."));
 
     private async Task EditAsync(BreedDto item) =>
-        await AfterSaveAsync(await Dialogs.EditAsync($"Edit {item.Name}", BreedRequest.From(item), Fields,
-            m => Api.PutAsync<BreedDto>($"{Url}/{item.Id}", m), Validate), "Breed updated.");
+        await AfterSaveAsync(await Dialogs.EditAsync(T("Edit {0}", item.Name), BreedRequest.From(item), Fields,
+            m => Api.PutAsync<BreedDto>($"{Url}/{item.Id}", m), Validate), T("Breed updated."));
 
     private async Task DeleteAsync(BreedDto item)
     {
-        if (await Dialogs.ConfirmDeleteAsync($"breed {item.Name}"))
-            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), "Breed deleted.");
+        if (await Dialogs.ConfirmDeleteAsync(T("breed {0}", item.Name)))
+            await NotifyAsync(await Api.DeleteAsync($"{Url}/{item.Id}"), T("Breed deleted."));
     }
 
     private RenderFragment<BreedRequest> Fields => m =>
         @<MudStack Spacing="2">
-            <MudTextField @bind-Value="m.Code" For="@(() => m.Code)" Label="Code" HelperText="e.g. BX" />
-            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="Name" HelperText="e.g. Brahman Cross" />
-            <MudTextField @bind-Value="m.Description" For="@(() => m.Description)" Label="Description" Lines="3" />
-            <MudSwitch @bind-Value="m.IsActive" Label="Active" Color="Color.Primary" />
+            <MudTextField @bind-Value="m.Code" For="@(() => m.Code)" Label="@T("Code")" HelperText="@T("e.g. BX")" />
+            <MudTextField @bind-Value="m.Name" For="@(() => m.Name)" Label="@T("Name")" HelperText="@T("e.g. Brahman Cross")" />
+            <MudTextField @bind-Value="m.Description" For="@(() => m.Description)" Label="@T("Description")" Lines="3" />
+            <MudSwitch @bind-Value="m.IsActive" Label="@T("Active")" Color="Color.Primary" />
         </MudStack>;
 }

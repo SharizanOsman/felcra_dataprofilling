@@ -1,5 +1,5 @@
 <MudChip T="string" Size="Size.Small" Color="@(Active ? Color.Success : Color.Default)" Variant="Variant.Outlined">
-    @(Active ? "Active" : "Inactive")
+    @(Active ? T("Active") : T("Inactive"))
 </MudChip>
 
 @code {

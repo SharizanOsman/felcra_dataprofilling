@@ -2,32 +2,32 @@
 <MudStack Spacing="2">
     @if (IsNew)
     {
-        <MudSelect T="Guid" @bind-Value="Model.FarmId" For="@(() => Model.FarmId)" Label="Farm">
+        <MudSelect T="Guid" @bind-Value="Model.FarmId" For="@(() => Model.FarmId)" Label="@T("Farm")">
             @foreach (var farm in Lookups.Farms.Where(f => f.IsActive))
             {
                 <MudSelectItem Value="farm.Id">@farm.Code — @farm.Name</MudSelectItem>
             }
         </MudSelect>
     }
-    <MudTextField @bind-Value="Model.Title" For="@(() => Model.Title)" Label="Title" HelperText="e.g. Headcount & health programme, July 2026" />
+    <MudTextField @bind-Value="Model.Title" For="@(() => Model.Title)" Label="@T("Title")" HelperText="@T("e.g. Headcount & health programme, July 2026")" />
     <MudStack Row="true">
-        <DateField Value="Model.StartDate" ValueChanged="@(d => Model.StartDate = d ?? Model.StartDate)" Label="Start date" Clearable="false" />
-        <DateField Value="Model.EndDate" ValueChanged="@(d => Model.EndDate = d ?? Model.EndDate)" Label="End date" Clearable="false" />
+        <DateField Value="Model.StartDate" ValueChanged="@(d => Model.StartDate = d ?? Model.StartDate)" Label="@T("Start date")" Clearable="false" />
+        <DateField Value="Model.EndDate" ValueChanged="@(d => Model.EndDate = d ?? Model.EndDate)" Label="@T("End date")" Clearable="false" />
     </MudStack>
-    <MudText Typo="Typo.subtitle2" Class="mt-2">Person in charge</MudText>
-    <MudTextField @bind-Value="Model.PicName" For="@(() => Model.PicName)" Label="Name" />
+    <MudText Typo="Typo.subtitle2" Class="mt-2">@T("Person in charge")</MudText>
+    <MudTextField @bind-Value="Model.PicName" For="@(() => Model.PicName)" Label="@T("Name")" />
     <MudStack Row="true">
-        <MudTextField @bind-Value="Model.PicPosition" For="@(() => Model.PicPosition)" Label="Position" />
-        <MudTextField @bind-Value="Model.PicPhone" For="@(() => Model.PicPhone)" Label="Phone" />
+        <MudTextField @bind-Value="Model.PicPosition" For="@(() => Model.PicPosition)" Label="@T("Position")" />
+        <MudTextField @bind-Value="Model.PicPhone" For="@(() => Model.PicPhone)" Label="@T("Phone")" />
     </MudStack>
-    <MudText Typo="Typo.subtitle2" Class="mt-2">Population on record (before the count)</MudText>
+    <MudText Typo="Typo.subtitle2" Class="mt-2">@T("Population on record (before the count)")</MudText>
     <MudStack Row="true">
-        <MudNumericField @bind-Value="Model.RecordedBulls" For="@(() => Model.RecordedBulls)" Label="Bulls (P)" />
-        <MudNumericField @bind-Value="Model.RecordedDams" For="@(() => Model.RecordedDams)" Label="Dams (I)" />
-        <MudNumericField @bind-Value="Model.RecordedMaleCalves" For="@(() => Model.RecordedMaleCalves)" Label="Male calves (AJ)" />
-        <MudNumericField @bind-Value="Model.RecordedFemaleCalves" For="@(() => Model.RecordedFemaleCalves)" Label="Female calves (AB)" />
+        <MudNumericField @bind-Value="Model.RecordedBulls" For="@(() => Model.RecordedBulls)" Label="@T("Bulls (P)")" />
+        <MudNumericField @bind-Value="Model.RecordedDams" For="@(() => Model.RecordedDams)" Label="@T("Dams (I)")" />
+        <MudNumericField @bind-Value="Model.RecordedMaleCalves" For="@(() => Model.RecordedMaleCalves)" Label="@T("Male calves (AJ)")" />
+        <MudNumericField @bind-Value="Model.RecordedFemaleCalves" For="@(() => Model.RecordedFemaleCalves)" Label="@T("Female calves (AB)")" />
     </MudStack>
-    <MudSelect T="Guid" Label="Programme treatments" MultiSelection="true" SelectedValues="Model.TreatmentProductIds"
+    <MudSelect T="Guid" Label="@T("Programme treatments")" MultiSelection="true" SelectedValues="Model.TreatmentProductIds"
                SelectedValuesChanged="@(v => Model.TreatmentProductIds = v.ToList())"
                ToStringFunc="@(id => Lookups.Treatments.FirstOrDefault(t => t.Id == id)?.Name ?? "")">
         @foreach (var t in Lookups.Treatments.Where(t => t.IsActive || Model.TreatmentProductIds.Contains(t.Id)))
@@ -35,10 +35,10 @@
             <MudSelectItem Value="t.Id">@t.Name</MudSelectItem>
         }
     </MudSelect>
-    <MudTextField @bind-Value="Model.Notes" For="@(() => Model.Notes)" Label="Notes" Lines="2" />
+    <MudTextField @bind-Value="Model.Notes" For="@(() => Model.Notes)" Label="@T("Notes")" Lines="2" />
     @if (!IsNew)
     {
-        <MudSwitch @bind-Value="Model.IsClosed" Label="Closed (no further changes)" Color="Color.Primary" />
+        <MudSwitch @bind-Value="Model.IsClosed" Label="@T("Closed (no further changes)")" Color="Color.Primary" />
     }
 </MudStack>
 

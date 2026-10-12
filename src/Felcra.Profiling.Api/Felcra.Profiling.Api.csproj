@@ -43,4 +43,8 @@
     <InternalsVisibleTo Include="Felcra.Profiling.Api.IntegrationTests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- T("…"): text in the user's language (see Felcra.Profiling.Localization). -->
+    <Using Include="Felcra.Profiling.Localization.Text" Static="true" />
+  </ItemGroup>
 </Project>

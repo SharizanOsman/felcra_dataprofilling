@@ -3,7 +3,7 @@
 @inherits AdminPageBase
 @using Felcra.Profiling.UI.Shared.Ration
 
-<PageHeader Title="Ration planner" Subtitle="Least-cost daily ration from the feed ingredients in Master data" Error="@LoadError" />
+<PageHeader Title="@T("Ration planner")" Subtitle="@T("Least-cost daily ration from the feed ingredients in Master data")" Error="@LoadError" />
 
 @if (IsLoading)
 {

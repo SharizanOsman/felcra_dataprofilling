@@ -31,7 +31,8 @@ public sealed class MonthlyReportOptions
 internal sealed class MonthlyReportJob(
     AppDbContext db, ReportService reports, IEmailSender email, IOptions<MonthlyReportOptions> options, TimeProvider clock, ILogger<MonthlyReportJob> logger)
 {
-    internal sealed record Recipient(Guid UserId, string Email, string Name, bool IsHq, IReadOnlyList<Guid> FarmIds);
+    /// <param name="Language">The language the user last used the apps in; the e-mail and its reports are written in it.</param>
+    internal sealed record Recipient(Guid UserId, string Email, string Name, bool IsHq, IReadOnlyList<Guid> FarmIds, string Language);
 
     public async Task<List<Recipient>> RecipientsAsync(CancellationToken ct)
     {
@@ -40,7 +41,7 @@ internal sealed class MonthlyReportJob(
                 join ur in db.UserRoles on u.Id equals ur.UserId
                 join r in db.Roles on ur.RoleId equals r.Id
                 where u.IsActive && u.Email != null && (r.Name == Roles.HqAdmin || r.Name == Roles.FarmManager)
-                select new { u.Id, u.Email, u.FullName, IsHq = r.Name == Roles.HqAdmin })
+                select new { u.Id, u.Email, u.FullName, u.Language, IsHq = r.Name == Roles.HqAdmin })
             .ToListAsync(ct);
         var activeFarms = await db.Farms.IgnoreQueryFilters().Where(f => f.IsActive && !f.IsDeleted).Select(f => f.Id).ToListAsync(ct);
         var farms = (await db.UserFarms.AsNoTracking().ToListAsync(ct))
@@ -48,7 +49,8 @@ internal sealed class MonthlyReportJob(
             .GroupBy(uf => uf.UserId).ToDictionary(g => g.Key, g => g.Select(uf => uf.FarmId).ToList());
 
         return users
-            .Select(u => new Recipient(u.Id, u.Email!, u.FullName, u.IsHq, u.IsHq ? [] : farms.GetValueOrDefault(u.Id) ?? []))
+            .Select(u => new Recipient(u.Id, u.Email!, u.FullName, u.IsHq, u.IsHq ? [] : farms.GetValueOrDefault(u.Id) ?? [],
+                Parse(u.Language) ?? DefaultLanguage))
             .Where(r => r.IsHq || r.FarmIds.Count > 0)
             .OrderBy(r => r.Email)
             .ToList();
@@ -91,10 +93,11 @@ internal sealed class MonthlyReportJob(
     private async Task<int> SendAllAsync(DateOnly period, CancellationToken ct)
     {
         var (from, to) = (period, period.AddMonths(1).AddDays(-1));
-        var packages = new Dictionary<Guid, MonthlyPackage>();
+        // Built once per farm and language (the PDFs are in the reader's language).
+        var packages = new Dictionary<(Guid, string), MonthlyPackage>();
         async Task<MonthlyPackage> PackageAsync(Guid? farmId)
         {
-            var key = farmId ?? Guid.Empty;
+            var key = (farmId ?? Guid.Empty, Language);
             if (!packages.TryGetValue(key, out var package)) packages[key] = package = await reports.MonthlyPackageAsync(farmId, from, to, ct);
             return package;
         }
@@ -102,6 +105,7 @@ internal sealed class MonthlyReportJob(
         var sent = 0;
         foreach (var recipient in await RecipientsAsync(ct))
         {
+            using var language = Use(recipient.Language);
             foreach (var farmId in recipient.IsHq ? [null] : recipient.FarmIds.Select(id => (Guid?)id))
             {
                 await email.SendAsync(Compose(recipient.Email, recipient.Name, period, await PackageAsync(farmId)), ct);
@@ -116,7 +120,7 @@ internal sealed class MonthlyReportJob(
     {
         var (from, until) = reports.LastMonth();
         var message = Compose(to, name, from, await reports.MonthlyPackageAsync(farmId, from, until, ct));
-        return message with { Subject = "[Test] " + message.Subject };
+        return message with { Subject = T("[Test]") + " " + message.Subject };
     }
 
     private EmailMessage Compose(string to, string name, DateOnly period, MonthlyPackage package)
@@ -126,28 +130,30 @@ internal sealed class MonthlyReportJob(
         var month = ReportText.Month(period);
         string[] lines =
         [
-            $"Active animals: {h.ActiveAnimals}" + (h.Capacity is > 0 ? $" ({100.0 * h.ActiveAnimals / h.Capacity.Value:0}% of capacity)" : ""),
-            $"Pregnancy rate: {(h.PregnancyRatePercent is { } p ? $"{p:0.#}%" : "– (no breeding records yet)")}",
-            $"Recorded in {month}: {d.Activity.Weighings} weighings, {d.Activity.Treatments} treatments, {d.Activity.BreedingEvents} breeding events",
-            $"Calves registered: {d.Activity.CalvesBorn} · Animals that left the herd: {d.Exits.Count}",
-            $"Culling candidates: {d.CullingCandidates} · Breeding tasks overdue: {h.TasksOverdue}",
+            T("Active animals: {0}", h.ActiveAnimals) + (h.Capacity is > 0 ? " " + T("({0:0}% of capacity)", 100.0 * h.ActiveAnimals / h.Capacity.Value) : ""),
+            T("Pregnancy rate: {0}", h.PregnancyRatePercent is { } p ? $"{p:0.#}%" : T("– (no breeding records yet)")),
+            T("Recorded in {0}: {1} weighings, {2} treatments, {3} breeding events", month, d.Activity.Weighings, d.Activity.Treatments, d.Activity.BreedingEvents),
+            T("Calves registered: {0} · Animals that left the herd: {1}", d.Activity.CalvesBorn, d.Exits.Count),
+            T("Culling candidates: {0} · Breeding tasks overdue: {1}", d.CullingCandidates, h.TasksOverdue),
         ];
         var link = options.Value.PortalUrl is { Length: > 0 } url ? $"{url.TrimEnd('/')}/admin/reports" : null;
         var attachments = string.Join(", ", package.Files.Select(f => f.FileName));
+        var reportsName = T("Reports");
 
-        var text = $"Dear {name},\n\nThe cattle profiling reports for {month} — {d.Scope.FarmLabel} — are attached.\n\n" +
+        var text = T("Dear {0},", name) + "\n\n" + T("The cattle profiling reports for {0} — {1} — are attached.", month, d.Scope.FarmLabel) + "\n\n" +
                    string.Join("\n", lines.Select(l => "• " + l)) +
-                   $"\n\nAttached: {attachments}.\nExcel versions and other periods are in the admin portal under Reports" +
+                   "\n\n" + T("Attached: {0}.", attachments) + "\n" + T("Excel versions and other periods are in the admin portal under {0}", reportsName) +
                    (link is null ? "." : $": {link}") +
-                   "\n\nThis e-mail is sent automatically each month by FELCRA Cattle Profiling.";
-        var html = $"<p>Dear {WebUtility.HtmlEncode(name)},</p>" +
-                   $"<p>The cattle profiling reports for <b>{month}</b> — {WebUtility.HtmlEncode(d.Scope.FarmLabel)} — are attached.</p>" +
+                   "\n\n" + T("This e-mail is sent automatically each month by FELCRA Cattle Profiling.");
+        var html = $"<p>{WebUtility.HtmlEncode(T("Dear {0},", name))}</p>" +
+                   $"<p>{T("The cattle profiling reports for {0} — {1} — are attached.", $"<b>{month}</b>", WebUtility.HtmlEncode(d.Scope.FarmLabel))}</p>" +
                    "<ul>" + string.Concat(lines.Select(l => $"<li>{WebUtility.HtmlEncode(l)}</li>")) + "</ul>" +
-                   $"<p>Attached: {WebUtility.HtmlEncode(attachments)}.<br>Excel versions and other periods are in the admin portal under " +
-                   (link is null ? "Reports." : $"<a href=\"{WebUtility.HtmlEncode(link)}\">Reports</a>.") + "</p>" +
-                   "<p style=\"color:#757575;font-size:12px\">This e-mail is sent automatically each month by FELCRA Cattle Profiling.</p>";
+                   $"<p>{WebUtility.HtmlEncode(T("Attached: {0}.", attachments))}<br>" +
+                   T("Excel versions and other periods are in the admin portal under {0}",
+                       link is null ? reportsName : $"<a href=\"{WebUtility.HtmlEncode(link)}\">{reportsName}</a>") + ".</p>" +
+                   $"<p style=\"color:#757575;font-size:12px\">{T("This e-mail is sent automatically each month by FELCRA Cattle Profiling.")}</p>";
 
-        return new EmailMessage(to, name, $"Cattle profiling reports — {month} — {d.Scope.FarmLabel}", text, html, package.Files);
+        return new EmailMessage(to, name, T("Cattle profiling reports — {0} — {1}", month, d.Scope.FarmLabel), text, html, package.Files);
     }
 
     public async Task<MonthlyReportStatusDto> StatusAsync(CancellationToken ct)

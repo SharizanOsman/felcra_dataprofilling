@@ -90,7 +90,8 @@ public class PushTests(ApiFactory factory)
     [Fact]
     public async Task Morning_notification_summarises_tasks_on_the_officers_farm_once_a_day()
     {
-        var officer = await factory.CreateAuthenticatedClientAsync(ApiFactory.OfficerEmail);
+        // The officer uses the field app in Malay, so the morning message is in Malay.
+        var officer = await factory.CreateAuthenticatedClientAsync(ApiFactory.OfficerEmail, "ms");
         var farm = (await officer.GetFromJsonAsync<List<FarmDto>>("/api/farms"))!.Single();
         var dam = await (await officer.PostAsJsonAsync("/api/animals", new AnimalRequest
         {
@@ -120,8 +121,9 @@ public class PushTests(ApiFactory factory)
         }
 
         var message = Assert.Single(factory.Push.To(phone.Endpoint));
-        Assert.Matches(@"^\d+ tasks? today$", message.Title);
-        Assert.Contains("pregnancy check", message.Body);
+        Assert.Matches(@"^\d+ tugasan hari ini$", message.Title);
+        Assert.Contains("pemeriksaan kebuntingan", message.Body);
+
         Assert.Equal("/field/", message.Url);
         Assert.Empty(factory.Push.To(hqPhone.Endpoint));
         Assert.False(await SubscriptionExistsAsync(expired.Endpoint)); // The push service said it is gone.

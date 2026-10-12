@@ -13,11 +13,11 @@ internal sealed class DbExceptionHandler(IProblemDetailsService problemDetails) 
         var detail = exception switch
         {
             DbUpdateConcurrencyException =>
-                "This record was changed by someone else. Reload it and try again.",
+                T("This record was changed by someone else. Reload it and try again."),
             DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } } =>
-                "A record with the same code or name already exists.",
+                T("A record with the same code or name already exists."),
             DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } } =>
-                "This record is referenced by other data and cannot be changed this way.",
+                T("This record is referenced by other data and cannot be changed this way."),
             _ => null,
         };
         if (detail is null) return false;

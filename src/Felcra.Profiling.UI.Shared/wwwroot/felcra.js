@@ -20,4 +20,10 @@ window.felcra = {
     back() {
         history.back();
     },
+
+    /** Saves the chosen language (read by start.js) and reloads the app in it. */
+    setLanguage(language) {
+        try { localStorage.setItem('felcra.language', language); } catch { /* storage blocked */ }
+        location.reload();
+    },
 };

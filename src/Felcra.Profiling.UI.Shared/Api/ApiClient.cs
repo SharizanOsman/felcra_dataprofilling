@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Felcra.Profiling.Localization;
+
 
 namespace Felcra.Profiling.UI.Shared.Api;
 
@@ -32,6 +34,10 @@ public sealed class ApiClient(HttpClient http)
     private static readonly IReadOnlyDictionary<string, string[]> NoFieldErrors = new Dictionary<string, string[]>();
 
     public async Task<T> GetAsync<T>(string url) => (await http.GetFromJsonAsync<T>(url))!;
+
+    /// <summary>Like <see cref="GetAsync{T}"/>, but failures come back as a message instead of an exception.</summary>
+    public Task<ApiResult<T>> TryGetAsync<T>(string url) => SendAsync<T>(() => http.GetAsync(url));
+
 
     public async Task<ApiResult<T>> PostAsync<T>(string url, object body) => await SendAsync<T>(() => http.PostAsJsonAsync(url, body));
 
@@ -78,7 +84,7 @@ public sealed class ApiClient(HttpClient http)
         }
         catch (HttpRequestException)
         {
-            return new(default, "Cannot reach the server. Check your connection and try again.", NoFieldErrors);
+            return new(default, Text.T("Cannot reach the server. Check your connection and try again."), NoFieldErrors);
         }
 
         if (response.IsSuccessStatusCode)
@@ -92,12 +98,12 @@ public sealed class ApiClient(HttpClient http)
         var problem = await ReadProblemAsync(response);
         var message = response.StatusCode switch
         {
-            HttpStatusCode.BadRequest => "Please correct the highlighted fields.",
-            HttpStatusCode.Unauthorized => "Your session has expired. Please sign in again.",
-            HttpStatusCode.Forbidden => "You do not have permission to do this.",
-            HttpStatusCode.NotFound => "The record was not found. It may have been deleted.",
-            HttpStatusCode.Conflict => problem?.Detail ?? "The change conflicts with existing data.",
-            _ => problem?.Detail ?? problem?.Title ?? $"Unexpected error ({(int)response.StatusCode}).",
+            HttpStatusCode.BadRequest => Text.T("Please correct the highlighted fields."),
+            HttpStatusCode.Unauthorized => Text.T("Your session has expired. Please sign in again."),
+            HttpStatusCode.Forbidden => Text.T("You do not have permission to do this."),
+            HttpStatusCode.NotFound => Text.T("The record was not found. It may have been deleted."),
+            HttpStatusCode.Conflict => problem?.Detail ?? Text.T("The change conflicts with existing data."),
+            _ => problem?.Detail ?? problem?.Title ?? Text.T("Unexpected error ({0}).", (int)response.StatusCode),
         };
         return new(default, message, problem?.Errors ?? NoFieldErrors, response.StatusCode);
     }

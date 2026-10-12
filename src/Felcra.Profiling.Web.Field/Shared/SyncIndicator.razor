@@ -31,11 +31,12 @@
 
     private string Text => Sync switch
     {
-        { IsOnline: false } => $"Offline — records are saved on this phone{(Sync.PendingCount > 0 ? $" ({Sync.PendingCount} waiting)" : "")}",
-        { IsSyncing: true } => "Syncing…",
-        { FailedCount: > 0 } => $"{Sync.FailedCount} record(s) not accepted — open Sync for details",
-        { PendingCount: > 0 } => $"{Sync.PendingCount} record(s) waiting to send",
-        _ => "All records sent",
+        { IsOnline: false } => T("Offline — records are saved on this phone") + (Sync.PendingCount > 0 ? " " + T("({0} waiting)", Sync.PendingCount) : ""),
+        { IsSyncing: true } => T("Syncing…"),
+        { FailedCount: > 0 } => T("{0} record(s) not accepted — open Sync for details", Sync.FailedCount),
+        { PendingCount: > 0 } => T("{0} record(s) waiting to send", Sync.PendingCount),
+        _ => T("All records sent"),
+
     };
 
     protected override void OnInitialized() => Sync.Changed += OnChanged;

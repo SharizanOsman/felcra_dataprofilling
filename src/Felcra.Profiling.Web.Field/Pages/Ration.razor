@@ -4,11 +4,11 @@
 @inject FieldData Data
 @inject SyncService Sync
 
-<PageTitle>Ration — FELCRA Field</PageTitle>
+<PageTitle>@T("Ration — FELCRA Field")</PageTitle>
 
-<MudText Typo="Typo.h6" Class="mb-1">Ration planner</MudText>
+<MudText Typo="Typo.h6" Class="mb-1">@T("Ration planner")</MudText>
 <MudText Typo="Typo.caption" Style="display:block" Class="mb-3">
-    Lowest-cost daily feed mix for a group of animals. Works without internet, using feed prices from the last sync.
+    @T("Lowest-cost daily feed mix for a group of animals. Works without internet, using feed prices from the last sync.")
 </MudText>
 
 @if (_feeds is null)
@@ -18,7 +18,8 @@
 else if (_feeds.Count == 0)
 {
     <MudAlert Severity="Severity.Info">
-        @(Sync.IsOnline ? "No feed ingredients have been set up yet. Ask your manager or HQ to add them." : "Connect to the internet once to download the feed ingredients.")
+        @(Sync.IsOnline ? T("No feed ingredients have been set up yet. Ask your manager or HQ to add them.") : T("Connect to the internet once to download the feed ingredients."))
+
     </MudAlert>
 }
 else

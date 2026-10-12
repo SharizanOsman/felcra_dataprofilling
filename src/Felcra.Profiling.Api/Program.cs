@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Felcra.Profiling.Api.Endpoints;
+using Felcra.Profiling.Api.Geocoding;
 using Felcra.Profiling.Api.Infrastructure;
 using Felcra.Profiling.Api.Notifications;
 using Felcra.Profiling.Api.Reports;
@@ -45,9 +46,19 @@ builder.Services.Configure<MonthlyReportOptions>(builder.Configuration.GetSectio
 builder.Services.AddHostedService<MonthlyReportService>();
 builder.Services.Configure<PushOptions>(builder.Configuration.GetSection(PushOptions.Section));
 builder.Services.AddHttpClient("webpush");
+builder.Services.AddMemoryCache();
+builder.Services.Configure<GeocodingOptions>(builder.Configuration.GetSection(GeocodingOptions.Section));
+builder.Services.AddHttpClient<IGeocoder, NominatimGeocoder>((sp, http) =>
+{
+    var o = sp.GetRequiredService<IOptions<GeocodingOptions>>().Value;
+    http.BaseAddress = new Uri(o.BaseUrl);
+    http.DefaultRequestHeaders.UserAgent.ParseAdd(o.UserAgent);
+    http.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddSingleton<IPushSender, WebPushSender>();
 builder.Services.AddScoped<ReminderNotificationJob>();
 builder.Services.AddHostedService<ReminderNotificationService>();
+Felcra.Profiling.Contracts.Common.ValidationText.Configure();
 AssemblyScanner.FindValidatorsInAssemblyContaining<LoginRequestValidator>()
     .ForEach(v => builder.Services.AddSingleton(v.InterfaceType, v.ValidatorType));
 
@@ -129,6 +140,8 @@ if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled")) app.UseForwardedHe
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSecurityHeaders();
+app.UseRequestLanguage();
+
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
@@ -179,6 +192,7 @@ app.MapBreedingEndpoints();
 app.MapAnalyticsEndpoints();
 app.MapReportEndpoints();
 app.MapPushEndpoints();
+app.MapGeocodeEndpoints();
 
 app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html").AllowAnonymous();
 app.MapFallbackToFile("/field/{*path:nonfile}", "field/index.html").AllowAnonymous();

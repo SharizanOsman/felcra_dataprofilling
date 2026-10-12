@@ -52,18 +52,18 @@ public sealed class FarmRequestValidator : AbstractValidator<FarmRequest>
     public FarmRequestValidator()
     {
         RuleFor(x => x.Code).NotEmpty().MaximumLength(32).Matches("^[A-Za-z0-9_-]+$")
-            .WithMessage("Code may only contain letters, digits, '-' and '_'.");
+            .WithMessage(_ => T("Code may only contain letters, digits, '-' and '_'."));
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Address).MaximumLength(500);
         RuleFor(x => x.State).Must(s => string.IsNullOrEmpty(s) || MalaysianStates.All.Contains(s))
-            .WithMessage("Choose one of the Malaysian states or federal territories.");
+            .WithMessage(_ => T("Choose one of the Malaysian states or federal territories."));
         RuleFor(x => x.AreaHectares).InclusiveBetween(0, 1_000_000);
         RuleFor(x => x.Capacity).InclusiveBetween(0, 1_000_000);
         // Latitude and longitude come together, inside Malaysia.
-        RuleFor(x => x.Latitude).NotNull().When(x => x.Longitude is not null).WithMessage("Enter the latitude too.")
-            .InclusiveBetween(0.5m, 7.5m).WithMessage("Latitude must be in Malaysia (0.5 to 7.5).");
-        RuleFor(x => x.Longitude).NotNull().When(x => x.Latitude is not null).WithMessage("Enter the longitude too.")
-            .InclusiveBetween(99.5m, 119.5m).WithMessage("Longitude must be in Malaysia (99.5 to 119.5).");
+        RuleFor(x => x.Latitude).NotNull().When(x => x.Longitude is not null).WithMessage(_ => T("Enter the latitude too."))
+            .InclusiveBetween(0.5m, 7.5m).WithMessage(_ => T("Latitude must be in Malaysia (0.5 to 7.5)."));
+        RuleFor(x => x.Longitude).NotNull().When(x => x.Latitude is not null).WithMessage(_ => T("Enter the longitude too."))
+            .InclusiveBetween(99.5m, 119.5m).WithMessage(_ => T("Longitude must be in Malaysia (99.5 to 119.5)."));
     }
 }
 
@@ -102,7 +102,26 @@ public static class MalaysianStates
         "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", "Pahang", "Perak", "Perlis", "Pulau Pinang",
         "Sabah", "Sarawak", "Selangor", "Terengganu", "Kuala Lumpur", "Labuan", "Putrajaya",
     ];
+
+    // Other spellings (English, "WP …", OpenStreetMap's), mapped to the names above.
+    private static readonly Dictionary<string, string> Aliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Penang"] = "Pulau Pinang", ["Malacca"] = "Melaka", ["Negri Sembilan"] = "Negeri Sembilan",
+        ["WP Kuala Lumpur"] = "Kuala Lumpur", ["Wilayah Persekutuan Kuala Lumpur"] = "Kuala Lumpur", ["Federal Territory of Kuala Lumpur"] = "Kuala Lumpur",
+        ["WP Labuan"] = "Labuan", ["Wilayah Persekutuan Labuan"] = "Labuan", ["Federal Territory of Labuan"] = "Labuan",
+        ["WP Putrajaya"] = "Putrajaya", ["Wilayah Persekutuan Putrajaya"] = "Putrajaya", ["Federal Territory of Putrajaya"] = "Putrajaya",
+    };
+
+    /// <summary>The state as spelled in <see cref="All"/>, or null when the text is not a Malaysian state.</summary>
+    public static string? Normalize(string? state)
+    {
+        if (string.IsNullOrWhiteSpace(state)) return null;
+        var text = state.Trim();
+        if (Aliases.TryGetValue(text, out var alias)) return alias;
+        return All.FirstOrDefault(s => s.Equals(text, StringComparison.OrdinalIgnoreCase));
+    }
 }
+
 
 /// <summary>A farm on the map: its place and herd size.</summary>
 public sealed record FarmMapPointDto(

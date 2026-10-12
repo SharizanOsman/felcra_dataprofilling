@@ -16,23 +16,24 @@
     <MudAppBar Elevation="1" Dense="true">
         @if (!IsHome)
         {
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" OnClick="BackAsync" aria-label="Back" />
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" OnClick="BackAsync" aria-label="@T("Back")" />
         }
-        <MudLink Href="" Color="Color.Inherit" Underline="Underline.None"><MudText Typo="Typo.h6">FELCRA Field</MudText></MudLink>
+        <MudLink Href="" Color="Color.Inherit" Underline="Underline.None"><MudText Typo="Typo.h6">@T("FELCRA Field")</MudText></MudLink>
         <MudSpacer />
+        <LanguageMenu Compact="true" />
         <AuthorizeView>
-            <MudIconButton Href="sync" Color="Color.Inherit" aria-label="Sync status" Class="pa-2">
+            <MudIconButton Href="sync" Color="Color.Inherit" aria-label="@T("Sync status")" Class="pa-2">
                 <SyncIndicator OnlineColor="Color.Inherit" />
             </MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" Color="Color.Inherit" Href="scan" aria-label="Scan" />
-            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="LogoutAsync" aria-label="Sign out" />
+            <MudIconButton Icon="@Icons.Material.Filled.QrCodeScanner" Color="Color.Inherit" Href="scan" aria-label="@T("Scan")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="LogoutAsync" aria-label="@T("Sign out")" />
         </AuthorizeView>
     </MudAppBar>
     <MudMainContent>
         @if (!Sync.IsOnline)
         {
             <div style="background:var(--mud-palette-warning);color:#fff;text-align:center;font-size:0.8rem;padding:2px">
-                Offline — records are saved on this phone and sent later
+                @T("Offline — records are saved on this phone and sent later")
             </div>
         }
         <MudContainer MaxWidth="MaxWidth.Small" Class="py-3 px-3">
@@ -61,9 +62,9 @@
     private async Task LogoutAsync()
     {
         var unsent = Sync.PendingCount + Sync.FailedCount;
-        if (unsent > 0 && await Dialogs.ShowMessageBoxAsync("Records not sent",
-                $"{unsent} record(s) on this phone have not reached the server yet. Signing out deletes them. Sync first, or sign out anyway?",
-                yesText: "Sign out anyway", cancelText: "Cancel") != true)
+        if (unsent > 0 && await Dialogs.ShowMessageBoxAsync(T("Records not sent"),
+                T("{0} record(s) on this phone have not reached the server yet. Signing out deletes them. Sync first, or sign out anyway?", unsent),
+                yesText: T("Sign out anyway"), cancelText: T("Cancel")) != true)
             return;
 
         // Shared phones: stop this user's notifications and remove their farm data and queued records.

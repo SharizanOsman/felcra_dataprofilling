@@ -3,7 +3,7 @@
 @inherits AdminPageBase
 @using Felcra.Profiling.Contracts.Analytics
 
-<PageHeader Title="Dashboard" Subtitle="Herd at a glance" Error="@LoadError">
+<PageHeader Title="@T("Dashboard")" Subtitle="@T("Herd at a glance")" Error="@LoadError">
     <Actions>
         <FarmFilter Farms="_farms" Value="_farmId" ValueChanged="OnFarmChanged" />
     </Actions>
@@ -18,50 +18,50 @@ else
     var d = _dashboard;
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Active animals" Value="@d.ActiveAnimals.ToString()" Icon="@Icons.Material.Filled.Pets" Href="animals"
-                     Detail="@(d.Capacity is > 0 ? $"{100.0 * d.ActiveAnimals / d.Capacity.Value:0}% of capacity ({d.Capacity})" : null)" />
+            <KpiCard Label="@T("Active animals")" Value="@d.ActiveAnimals.ToString()" Icon="@Icons.Material.Filled.Pets" Href="animals"
+                     Detail="@(d.Capacity is > 0 ? T("{0:0}% of capacity ({1})", 100.0 * d.ActiveAnimals / d.Capacity.Value, d.Capacity) : null)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Pregnancy rate" Value="@(d.PregnancyRatePercent is { } p ? $"{p:0.#}%" : "–")" Icon="@Icons.Material.Filled.Favorite" Href="breeding"
+            <KpiCard Label="@T("Pregnancy rate")" Value="@(d.PregnancyRatePercent is { } p ? $"{p:0.#}%" : "–")" Icon="@Icons.Material.Filled.Favorite" Href="breeding"
                      Color="Color.Secondary" DetailWarning="@(d.BreedingFemalesWithoutRecords > 0)"
-                     Detail="@(d.BreedingFemalesWithoutRecords > 0 ? $"{d.BreedingFemalesWithoutRecords} breeding females have no records" : "of breeding females")" />
+                     Detail="@(d.BreedingFemalesWithoutRecords > 0 ? T("{0} breeding females have no records", d.BreedingFemalesWithoutRecords) : T("of breeding females"))" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Tasks due (14 days)" Value="@d.TasksDue.ToString()" Icon="@Icons.Material.Filled.Alarm" Href="breeding"
+            <KpiCard Label="@T("Tasks due (14 days)")" Value="@d.TasksDue.ToString()" Icon="@Icons.Material.Filled.Alarm" Href="breeding"
                      Color="@(d.TasksOverdue > 0 ? Color.Error : Color.Primary)" DetailWarning="@(d.TasksOverdue > 0)"
-                     Detail="@(d.TasksOverdue > 0 ? $"{d.TasksOverdue} overdue" : "none overdue")" />
+                     Detail="@(d.TasksOverdue > 0 ? T("{0} overdue", d.TasksOverdue) : T("none overdue"))" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Culling candidates" Value="@d.CullingCandidates.ToString()" Icon="@Icons.Material.Filled.ContentCut" Href="breeding"
-                     Color="Color.Warning" Detail="by age, fertility and BCS rules" />
+            <KpiCard Label="@T("Culling candidates")" Value="@d.CullingCandidates.ToString()" Icon="@Icons.Material.Filled.ContentCut" Href="breeding"
+                     Color="Color.Warning" Detail="@T("by age, fertility and BCS rules")" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Weighed in last 90 days" Value="@d.WeighedLast90Days.ToString()" Icon="@Icons.Material.Filled.Scale" Href="analytics/growth"
-                     Detail="@(d.ActiveAnimals > 0 ? $"{100.0 * d.WeighedLast90Days / d.ActiveAnimals:0}% of the herd" : null)"
+            <KpiCard Label="@T("Weighed in last 90 days")" Value="@d.WeighedLast90Days.ToString()" Icon="@Icons.Material.Filled.Scale" Href="analytics/growth"
+                     Detail="@(d.ActiveAnimals > 0 ? T("{0:0}% of the herd", 100.0 * d.WeighedLast90Days / d.ActiveAnimals) : null)"
                      DetailWarning="@(d.ActiveAnimals > 0 && d.WeighedLast90Days < d.ActiveAnimals / 2)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Calves born (12 months)" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Secondary"
-                     Detail="@($"Deaths: {d.DeathsLast12Months}" + (d.MortalityPercent is { } m && d.DeathsLast12Months > 0 ? $" ({m:0.#}% mortality)" : ""))"
+            <KpiCard Label="@T("Calves born (12 months)")" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Secondary"
+                     Detail="@(T("Deaths: {0}", d.DeathsLast12Months) + (d.MortalityPercent is { } m && d.DeathsLast12Months > 0 ? " " + T("({0:0.#}% mortality)", m) : ""))"
                      DetailWarning="@(d.MortalityPercent > 3)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Treatments (30 days)" Value="@d.TreatmentsLast30Days.ToString()" Icon="@Icons.Material.Filled.Vaccines" Href="animals" Color="Color.Info" />
+            <KpiCard Label="@T("Treatments (30 days)")" Value="@d.TreatmentsLast30Days.ToString()" Icon="@Icons.Material.Filled.Vaccines" Href="animals" Color="Color.Info" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Tag problems" Value="@((d.Untagged + d.SharingATag).ToString())" Icon="@Icons.Material.Filled.Label" Href="animals"
+            <KpiCard Label="@T("Tag problems")" Value="@((d.Untagged + d.SharingATag).ToString())" Icon="@Icons.Material.Filled.Label" Href="animals"
                      Color="@(d.Untagged + d.SharingATag > 0 ? Color.Warning : Color.Success)"
-                     Detail="@($"{d.Untagged} untagged · {d.SharingATag} sharing a tag")" DetailWarning="@(d.Untagged + d.SharingATag > 0)" />
+                     Detail="@T("{0} untagged · {1} sharing a tag", d.Untagged, d.SharingATag)" DetailWarning="@(d.Untagged + d.SharingATag > 0)" />
         </MudItem>
     </MudGrid>
 
     <MudGrid Spacing="3">
         <MudItem xs="12" md="5">
             <MudPaper Class="pa-3" Elevation="1">
-                <MudText Typo="Typo.h6" Class="mb-2">Herd by category</MudText>
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Herd by category")</MudText>
                 <MudSimpleTable Dense="true" Elevation="0">
                     <thead>
-                        <tr><th>Category</th><th style="text-align:right">Head</th><th style="text-align:right">Avg weight</th><th style="text-align:right">Avg BCS</th></tr>
+                        <tr><th>@T("Category")</th><th style="text-align:right">@T("Head")</th><th style="text-align:right">@T("Avg weight")</th><th style="text-align:right">@T("Avg BCS")</th></tr>
                     </thead>
                     <tbody>
                         @foreach (var c in d.Categories)
@@ -73,21 +73,22 @@ else
                                 <td style="text-align:right">@(c.AverageBcs?.ToString("0.0") ?? "–")</td>
                             </tr>
                         }
-                        <tr style="font-weight:600"><td>Total</td><td style="text-align:right">@d.ActiveAnimals</td><td></td><td></td></tr>
+                        <tr style="font-weight:600"><td>@T("Total")</td><td style="text-align:right">@d.ActiveAnimals</td><td></td><td></td></tr>
                     </tbody>
                 </MudSimpleTable>
-                <MudText Typo="Typo.caption" Style="display:block" Class="mt-2">Averages use each animal's latest weighing or census record.</MudText>
+                <MudText Typo="Typo.caption" Style="display:block" Class="mt-2">@T("Averages use each animal's latest weighing or census record.")</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" md="7">
             <MudPaper Class="pa-3" Elevation="1">
-                <MudText Typo="Typo.h6" Class="mb-2">Recording activity (last 12 weeks)</MudText>
-                <BarChart Labels="@d.Activity.Select(a => a.WeekStart.ToString("dd MMM")).ToList()" AriaLabel="Records per week"
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Recording activity (last 12 weeks)")</MudText>
+                <BarChart Labels="@d.Activity.Select(a => a.WeekStart.ToString("dd MMM")).ToList()" AriaLabel="@T("Records per week")"
                           Series="@([
-                              new BarSeries("Weighings", ChartColors.Primary, d.Activity.Select(a => (double)a.Weighings).ToList()),
-                              new BarSeries("Treatments", ChartColors.Secondary, d.Activity.Select(a => (double)a.Treatments).ToList()),
-                              new BarSeries("Breeding events", ChartColors.Purple, d.Activity.Select(a => (double)a.BreedingEvents).ToList()),
-                              new BarSeries("Observations", ChartColors.Muted, d.Activity.Select(a => (double)a.Observations).ToList()),
+                              new BarSeries(T("Weighings"), ChartColors.Primary, d.Activity.Select(a => (double)a.Weighings).ToList()),
+                              new BarSeries(T("Treatments"), ChartColors.Secondary, d.Activity.Select(a => (double)a.Treatments).ToList()),
+                              new BarSeries(T("Breeding events"), ChartColors.Purple, d.Activity.Select(a => (double)a.BreedingEvents).ToList()),
+                              new BarSeries(T("Observations"), ChartColors.Muted,
+ d.Activity.Select(a => (double)a.Observations).ToList()),
                           ])" />
             </MudPaper>
         </MudItem>

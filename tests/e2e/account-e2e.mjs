@@ -1,5 +1,6 @@
 // Step 9: change your own password in the admin portal and in the field app (throwaway users).
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 
 const root = process.argv[2] ?? 'http://localhost:5237';
 const results = [];
@@ -18,7 +19,7 @@ const users = { manager: `pw-manager-${stamp}@felcra.local`, officer: `pw-office
 await api('/api/users', hq, { email: users.manager, fullName: 'PW Manager', role: 'FarmManager', farmIds: [farm.id], password: 'Felcra@2026' });
 await api('/api/users', hq, { email: users.officer, fullName: 'PW Officer', role: 'FieldOfficer', farmIds: [farm.id], password: 'Felcra@2026' });
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const changeIn = async (page, label) => {
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Current password').fill('Wrong@2026');

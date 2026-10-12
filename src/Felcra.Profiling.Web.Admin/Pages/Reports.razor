@@ -3,7 +3,7 @@
 @inherits AdminPageBase
 @using Felcra.Profiling.Contracts.Reports
 
-<PageHeader Title="Reports" Subtitle="PDF for printing and sharing, Excel for further analysis" Error="@LoadError">
+<PageHeader Title="@T("Reports")" Subtitle="@T("PDF for printing and sharing, Excel for further analysis")" Error="@LoadError">
     <Actions>
         <FarmFilter Farms="_farms" Value="_farmId" ValueChanged="OnFarmChanged" />
     </Actions>
@@ -11,48 +11,48 @@
 
 <MudPaper Class="pa-3 mb-4" Elevation="1">
     <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="3">
-        <MudText Typo="Typo.subtitle1">Period</MudText>
-        <div style="width:170px"><DateField Label="From" Value="_from" ValueChanged="@(d => SetPeriod(d ?? _from, _to))" Clearable="false" /></div>
-        <div style="width:170px"><DateField Label="To" Value="_to" ValueChanged="@(d => SetPeriod(_from, d ?? _to))" Clearable="false" /></div>
+        <MudText Typo="Typo.subtitle1">@T("Period")</MudText>
+        <div style="width:170px"><DateField Label="@T("From")" Value="_from" ValueChanged="@(d => SetPeriod(d ?? _from, _to))" Clearable="false" /></div>
+        <div style="width:170px"><DateField Label="@T("To")" Value="_to" ValueChanged="@(d => SetPeriod(_from, d ?? _to))" Clearable="false" /></div>
         <MudChipSet T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="_preset" SelectedValueChanged="ApplyPreset" Size="Size.Small"
                      SelectedColor="Color.Primary" CheckMark="true">
-            <MudChip T="string" Value="@("last-month")">Last month</MudChip>
-            <MudChip T="string" Value="@("this-month")">This month</MudChip>
-            <MudChip T="string" Value="@("last-3")">Last 3 months</MudChip>
-            <MudChip T="string" Value="@("this-year")">This year</MudChip>
+            <MudChip T="string" Value="@("last-month")">@T("Last month")</MudChip>
+            <MudChip T="string" Value="@("this-month")">@T("This month")</MudChip>
+            <MudChip T="string" Value="@("last-3")">@T("Last 3 months")</MudChip>
+            <MudChip T="string" Value="@("this-year")">@T("This year")</MudChip>
         </MudChipSet>
     </MudStack>
     @if (_to < _from)
     {
-        <MudText Typo="Typo.caption" Color="Color.Error">The end date must be on or after the start date.</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Error">@T("The end date must be on or after the start date.")</MudText>
     }
 </MudPaper>
 
 <MudGrid Spacing="3">
     <MudItem xs="12" md="6">
-        <ReportCard Title="Farm performance" Icon="@Icons.Material.Filled.Insights"
-                    Description="Herd by category, records made in the period, animals that left the herd, breeding, growth and data quality.">
-            <ReportButtons Name="Farm performance" Href="@($"api/reports/performance?{FarmAnd}from={_from:yyyy-MM-dd}&to={_to:yyyy-MM-dd}")"
+        <ReportCard Title="@T("Farm performance")" Icon="@Icons.Material.Filled.Insights"
+                    Description="@T("Herd by category, records made in the period, animals that left the herd, breeding, growth and data quality.")">
+            <ReportButtons Name="@T("Farm performance")" Href="@($"api/reports/performance?{FarmAnd}from={_from:yyyy-MM-dd}&to={_to:yyyy-MM-dd}")"
                            Download="DownloadAsync" Busy="@BusyOrInvalid" />
         </ReportCard>
     </MudItem>
     <MudItem xs="12" md="6">
-        <ReportCard Title="Health and treatments" Icon="@Icons.Material.Filled.Vaccines"
-                    Description="Every treatment given in the period with dose, batch and withdrawal date, and a summary by product.">
-            <ReportButtons Name="Health and treatments" Href="@($"api/reports/treatments?{FarmAnd}from={_from:yyyy-MM-dd}&to={_to:yyyy-MM-dd}")"
+        <ReportCard Title="@T("Health and treatments")" Icon="@Icons.Material.Filled.Vaccines"
+                    Description="@T("Every treatment given in the period with dose, batch and withdrawal date, and a summary by product.")">
+            <ReportButtons Name="@T("Health and treatments")" Href="@($"api/reports/treatments?{FarmAnd}from={_from:yyyy-MM-dd}&to={_to:yyyy-MM-dd}")"
                            Download="DownloadAsync" Busy="@BusyOrInvalid" />
         </ReportCard>
     </MudItem>
     <MudItem xs="12" md="6">
-        <ReportCard Title="Culling candidates" Icon="@Icons.Material.Filled.ContentCut"
-                    Description="Animals meeting the age, fertility or body-condition rules today (the period does not apply).">
-            <ReportButtons Name="Culling candidates" Href="@($"api/reports/culling-candidates{FarmFilter.Query(_farmId)}")" Download="DownloadAsync" Busy="@Downloading" />
+        <ReportCard Title="@T("Culling candidates")" Icon="@Icons.Material.Filled.ContentCut"
+                    Description="@T("Animals meeting the age, fertility or body-condition rules today (the period does not apply).")">
+            <ReportButtons Name="@T("Culling candidates")" Href="@($"api/reports/culling-candidates{FarmFilter.Query(_farmId)}")" Download="DownloadAsync" Busy="@Downloading" />
         </ReportCard>
     </MudItem>
     <MudItem xs="12" md="6">
-        <ReportCard Title="Census and profiling form" Icon="@Icons.Material.Filled.FactCheck"
-                    Description="The census programme in the layout of the Pagoh report, and the list of selected animals.">
-            <MudSelect T="Guid?" @bind-Value="_sessionId" Label="Census programme" Dense="true" Class="mb-2"
+        <ReportCard Title="@T("Census and profiling form")" Icon="@Icons.Material.Filled.FactCheck"
+                    Description="@T("The census programme in the layout of the Pagoh report, and the list of selected animals.")">
+            <MudSelect T="Guid?" @bind-Value="_sessionId" Label="@T("Census programme")" Dense="true" Class="mb-2"
                        ToStringFunc="@(id => Sessions.FirstOrDefault(s => s.Id == id) is { } s ? SessionLabel(s) : "")">
                 @foreach (var s in Sessions)
                 {
@@ -62,15 +62,15 @@
             @if (_sessionId is { } id)
             {
                 <MudStack Spacing="1">
-                    <MudText Typo="Typo.caption">Census and profiling form</MudText>
-                    <ReportButtons Name="Census and profiling form" Href="@($"api/reports/census-sessions/{id}/form")" Download="DownloadAsync" Busy="@Downloading" />
-                    <MudText Typo="Typo.caption" Class="mt-2">Selected animals</MudText>
-                    <ReportButtons Name="Selected animals" Href="@($"api/reports/census-sessions/{id}/selected")" Download="DownloadAsync" Busy="@Downloading" />
+                    <MudText Typo="Typo.caption">@T("Census and profiling form")</MudText>
+                    <ReportButtons Name="@T("Census and profiling form")" Href="@($"api/reports/census-sessions/{id}/form")" Download="DownloadAsync" Busy="@Downloading" />
+                    <MudText Typo="Typo.caption" Class="mt-2">@T("Selected animals")</MudText>
+                    <ReportButtons Name="@T("Selected animals")" Href="@($"api/reports/census-sessions/{id}/selected")" Download="DownloadAsync" Busy="@Downloading" />
                 </MudStack>
             }
             else if (Sessions.Count == 0 && !IsLoading)
             {
-                <MudText Typo="Typo.body2">No census programmes for this farm yet.</MudText>
+                <MudText Typo="Typo.body2">@T("No census programmes for this farm yet.")</MudText>
             }
         </ReportCard>
     </MudItem>
@@ -78,47 +78,47 @@
 
 @if (IsHq && _monthly is { } m)
 {
-    <MudText Typo="Typo.h6" Class="mt-6 mb-2">Monthly report e-mail</MudText>
+    <MudText Typo="Typo.h6" Class="mt-6 mb-2">@T("Monthly report e-mail")</MudText>
     <MudPaper Class="pa-4" Elevation="1">
         <MudGrid Spacing="3">
             <MudItem xs="12" md="6">
                 <MudText Typo="Typo.body2" Class="mb-2">
-                    On day @m.DayOfMonth of each month from @($"{m.Hour:00}:00") (Malaysia time), last month's farm performance, health and
-                    treatment, and culling candidate reports are e-mailed as PDFs: HQ admins get all farms, each farm manager gets their own farms.
+                    @T("On day {0} of each month from {1:00}:00 (Malaysia time), last month's farm performance, health and treatment, and culling candidate reports are e-mailed as PDFs: HQ admins get all farms, each farm manager gets their own farms.", m.DayOfMonth, m.Hour)
                 </MudText>
                 <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-3">
                     <MudChip T="string" Size="Size.Small" Color="@(m.Enabled ? Color.Success : Color.Default)" Variant="Variant.Outlined">
-                        @(m.Enabled ? "Schedule on" : "Schedule off")
+                        @(m.Enabled ? T("Schedule on") : T("Schedule off"))
                     </MudChip>
                     <MudChip T="string" Size="Size.Small" Color="@(m.EmailConfigured ? Color.Success : Color.Warning)" Variant="Variant.Outlined">
-                        @(m.EmailConfigured ? "E-mail configured" : "E-mail not configured")
+                        @(m.EmailConfigured ? T("E-mail configured") : T("E-mail not configured"))
                     </MudChip>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@m.Recipients recipients</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@T("{0} recipients", m.Recipients)</MudChip>
                 </MudStack>
                 @if (!m.Enabled || !m.EmailConfigured)
                 {
                     <MudText Typo="Typo.caption" Style="display:block" Class="mb-2">
-                        Set up by the server administrator: <code>Reports:Monthly:Enabled</code> and the <code>Email</code> settings (SMTP server and sender).
+                        @((MarkupString)T("Set up by the server administrator: {0} and the {1} settings (SMTP server and sender).", "<code>Reports:Monthly:Enabled</code>", "<code>Email</code>"))
+
                     </MudText>
                 }
                 <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Send" Disabled="@(!m.EmailConfigured || _sendingTest)"
-                           OnClick="SendTestAsync">Send me a test e-mail</MudButton>
+                           OnClick="SendTestAsync">@T("Send me a test e-mail")</MudButton>
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudSimpleTable Dense="true" Elevation="0">
-                    <thead><tr><th>Month</th><th>Sent</th><th style="text-align:right">E-mails</th></tr></thead>
+                    <thead><tr><th>@T("Month")</th><th>@T("Sent")</th><th style="text-align:right">@T("E-mails")</th></tr></thead>
                     <tbody>
                         @foreach (var run in m.RecentRuns)
                         {
                             <tr>
                                 <td>@run.Period.ToString("MMMM yyyy")</td>
-                                <td>@(run.CompletedAt is { } done ? done.ToLocalTime().ToString("d MMM yyyy HH:mm") : "in progress")</td>
+                                <td>@(run.CompletedAt is { } done ? done.ToLocalTime().ToString("d MMM yyyy HH:mm") : T("in progress"))</td>
                                 <td style="text-align:right">@run.EmailsSent</td>
                             </tr>
                         }
                         @if (m.RecentRuns.Count == 0)
                         {
-                            <tr><td colspan="3">Nothing sent yet.</td></tr>
+                            <tr><td colspan="3">@T("Nothing sent yet.")</td></tr>
                         }
                     </tbody>
                 </MudSimpleTable>
@@ -186,9 +186,9 @@
         {
             var result = await Api.PostAsync<TestEmailResultDto>($"api/reports/monthly/test{FarmFilter.Query(_farmId)}", new { });
             if (result.Value is { } sent)
-                Snackbar.Add($"Test e-mail sent to {sent.SentTo} with {sent.Attachments.Count} reports.", Severity.Success);
+                Snackbar.Add(T("Test e-mail sent to {0} with {1} reports.", sent.SentTo, sent.Attachments.Count), Severity.Success);
             else
-                Snackbar.Add(result.FullError ?? "The test e-mail could not be sent.", Severity.Error);
+                Snackbar.Add(result.FullError ?? T("The test e-mail could not be sent."), Severity.Error);
         }
         finally
         {

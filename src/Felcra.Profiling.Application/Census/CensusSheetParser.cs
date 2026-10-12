@@ -56,7 +56,7 @@ public static partial class CensusSheetParser
             if (mapped.ContainsKey(Column.Tag)) (headerIndex, columns) = (r, mapped);
         }
         if (headerIndex < 0)
-            return new([], "Could not find the header row. The sheet needs a 'Tag No' (or 'No. Tag') column.");
+            return new([], T("Could not find the header row. The sheet needs a 'Tag No' (or 'No. Tag') column."));
 
         // The paper form has "JENIS" on one row and "P I AJ AB" on the row below.
         var dataStart = headerIndex + 1;
@@ -71,7 +71,7 @@ public static partial class CensusSheetParser
         }
 
         if (!columns.ContainsKey(Column.Category) && !HasTickColumns(columns))
-            return new([], "Could not find the category: add a 'Category' column or the P / I / AJ / AB columns.");
+            return new([], T("Could not find the category: add a 'Category' column or the P / I / AJ / AB columns."));
 
         var rows = new List<ParsedCensusRow>();
         for (var r = dataStart; r < sheet.Count; r++)
@@ -100,7 +100,7 @@ public static partial class CensusSheetParser
 
         AnimalCategory? category = null;
         if (ticks.Count > 1)
-            errors.Add("More than one of P / I / AJ / AB is ticked.");
+            errors.Add(T("More than one of P / I / AJ / AB is ticked."));
         else if (ticks.Count == 1)
             category = ticks[0] switch
             {
@@ -110,37 +110,37 @@ public static partial class CensusSheetParser
                 _ => AnimalCategory.FemaleCalf,
             };
         else if (categoryText is not null)
-            category = ParseCategory(categoryText) ?? AddError<AnimalCategory?>(errors, $"Unknown category '{categoryText}'. Use P, I, AJ or AB.");
+            category = ParseCategory(categoryText) ?? AddError<AnimalCategory?>(errors, T("Unknown category '{0}'. Use P, I, AJ or AB.", categoryText));
         else
-            errors.Add("Category is missing.");
+            errors.Add(T("Category is missing."));
 
         var tag = Animal.NormaliseTag(tagText);
-        if (tag is null) warnings.Add("No ear tag: the animal will be registered untagged.");
+        if (tag is null) warnings.Add(T("No ear tag: the animal will be registered untagged."));
 
         int? ageMonths = null;
         if (ageText is not null)
         {
             ageMonths = ParseAgeMonths(ageText);
-            if (ageMonths is null) warnings.Add($"Could not read age '{ageText}'; age left empty.");
+            if (ageMonths is null) warnings.Add(T("Could not read age '{0}'; age left empty.", ageText));
         }
 
         decimal? weight = null;
         if (weightText is not null)
         {
             weight = ParseDecimal(weightText.Replace("kg", "", StringComparison.OrdinalIgnoreCase));
-            if (weight is null) errors.Add($"Weight '{weightText}' is not a number.");
-            else if (weight is < 1 or > 1500) errors.Add($"Weight {weight} kg is outside 1–1500 kg.");
+            if (weight is null) errors.Add(T("Weight '{0}' is not a number.", weightText));
+            else if (weight is < 1 or > 1500) errors.Add(T("Weight {0} kg is outside 1–1500 kg.", weight));
         }
         else
         {
-            warnings.Add("No weight recorded.");
+            warnings.Add(T("No weight recorded."));
         }
 
         decimal? bcs = null;
         if (Cell(Column.Bcs) is { } bcsText)
         {
             bcs = ParseDecimal(bcsText);
-            if (bcs is null or < 1 or > 9) errors.Add($"BCS '{bcsText}' must be a number from 1 to 9.");
+            if (bcs is null or < 1 or > 9) errors.Add(T("BCS '{0}' must be a number from 1 to 9.", bcsText));
         }
 
         int? lineNo = int.TryParse(Cell(Column.LineNo), out var n) ? n : null;
@@ -148,9 +148,9 @@ public static partial class CensusSheetParser
         if (category is { } c && ageMonths is { } months)
         {
             if (c is AnimalCategory.MaleCalf or AnimalCategory.FemaleCalf && months >= 30)
-                warnings.Add($"Recorded as a calf but age is {FormatAge(months)}; check the category.");
+                warnings.Add(T("Recorded as a calf but age is {0}; check the category.", FormatAge(months)));
             if (c is AnimalCategory.Bull or AnimalCategory.Dam && months < 12)
-                warnings.Add($"Recorded as an adult but age is {FormatAge(months)}; check the category.");
+                warnings.Add(T("Recorded as an adult but age is {0}; check the category.", FormatAge(months)));
         }
 
         return new ParsedCensusRow(
@@ -190,9 +190,10 @@ public static partial class CensusSheetParser
     public static string FormatAge(int months) =>
         (months / 12, months % 12) switch
         {
-            (0, var m) => $"{m} mo",
-            (var y, 0) => $"{y} yr",
-            (var y, var m) => $"{y} yr {m} mo",
+            (0, var m) => T("{0} mo", m),
+            (var y, 0) => T("{0} yr", y),
+            (var y, var m) => T("{0} yr {1} mo", y, m),
+
         };
 
     private static bool IsTicked(string? value) =>

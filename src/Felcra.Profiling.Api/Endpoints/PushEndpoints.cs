@@ -56,9 +56,9 @@ internal static class PushEndpoints
         ReminderNotificationJob job, IPushSender push, ICurrentUser user, CancellationToken ct)
     {
         if (!push.IsConfigured)
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Push"] = ["Push notifications are not set up on the server."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Push"] = [T("Push notifications are not set up on the server.")] });
         var sent = await job.SendToUserAsync(user.UserId!.Value,
-            new PushPayload("Notifications are on", "You will get a message each morning when tasks are due.", "/field/", "test"), ct);
+            new PushPayload(T("Notifications are on"), T("You will get a message each morning when tasks are due."), "/field/", "test"), ct);
         return TypedResults.Ok(new PushTestResultDto(sent));
     }
 

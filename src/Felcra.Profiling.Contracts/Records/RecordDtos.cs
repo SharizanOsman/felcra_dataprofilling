@@ -22,19 +22,20 @@ public sealed class MeasurementRequestValidator : AbstractValidator<MeasurementR
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.Type).IsInEnum();
-        RuleFor(x => x.Value).NotNull().WithMessage("Enter a value.")
+        RuleFor(x => x.Value).NotNull().WithMessage(_ => T("Enter a value."))
             .Must((r, v) => v is null || (v >= Measurement.Range(r.Type).Min && v <= Measurement.Range(r.Type).Max))
-            .WithMessage(r => $"{Label(r.Type)} must be between {Measurement.Range(r.Type).Min} and {Measurement.Range(r.Type).Max}{Unit(r.Type)}.");
-        RuleFor(x => x.MeasuredOn).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage("Date cannot be in the future.");
-        RuleFor(x => x.Method).Null().When(x => x.Type != MeasurementType.Weight).WithMessage("Method only applies to weights.");
+            .WithMessage(r => T("{0} must be between {1} and {2}{3}.", Label(r.Type), Measurement.Range(r.Type).Min, Measurement.Range(r.Type).Max, Unit(r.Type)));
+        RuleFor(x => x.MeasuredOn).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage(_ => T("Date cannot be in the future."));
+        RuleFor(x => x.Method).Null().When(x => x.Type != MeasurementType.Weight).WithMessage(_ => T("Method only applies to weights."));
         RuleFor(x => x.Notes).MaximumLength(500);
     }
 
     private static string Label(MeasurementType type) => type switch
     {
         MeasurementType.BodyCondition => "BCS",
-        MeasurementType.MilkYield => "Milk yield",
-        _ => "Weight",
+        MeasurementType.MilkYield => T("Milk yield"),
+        _ => T("Weight"),
+
     };
 
     private static string Unit(MeasurementType type) => Measurement.Unit(type) is { Length: > 0 } u ? $" {u}" : "";
@@ -63,14 +64,14 @@ public sealed class TreatmentRecordRequestValidator : AbstractValidator<Treatmen
     public TreatmentRecordRequestValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.TreatmentProductId).NotEmpty().WithMessage("Choose the treatment.");
-        RuleFor(x => x.GivenOn).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage("Date cannot be in the future.");
+        RuleFor(x => x.TreatmentProductId).NotEmpty().WithMessage(_ => T("Choose the treatment."));
+        RuleFor(x => x.GivenOn).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage(_ => T("Date cannot be in the future."));
         RuleFor(x => x.Dose).GreaterThan(0).When(x => x.Dose.HasValue);
         RuleFor(x => x.DoseUnit).MaximumLength(20);
         RuleFor(x => x.Route).IsInEnum().When(x => x.Route.HasValue);
         RuleFor(x => x.BatchNumber).MaximumLength(50);
         RuleFor(x => x.NextDueOn).GreaterThan(x => x.GivenOn).When(x => x.NextDueOn.HasValue)
-            .WithMessage("Next due date must be after the date given.");
+            .WithMessage(_ => T("Next due date must be after the date given."));
         RuleFor(x => x.Notes).MaximumLength(500);
     }
 }
@@ -96,10 +97,10 @@ public sealed class ObservationRequestValidator : AbstractValidator<ObservationR
     public ObservationRequestValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.ObservedOn).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage("Date cannot be in the future.");
+        RuleFor(x => x.ObservedOn).LessThanOrEqualTo(_ => ValidationDates.LatestToday).WithMessage(_ => T("Date cannot be in the future."));
         RuleFor(x => x.Category).IsInEnum();
-        RuleFor(x => x.Notes).NotEmpty().WithMessage("Describe what you observed.").MaximumLength(2000);
-        RuleFor(x => x.PhotoIds).Must(p => p.Count <= 5).WithMessage("At most 5 photos per observation.");
+        RuleFor(x => x.Notes).NotEmpty().WithMessage(_ => T("Describe what you observed.")).MaximumLength(2000);
+        RuleFor(x => x.PhotoIds).Must(p => p.Count <= 5).WithMessage(_ => T("At most 5 photos per observation."));
     }
 }
 

@@ -125,7 +125,7 @@ internal static class CensusEndpoints
         var distinct = ids.Distinct().ToList();
         return await db.TreatmentProducts.CountAsync(t => distinct.Contains(t.Id), ct) == distinct.Count
             ? null
-            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["TreatmentProductIds"] = ["One or more treatments do not exist."] });
+            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["TreatmentProductIds"] = [T("One or more treatments do not exist.")] });
     }
 
     internal static async Task<List<CensusSessionDto>> ToDtosAsync(AppDbContext db, List<CensusSession> sessions, CancellationToken ct)
@@ -193,7 +193,7 @@ internal static class CensusEndpoints
         if (session is null) return TypedResults.NotFound();
         if (session.IsClosed) return Closed();
         if (!await db.Animals.AnyAsync(a => a.Id == request.AnimalId && a.FarmId == session.FarmId, ct))
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["AnimalId"] = ["Animal is not on this farm."] });
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["AnimalId"] = [T("Animal is not on this farm.")] });
 
         var entry = new CensusEntry { CensusSessionId = id, AnimalId = request.AnimalId, FarmId = session.FarmId };
         ApplyEntry(request, entry);
@@ -240,7 +240,7 @@ internal static class CensusEndpoints
     }
 
     private static ValidationProblem Closed() =>
-        TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Session"] = ["This census session is closed. Reopen it to make changes."] });
+        TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Session"] = [T("This census session is closed. Reopen it to make changes.")] });
 
     // ---- Import --------------------------------------------------------------------------------
 
@@ -270,15 +270,15 @@ internal static class CensusEndpoints
         {
             null => TypedResults.NotFound(),
             { FileError: { } error } => FileProblem(error),
-            { Result: null } => FileProblem($"{outcome.Preview!.RowsWithErrors} row(s) have errors. Preview the file and fix them first."),
+            { Result: null } => FileProblem(T("{0} row(s) have errors. Preview the file and fix them first.", outcome.Preview!.RowsWithErrors)),
             _ => TypedResults.Ok(outcome.Result),
         };
     }
 
     private static async Task<ValidationProblem?> CheckUploadAsync(Guid id, IFormFile file, AppDbContext db, CancellationToken ct)
     {
-        if (file.Length == 0) return FileProblem("The file is empty.");
-        if (file.Length > MaxImportBytes) return FileProblem("The file is larger than 5 MB.");
+        if (file.Length == 0) return FileProblem(T("The file is empty."));
+        if (file.Length > MaxImportBytes) return FileProblem(T("The file is larger than 5 MB."));
         return await db.CensusSessions.AnyAsync(s => s.Id == id && s.IsClosed, ct) ? Closed() : null;
     }
 

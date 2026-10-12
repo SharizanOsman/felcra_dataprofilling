@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- UI and message text in English and Malay. No dependencies: shared by the server, both clients and the analytics models. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Felcra.Profiling.Localization.Tests" />
+  </ItemGroup>
+</Project>

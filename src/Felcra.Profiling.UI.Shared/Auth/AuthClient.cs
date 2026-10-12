@@ -37,20 +37,20 @@ public sealed class AuthClient(
         }
         catch (HttpRequestException)
         {
-            return new(false, "Cannot reach the server. Check your connection and try again.");
+            return new(false, T("Cannot reach the server. Check your connection and try again."));
         }
 
         if (response.StatusCode == HttpStatusCode.TooManyRequests)
-            return new(false, "Too many attempts. Please wait a minute and try again.");
+            return new(false, T("Too many attempts. Please wait a minute and try again."));
         if (!response.IsSuccessStatusCode)
-            return new(false, "Invalid email or password.");
+            return new(false, T("Invalid email or password."));
 
         var tokens = (await response.Content.ReadFromJsonAsync<TokenResponse>())!;
         var principal = JwtAuthStateProvider.CreatePrincipal(tokens.AccessToken);
         if (!options.AllowedRoles.Any(principal.IsInRole))
         {
             await LogoutOnServerAsync(tokens.RefreshToken);
-            return new(false, "Your account does not have access to this application.");
+            return new(false, T("Your account does not have access to this application."));
         }
 
         await store.SetAsync(tokens);

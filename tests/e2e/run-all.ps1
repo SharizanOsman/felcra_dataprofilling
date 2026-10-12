@@ -45,6 +45,7 @@ function Run($name, $script, [string[]]$scriptArgs) {
 
 Reset-Db
 Run "Admin (master data, farms, users)" "admin-e2e.mjs" @($out)
+Run "Language and farm map" "language-map-e2e.mjs" @("http://localhost:5237", $out)
 Run "Census and import" "census-e2e.mjs" @($Csv, $out)
 
 Reset-Db

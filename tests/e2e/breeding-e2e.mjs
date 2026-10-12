@@ -1,5 +1,6 @@
 // Step 6 end-to-end: breeding in the field app (online and offline) and the admin Breeding page.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 import path from 'node:path';
 
 const root = process.argv[2] ?? 'http://localhost:5237';
@@ -24,7 +25,7 @@ const dam3 = tag('2348');  // Dam, recorded offline
 const bull = tag('178');   // Bull
 const calfTag = `C${Date.now() % 100000}`;
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const context = await browser.newContext({ viewport: { width: 400, height: 860 }, isMobile: true, hasTouch: true });
 const page = await context.newPage();
 page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED/.test(m.text())) errors.push(m.text()); });

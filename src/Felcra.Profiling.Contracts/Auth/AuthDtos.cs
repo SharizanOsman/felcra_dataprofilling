@@ -46,6 +46,6 @@ public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePas
     {
         RuleFor(x => x.CurrentPassword).NotEmpty();
         RuleFor(x => x.NewPassword).ValidPassword()
-            .NotEqual(x => x.CurrentPassword).WithMessage("Choose a password different from the current one.");
+            .NotEqual(x => x.CurrentPassword).WithMessage(_ => T("Choose a password different from the current one."));
     }
 }

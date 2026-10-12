@@ -16,16 +16,16 @@ internal static class ExcelReports
     public static byte[] CensusForm(CensusFormData d)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add("Census");
-        var row = TitleBlock(sheet, d.Scope, $"{d.SessionTitle} · person in charge: {d.PicName ?? "–"}");
+        var sheet = workbook.Worksheets.Add(T("Census"));
+        var row = TitleBlock(sheet, d.Scope, $"{d.SessionTitle} · " + T("person in charge: {0}", d.PicName ?? "–"));
 
-        string[] headers = ["Line", "Tag No", "P", "I", "AJ", "AB", "Age", "Weight (kg)", "BCS", "Project", "Remarks", "Selected", "Animal no."];
+        string[] headers = [T("Line"), T("Tag No"), "P", "I", "AJ", "AB", T("Age"), T("Weight (kg)"), "BCS", T("Project"), T("Remarks"), T("Selected"), T("Animal no.")];
         var headerRow = row;
         Headers(sheet, row++, headers);
         foreach (var r in d.Rows)
         {
             sheet.Cell(row, 1).Value = r.No;
-            sheet.Cell(row, 2).Value = r.TagNumber ?? "NO. TAG";
+            sheet.Cell(row, 2).Value = r.TagNumber ?? T("NO. TAG");
             sheet.Cell(row, 3 + r.Category switch { AnimalCategory.Bull => 0, AnimalCategory.Dam => 1, AnimalCategory.MaleCalf => 2, _ => 3 }).Value = "/";
             sheet.Cell(row, 7).Value = ReportText.Age(r.AgeMonths);
             if (r.WeightKg is { } w) sheet.Cell(row, 8).Value = w;
@@ -35,16 +35,16 @@ internal static class ExcelReports
             sheet.Cell(row, 12).Value = r.Selected ? "/" : "";
             sheet.Cell(row, 13).Value = r.AnimalNo;
             if (r.Selected) sheet.Range(row, 1, row, headers.Length).Style.Fill.BackgroundColor = SelectedFill;
-            if (r.DuplicateTag) sheet.Cell(row, 2).CreateComment().AddText("Tag number also used by another animal on this farm.");
+            if (r.DuplicateTag) sheet.Cell(row, 2).CreateComment().AddText(T("Tag number also used by another animal on this farm."));
             row++;
         }
         Finish(sheet, headerRow, row - 1, headers.Length);
         sheet.Range(headerRow, 3, row - 1, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         sheet.Range(headerRow, 12, row - 1, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-        var summary = workbook.Worksheets.Add("Summary");
+        var summary = workbook.Worksheets.Add(T("Summary"));
         var s = TitleBlock(summary, d.Scope);
-        string[] cols = ["Category", "On record", "Counted", "Selected", "Avg weight (kg)"];
+        string[] cols = [T("Category"), T("On record"), T("Counted"), T("Selected"), T("Avg weight (kg)")];
         var first = s;
         Headers(summary, s++, cols);
         (AnimalCategory Category, int? Recorded, int Counted)[] categories =
@@ -65,7 +65,7 @@ internal static class ExcelReports
             if (weights.Count > 0) summary.Cell(s, 5).Value = Math.Round(weights.Average(), 1);
             s++;
         }
-        summary.Cell(s, 1).Value = "Total";
+        summary.Cell(s, 1).Value = T("Total");
         if (d.Recorded is { } total) summary.Cell(s, 2).Value = total.Total;
         summary.Cell(s, 3).Value = d.Counted.Total;
         summary.Cell(s, 4).Value = d.Selected.Count;
@@ -73,13 +73,13 @@ internal static class ExcelReports
         Finish(summary, first, s, cols.Length);
 
         s += 2;
-        summary.Cell(s++, 1).Value = "Programme treatments";
+        summary.Cell(s++, 1).Value = T("Programme treatments");
         summary.Cell(s - 1, 1).Style.Font.Bold = true;
         foreach (var t in d.Treatments) summary.Cell(s++, 1).Value = t;
         if (!string.IsNullOrWhiteSpace(d.Notes))
         {
             s++;
-            summary.Cell(s++, 1).Value = "Findings and recommendations";
+            summary.Cell(s++, 1).Value = T("Findings and recommendations");
             summary.Cell(s - 1, 1).Style.Font.Bold = true;
             summary.Cell(s, 1).Value = d.Notes;
         }
@@ -89,15 +89,15 @@ internal static class ExcelReports
     public static byte[] SelectedAnimals(CensusFormData d)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add("Selected");
-        var scope = d.Scope with { Title = "Selected animals" };
-        var row = TitleBlock(sheet, scope, $"{d.Selected.Count} of {d.Rows.Count} animals assessed");
-        string[] headers = ["Line", "Animal no.", "Tag no.", "Category", "Age", "Weight (kg)", "BCS", "Project", "Remarks"];
+        var sheet = workbook.Worksheets.Add(T("Selected"));
+        var scope = d.Scope with { Title = T("Selected animals") };
+        var row = TitleBlock(sheet, scope, T("{0} of {1} animals assessed", d.Selected.Count, d.Rows.Count));
+        string[] headers = [T("Line"), T("Animal no."), T("Tag no."), T("Category"), T("Age"), T("Weight (kg)"), "BCS", T("Project"), T("Remarks")];
         var first = row;
         Headers(sheet, row++, headers);
         foreach (var r in d.Selected)
         {
-            Values(sheet, row++, r.No, r.AnimalNo, r.TagNumber ?? "No tag", ReportText.Category(r.Category), ReportText.Age(r.AgeMonths),
+            Values(sheet, row++, r.No, r.AnimalNo, r.TagNumber ?? T("No tag"), ReportText.Category(r.Category), ReportText.Age(r.AgeMonths),
                 r.WeightKg, r.Bcs, r.ProjectCode, r.Remarks);
         }
         Finish(sheet, first, row - 1, headers.Length);
@@ -107,9 +107,9 @@ internal static class ExcelReports
     public static byte[] Treatments(TreatmentReportData d)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add("Treatments");
+        var sheet = workbook.Worksheets.Add(T("Treatments"));
         var row = TitleBlock(sheet, d.Scope);
-        string[] headers = ["Date", "Farm", "Animal no.", "Tag no.", "Category", "Product", "Product type", "Dose", "Route", "Batch", "Withdrawal until", "Next due", "Given by"];
+        string[] headers = [T("Date"), T("Farm"), T("Animal no."), T("Tag no."), T("Category"), T("Product"), T("Product type"), T("Dose"), T("Route"), T("Batch"), T("Withdrawal until"), T("Next due"), T("Given by")];
         var first = row;
         Headers(sheet, row++, headers);
         foreach (var r in d.Rows)
@@ -119,10 +119,10 @@ internal static class ExcelReports
         }
         Finish(sheet, first, row - 1, headers.Length);
 
-        var summary = workbook.Worksheets.Add("By product");
+        var summary = workbook.Worksheets.Add(T("Summary by product"));
         var s = TitleBlock(summary, d.Scope);
         var sf = s;
-        Headers(summary, s++, ["Product", "Treatments", "Animals"]);
+        Headers(summary, s++, [T("Product"), T("Treatments"), T("Animals")]);
         foreach (var (product, treatments, animals) in d.ByProduct) Values(summary, s++, product, treatments, animals);
         Finish(summary, sf, s - 1, 3);
         return Save(workbook);
@@ -132,66 +132,66 @@ internal static class ExcelReports
     {
         using var workbook = new XLWorkbook();
         var h = d.Herd;
-        var sheet = workbook.Worksheets.Add("Summary");
+        var sheet = workbook.Worksheets.Add(T("Summary"));
         var row = TitleBlock(sheet, d.Scope);
         (string, object?)[] figures =
         [
-            ("Active animals", h.ActiveAnimals),
-            ("Capacity", h.Capacity),
-            ("Pregnancy rate (%)", h.PregnancyRatePercent),
-            ("Breeding females without records", h.BreedingFemalesWithoutRecords),
-            ("Calves born in the last 12 months", h.CalvesLast12Months),
-            ("Deaths in the last 12 months", h.DeathsLast12Months),
-            ("Mortality, 12 months (%)", h.MortalityPercent),
-            ("Breeding tasks due in 14 days", h.TasksDue),
-            ("…of which overdue", h.TasksOverdue),
-            ("Culling candidates", d.CullingCandidates),
-            ("Untagged animals", h.Untagged),
-            ("Animals sharing a tag number", h.SharingATag),
-            ("Weighed in the last 90 days", h.WeighedLast90Days),
-            ($"Weighings in period", d.Activity.Weighings),
-            ("BCS scores in period", d.Activity.BcsScores),
-            ("Treatments in period", d.Activity.Treatments),
-            ("Breeding events in period", d.Activity.BreedingEvents),
-            ("Observations in period", d.Activity.Observations),
-            ("Calves registered in period", d.Activity.CalvesBorn),
-            ("Animals that left the herd in period", d.Exits.Count),
+            (T("Active animals"), h.ActiveAnimals),
+            (T("Capacity"), h.Capacity),
+            (T("Pregnancy rate (%)"), h.PregnancyRatePercent),
+            (T("Breeding females without records"), h.BreedingFemalesWithoutRecords),
+            (T("Calves born in the last 12 months"), h.CalvesLast12Months),
+            (T("Deaths in the last 12 months"), h.DeathsLast12Months),
+            (T("Mortality, 12 months (%)"), h.MortalityPercent),
+            (T("Breeding tasks due in 14 days"), h.TasksDue),
+            (T("…of which overdue"), h.TasksOverdue),
+            (T("Culling candidates"), d.CullingCandidates),
+            (T("Untagged animals"), h.Untagged),
+            (T("Animals sharing a tag number"), h.SharingATag),
+            (T("Weighed in the last 90 days"), h.WeighedLast90Days),
+            (T("Weighings in period"), d.Activity.Weighings),
+            (T("BCS scores in period"), d.Activity.BcsScores),
+            (T("Treatments in period"), d.Activity.Treatments),
+            (T("Breeding events in period"), d.Activity.BreedingEvents),
+            (T("Observations in period"), d.Activity.Observations),
+            (T("Calves registered in period"), d.Activity.CalvesBorn),
+            (T("Animals that left the herd in period"), d.Exits.Count),
         ];
         var first = row;
-        Headers(sheet, row++, ["Figure", "Value"]);
+        Headers(sheet, row++, [T("Figure"), T("Value")]);
         foreach (var (label, value) in figures) Values(sheet, row++, label, value);
         Finish(sheet, first, row - 1, 2);
 
-        var categories = workbook.Worksheets.Add("By category");
+        var categories = workbook.Worksheets.Add(T("By category"));
         var c = TitleBlock(categories, d.Scope);
         var cf = c;
-        Headers(categories, c++, ["Category", "Head", "Avg weight (kg)", "Avg BCS"]);
+        Headers(categories, c++, [T("Category"), T("Head"), T("Avg weight (kg)"), T("Avg BCS")]);
         foreach (var cat in h.Categories) Values(categories, c++, ReportText.Category(cat.Category), cat.Count, cat.AverageWeightKg, cat.AverageBcs);
         Finish(categories, cf, c - 1, 4);
 
-        var breeding = workbook.Worksheets.Add("Breeding");
+        var breeding = workbook.Worksheets.Add(T("Breeding"));
         var b = TitleBlock(breeding, d.Scope);
         var bf = b;
-        Headers(breeding, b++, ["Farm", "Breeding females", "Pregnant", "Served", "Open", "No records", "Pregnancy rate (%)", "Avg calving interval (days)",
-            "Calves (12 mo)", "Calving rate (%)", "Abortions (12 mo)"]);
+        Headers(breeding, b++, [T("Farm"), T("Breeding females"), T("Pregnant"), T("Served"), T("Open"), T("No records"), T("Pregnancy rate (%)"), T("Avg calving interval (days)"),
+            T("Calves (12 mo)"), T("Calving rate (%)"), T("Abortions (12 mo)")]);
         foreach (var s in d.Breeding)
             Values(breeding, b++, s.FarmCode, s.Dams, s.Pregnant, s.Served, s.Open, s.NoRecords, s.PregnancyRatePercent, s.AverageCalvingIntervalDays,
                 s.CalvesLast12Months, s.CalvingRatePercent, s.AbortionsLast12Months);
         Finish(breeding, bf, b - 1, 11);
 
-        var exits = workbook.Worksheets.Add("Left the herd");
+        var exits = workbook.Worksheets.Add(T("Left the herd"));
         var e = TitleBlock(exits, d.Scope);
         var ef = e;
-        Headers(exits, e++, ["Date", "Farm", "Animal no.", "Tag no.", "Category", "Status", "Reason"]);
+        Headers(exits, e++, [T("Date"), T("Farm"), T("Animal no."), T("Tag no."), T("Category"), T("Status"), T("Reason")]);
         foreach (var x in d.Exits) Values(exits, e++, x.Date, x.FarmCode, x.AnimalNo, x.TagNumber, ReportText.Category(x.Category), ReportText.Humanize(x.Status), x.Reason);
         Finish(exits, ef, e - 1, 7);
 
-        var growth = workbook.Worksheets.Add("Below growth curve");
-        var g = TitleBlock(growth, d.Scope, $"Latest weight {-d.Growth.BelowCurveThresholdPercent:0}% or more below the Gompertz curve for the animal's age");
+        var growth = workbook.Worksheets.Add(T("Below growth curve"));
+        var g = TitleBlock(growth, d.Scope, T("Latest weight {0:0}% or more below the Gompertz curve for the animal's age", -d.Growth.BelowCurveThresholdPercent));
         var gf = g;
-        Headers(growth, g++, ["Animal no.", "Tag no.", "Category", "Age (months)", "Age estimated", "Weight (kg)", "Weighed on", "Expected (kg)", "Difference (%)"]);
+        Headers(growth, g++, [T("Animal no."), T("Tag no."), T("Category"), T("Age (months)"), T("Age estimated"), T("Weight (kg)"), T("Weighed on"), T("Expected (kg)"), T("Difference (%)")]);
         foreach (var a in d.Growth.BelowCurve)
-            Values(growth, g++, a.AnimalNo, a.TagNumber, ReportText.Category(a.Category), Math.Round(a.AgeDays / 30.44, 1), a.AgeIsEstimated ? "Yes" : "No",
+            Values(growth, g++, a.AnimalNo, a.TagNumber, ReportText.Category(a.Category), Math.Round(a.AgeDays / 30.44, 1), a.AgeIsEstimated ? T("Yes") : T("No"),
                 a.WeightKg, a.WeighedOn, a.ExpectedKg, a.DeviationPercent);
         Finish(growth, gf, g - 1, 9);
         return Save(workbook);
@@ -200,10 +200,10 @@ internal static class ExcelReports
     public static byte[] Culling(CullingReportData d)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add("Culling candidates");
+        var sheet = workbook.Worksheets.Add(T("Culling candidates"));
         var row = TitleBlock(sheet, d.Scope);
         var first = row;
-        Headers(sheet, row++, ["Animal no.", "Tag no.", "Farm", "Age", "Status", "Last calving", "BCS", "Reasons"]);
+        Headers(sheet, row++, [T("Animal no."), T("Tag no."), T("Farm"), T("Age"), T("Status"), T("Last calving"), "BCS", T("Reasons")]);
         foreach (var x in d.Candidates)
             Values(sheet, row++, x.AnimalNo, x.TagNumber, x.FarmCode, ReportText.Age(x.AgeMonths), ReportText.Humanize(x.State), x.LastCalving, x.LatestBcs,
                 string.Join("; ", x.Reasons));
@@ -222,7 +222,8 @@ internal static class ExcelReports
         sheet.Cell(2, 1).Value = scope.FarmLabel + (scope.Period is null ? "" : $" · {scope.Period}");
         var row = 3;
         if (subtitle is not null) sheet.Cell(row++, 1).Value = subtitle;
-        sheet.Cell(row, 1).Value = $"Generated {ReportText.Generated(scope.GeneratedAt)} by FELCRA Cattle Profiling";
+        sheet.Cell(row, 1).Value = T("Generated {0} by FELCRA Cattle Profiling", ReportText.Generated(scope.GeneratedAt));
+
         sheet.Cell(row, 1).Style.Font.FontColor = XLColor.Gray;
         return row + 2;
     }

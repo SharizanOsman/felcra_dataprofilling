@@ -4,9 +4,9 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
-<PageTitle>Scan — FELCRA Field</PageTitle>
+<PageTitle>@T("Scan — FELCRA Field")</PageTitle>
 
-<MudText Typo="Typo.h6" Class="mb-2">Scan the QR label on the ear tag</MudText>
+<MudText Typo="Typo.h6" Class="mb-2">@T("Scan the QR label on the ear tag")</MudText>
 
 <div id="qr-reader" style="width:100%;min-height:280px;border-radius:8px;overflow:hidden;background:#000"></div>
 
@@ -15,7 +15,7 @@
     <MudAlert Severity="Severity.Warning" Class="mt-3">@_error</MudAlert>
 }
 <MudText Typo="Typo.caption" Class="mt-2" Style="display:block">
-    No label, or the camera does not work? <MudLink Href="find">Find the animal by tag number</MudLink>.
+    @T("No label, or the camera does not work?") <MudLink Href="find">@T("Find the animal by tag number")</MudLink>.
 </MudText>
 
 @code {
@@ -33,7 +33,8 @@
         }
         catch (JSException)
         {
-            _error = "Cannot open the camera. Allow camera access for this app in your browser settings (the app must be opened over HTTPS).";
+            _error = T("Cannot open the camera. Allow camera access for this app in your browser settings (the app must be opened over HTTPS).");
+
             StateHasChanged();
         }
     }

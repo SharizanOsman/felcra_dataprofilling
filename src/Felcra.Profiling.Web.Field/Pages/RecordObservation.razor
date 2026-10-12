@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
 @inherits RecordPageBase
 
-<PageTitle>Observation — FELCRA Field</PageTitle>
+<PageTitle>@T("Observation — FELCRA Field")</PageTitle>
 
 @if (LoadError is not null)
 {
@@ -15,31 +15,31 @@ else if (Animal is null)
 else
 {
     <AnimalHeader Animal="Animal" DuplicateTag="DuplicateTag" />
-    <MudText Typo="Typo.h6" Class="mb-2">Health / condition observation</MudText>
+    <MudText Typo="Typo.h6" Class="mb-2">@T("Health / condition observation")</MudText>
 
     <MudForm @ref="_form" Model="_model" Validation="@Validate" ValidationDelay="0">
         <MudStack Spacing="3">
-            <MudSelect T="ObservationCategory" @bind-Value="_model.Category" Label="Type" Variant="Variant.Outlined">
+            <MudSelect T="ObservationCategory" @bind-Value="_model.Category" Label="@T("Type")" Variant="Variant.Outlined">
                 @foreach (var c in Enum.GetValues<ObservationCategory>())
                 {
                     <MudSelectItem Value="c">@EnumText.Humanize(c)</MudSelectItem>
                 }
             </MudSelect>
-            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="What did you see?" Variant="Variant.Outlined" Lines="4" />
-            <DateField Value="_model.ObservedOn" ValueChanged="@(d => _model.ObservedOn = d ?? _model.ObservedOn)" Label="Date" Clearable="false"
+            <MudTextField @bind-Value="_model.Notes" For="@(() => _model.Notes)" Label="@T("What did you see?")" Variant="Variant.Outlined" Lines="4" />
+            <DateField Value="_model.ObservedOn" ValueChanged="@(d => _model.ObservedOn = d ?? _model.ObservedOn)" Label="@T("Date")" Clearable="false"
                        Max="DateOnly.FromDateTime(DateTime.Today)" />
 
             <div>
                 <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                     @foreach (var photo in _photos)
                     {
-                        <img src="@photo.Preview" alt="Photo" style="width:84px;height:84px;object-fit:cover;border-radius:6px" />
+                        <img src="@photo.Preview" alt="@T("Photo")" style="width:84px;height:84px;object-fit:cover;border-radius:6px" />
                     }
                 </MudStack>
                 @if (_photos.Count < MaxPhotos)
                 {
                     <label class="mud-button-root mud-button mud-button-outlined mud-button-outlined-primary mud-button-outlined-size-medium mt-2" style="cursor:pointer">
-                        <MudIcon Icon="@Icons.Material.Filled.AddAPhoto" Class="mr-2" /> @(_uploading ? "Uploading…" : "Add photo")
+                        <MudIcon Icon="@Icons.Material.Filled.AddAPhoto" Class="mr-2" /> @(_uploading ? T("Uploading…") : T("Add photo"))
                         <InputFile OnChange="OnPhotoSelected" accept="image/*" capture="environment" style="display:none" disabled="@_uploading" />
                     </label>
                 }
@@ -49,7 +49,7 @@ else
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="SubmitAsync"
                        Disabled="@(Saving || _uploading || Animal.Status != AnimalStatus.Active)" Style="height:56px">
-                @(Saving ? "Saving…" : "Save")
+                @(Saving ? T("Saving…") : T("Save"))
             </MudButton>
         </MudStack>
     </MudForm>
@@ -81,7 +81,7 @@ else
         }
         catch (IOException)
         {
-            SaveError = "The photo is too large.";
+            SaveError = T("The photo is too large.");
         }
         finally
         {
@@ -98,13 +98,13 @@ else
         foreach (var (photo, index) in _photos.Select((p, i) => (p, i)))
         {
             await Data.SavePhotoAsync(new PendingPhoto(photo.Id, Id, "image/jpeg", photo.Base64));
-            await Data.EnqueueAsync(MakeItem(photo.Id, OutboxKind.Photo, "", $"Photo {index + 1}", _model.ObservedOn) with
+            await Data.EnqueueAsync(MakeItem(photo.Id, OutboxKind.Photo, "", T("Photo {0}", index + 1), _model.ObservedOn) with
             {
                 Key = OutboxItem.MakeKey(queuedAt.AddMilliseconds(index), photo.Id),
             });
         }
 
-        var summary = $"{EnumText.Humanize(_model.Category)}{(_photos.Count > 0 ? $" ({_photos.Count} photo{(_photos.Count > 1 ? "s" : "")})" : "")}";
+        var summary = EnumText.Humanize(_model.Category) + (_photos.Count > 0 ? " " + T(_photos.Count > 1 ? "({0} photos)" : "({0} photo)", _photos.Count) : "");
         await SaveAsync(_model.Id, OutboxKind.Observation, _model, summary, _model.ObservedOn);
     }
 }

@@ -1,0 +1,156 @@
+@* Map of the farms on OpenStreetMap (street or satellite), with search for farms, places and GPS coordinates.
+   Pin size = active head. A place found by search can become a new farm (HQ admins). *@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Wrap="Wrap.Wrap" Class="mb-2">
+    <div style="flex:1;min-width:240px">
+        <PlaceSearch Farms="Farms" OnSelected="ShowAsync" Placeholder="@T("Search farm, place or GPS (e.g. Pagoh, or 2.148, 102.771)")" />
+    </div>
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ZoomOutMap" OnClick="FitAsync" Class="mt-1">@T("Show all farms")</MudButton>
+</MudStack>
+
+@if (_place is { Latitude: { } lat, Longitude: { } lon })
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="true" CloseIconClicked="ClearPlaceAsync" data-testid="map-place">
+        <strong>@_place.Title</strong> · @Coordinates(lat, lon)
+        @if (_place.Detail is not null && _place.Detail != _place.Title) { <span> · @_place.Detail</span> }
+        <MudLink Href="@GoogleMaps(lat, lon)" Target="_blank" Class="ml-2">@T("Open in Google Maps")</MudLink>
+        @if (OnAddHere.HasDelegate)
+        {
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddLocationAlt"
+                       Class="ml-2" OnClick="() => OnAddHere.InvokeAsync(_place)">@T("Add farm here")</MudButton>
+        }
+    </MudAlert>
+}
+
+<div @ref="_element" class="farm-map" data-testid="farm-map-canvas"></div>
+
+<MudStack Row="true" Wrap="Wrap.Wrap" Spacing="3" Class="mt-2" AlignItems="AlignItems.Center">
+    <MudText Typo="Typo.caption">@Summary</MudText>
+    @if (Unlocated.Count > 0)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Warning">
+            @T("No location yet: {0} — edit the farm and search or click its place on the map.", string.Join(", ", Unlocated.Select(f => f.Code)))
+        </MudText>
+    }
+    <MudSpacer />
+    <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Pin size = active head. Click a pin for details.")</MudText>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<FarmMapPointDto> Farms { get; set; } = [];
+
+    /// <summary>Shown with a found place: start a new farm there.</summary>
+    [Parameter] public EventCallback<PlaceResult> OnAddHere { get; set; }
+
+    private ElementReference _element;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _map;
+    private DotNetObjectReference<FarmMap>? _self;
+    private IReadOnlyList<FarmMapPointDto>? _shown;
+    private PlaceResult? _place;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _self = DotNetObjectReference.Create(this);
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/farm-map.js");
+            _map = await _module.InvokeAsync<IJSObjectReference>("createMap", _element, _self, new { picker = false, labels = MapLabels.Current });
+        }
+        if (_map is not null && !ReferenceEquals(_shown, Farms))
+        {
+            var fit = _shown is null || _shown.Count == 0;
+            _shown = Farms;
+            await _map.InvokeVoidAsync("setFarms", Located.Select(ToPin).ToList());
+            if (fit) await _map.InvokeVoidAsync("fitFarms");
+        }
+    }
+
+    [JSInvokable]
+    public void OnFarmClicked(Guid id) => Navigation.NavigateTo($"farms/{id}");
+
+    private async Task ShowAsync(PlaceResult result)
+    {
+        if (_map is null || result.Latitude is not { } lat || result.Longitude is not { } lon)
+        {
+            // A farm without a location: open it so it can be placed.
+            if (result.FarmId is { } farmId) Navigation.NavigateTo($"farms/{farmId}");
+            return;
+        }
+        if (result.FarmId is { } id)
+        {
+            _place = null;
+            await _map.InvokeVoidAsync("clearPlace");
+            await _map.InvokeVoidAsync("openFarm", id);
+            return;
+        }
+        _place = result;
+        await _map.InvokeVoidAsync("showPlace", lat, lon, result.Title, new[] { result.Detail, Coordinates(lat, lon) }, result.Type == "coordinates" ? 16 : 14);
+    }
+
+    private async Task ClearPlaceAsync()
+    {
+        _place = null;
+        if (_map is not null) await _map.InvokeVoidAsync("clearPlace");
+    }
+
+    private async Task FitAsync()
+    {
+        if (_map is not null) await _map.InvokeVoidAsync("fitFarms");
+    }
+
+    private IEnumerable<FarmMapPointDto> Located => Farms.Where(f => f.Latitude is not null && f.Longitude is not null);
+    private List<FarmMapPointDto> Unlocated => Farms.Where(f => f.Latitude is null || f.Longitude is null).ToList();
+
+    private static object ToPin(FarmMapPointDto f) => new
+    {
+        id = f.FarmId,
+        code = f.Code,
+        name = f.Name,
+        lat = f.Latitude,
+        lon = f.Longitude,
+        radius = Math.Min(18, 6 + Math.Sqrt(f.ActiveAnimals) * 0.6),
+        active = f.IsActive,
+        lines = new[]
+        {
+            f.State,
+            f.Capacity is > 0 ? T("{0} active head of {1}", f.ActiveAnimals, f.Capacity) : T("{0} active head", f.ActiveAnimals),
+            f.IsActive ? null : T("Inactive"),
+        },
+    };
+
+    private string Summary
+    {
+        get
+        {
+            var states = Farms.Select(f => f.State).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().Count();
+            return T("{0} farm(s) in {1} state(s) · {2} active head", Farms.Count, states, Farms.Sum(f => f.ActiveAnimals));
+        }
+    }
+
+    internal static string Coordinates(decimal lat, decimal lon) => FormattableString.Invariant($"{lat:0.######}, {lon:0.######}");
+
+    internal static string GoogleMaps(decimal lat, decimal lon) =>
+        FormattableString.Invariant($"https://www.google.com/maps/search/?api=1&query={lat:0.######},{lon:0.######}");
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_map is not null)
+            {
+                await _map.InvokeVoidAsync("dispose");
+                await _map.DisposeAsync();
+            }
+            if (_module is not null) await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // page is closing
+        }
+        _self?.Dispose();
+    }
+}

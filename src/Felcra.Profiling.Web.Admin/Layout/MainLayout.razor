@@ -13,14 +13,15 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-2">FELCRA Cattle Profiling — Admin</MudText>
+        <MudText Typo="Typo.h6" Class="ml-2">@T("FELCRA Cattle Profiling — Admin")</MudText>
         <MudSpacer />
+        <LanguageMenu />
         <AuthorizeView>
             <MudMenu Label="@context.User.FindFirst(AppClaimTypes.FullName)?.Value" Color="Color.Inherit" Variant="Variant.Text"
-                     StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" aria-label="Account">
-                <MudMenuItem Icon="@Icons.Material.Filled.Password" OnClick="ChangePasswordAsync">Change password</MudMenuItem>
+                     StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" aria-label="@T("Account")">
+                <MudMenuItem Icon="@Icons.Material.Filled.Password" OnClick="ChangePasswordAsync">@T("Change password")</MudMenuItem>
             </MudMenu>
-            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="LogoutAsync" aria-label="Sign out" />
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="LogoutAsync" aria-label="@T("Sign out")" />
         </AuthorizeView>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="1">
@@ -41,7 +42,7 @@
     private async Task ChangePasswordAsync()
     {
         if (await Dialogs.ChangePasswordAsync(Api, Auth))
-            Snackbar.Add("Password changed. Other devices signed in as you have been signed out.", Severity.Success);
+            Snackbar.Add(T("Password changed. Other devices signed in as you have been signed out."), Severity.Success);
     }
 
     private async Task LogoutAsync()

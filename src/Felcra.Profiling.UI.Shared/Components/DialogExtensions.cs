@@ -38,8 +38,8 @@ public static class DialogExtensions
 
     public static async Task<bool> ConfirmDeleteAsync(this IDialogService dialogs, string what) =>
         await dialogs.ShowMessageBoxAsync(
-            "Delete",
-            $"Delete {what}? This cannot be undone from this screen.",
-            yesText: "Delete",
-            cancelText: "Cancel") == true;
+            T("Delete"),
+            T("Delete {0}? This cannot be undone from this screen.", what),
+            yesText: T("Delete"),
+            cancelText: T("Cancel")) == true;
 }

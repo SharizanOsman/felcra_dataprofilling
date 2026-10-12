@@ -1,5 +1,6 @@
 ﻿// End-to-end check of the Step 2 admin portal in real Edge (headless) via playwright-core.
 import { chromium } from 'playwright-core';
+import { inEnglish } from './english.mjs';
 
 const base = 'http://localhost:5237/admin/';
 const shots = process.argv[2] ?? '.';
@@ -8,7 +9,7 @@ const results = [];
 const visible = async (locator) => { try { await locator.waitFor({ state: 'visible', timeout: 10000 }); return true; } catch { return false; } };
 const check = (name, ok, extra = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  ' + extra : ''}`); };
 
-const browser = await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true });
+const browser = inEnglish(await chromium.launch({ channel: process.env.E2E_CHANNEL ?? 'msedge', headless: true }));
 const consoleErrors = [];
 
 async function login(email, expectOk = true) {
@@ -55,7 +56,7 @@ try {
   await save(hq, 'Farm added.');
   await hq.locator('td', { hasText: farmCode }).first().waitFor({ timeout: 10000 }).catch(() => {});
   check('Add farm via dialog', await hq.locator('td', { hasText: farmCode }).first().isVisible());
-  check('New farm appears as a pin on the Malaysia map', await hq.locator('[data-testid=farm-pin]').filter({ hasText: farmCode }).isVisible());
+  check('New farm appears as a pin on the farm map', await visible(hq.locator('.farm-map-label', { hasText: farmCode })));
 
   await (await rowWith(hq, farmCode)).getByRole('button', { name: 'Edit' }).click();
   await hq.getByRole('dialog').getByLabel('Name', { exact: true }).fill('UI test farm (edited)');

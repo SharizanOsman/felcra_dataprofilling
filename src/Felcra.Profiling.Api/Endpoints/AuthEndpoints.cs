@@ -26,19 +26,20 @@ internal static class AuthEndpoints
     }
 
     private static async Task<Results<Ok<TokenResponse>, ValidationProblem, UnauthorizedHttpResult>> Login(
-        LoginRequest request, IValidator<LoginRequest> validator, IAuthService auth, CancellationToken ct)
+        LoginRequest request, IValidator<LoginRequest> validator, IAuthService auth, HttpContext http, CancellationToken ct)
     {
         var validation = await validator.ValidateAsync(request, ct);
         if (!validation.IsValid) return TypedResults.ValidationProblem(validation.ToDictionary());
 
-        var tokens = await auth.LoginAsync(request, ct);
+        var tokens = await auth.LoginAsync(request, ct, Parse(http.Request.Headers.AcceptLanguage.ToString()));
         return tokens is null ? TypedResults.Unauthorized() : TypedResults.Ok(tokens);
     }
 
     private static async Task<Results<Ok<TokenResponse>, UnauthorizedHttpResult>> Refresh(
-        RefreshRequest request, IAuthService auth, CancellationToken ct)
+        RefreshRequest request, IAuthService auth, HttpContext http, CancellationToken ct)
     {
-        var tokens = await auth.RefreshAsync(request.RefreshToken, ct);
+        var tokens = await auth.RefreshAsync(request.RefreshToken, ct, Parse(http.Request.Headers.AcceptLanguage.ToString()));
+
         return tokens is null ? TypedResults.Unauthorized() : TypedResults.Ok(tokens);
     }
 
@@ -54,7 +55,7 @@ internal static class AuthEndpoints
         var tokens = await auth.ChangePasswordAsync(currentUser.UserId!.Value, request, ct);
         return tokens is not null
             ? TypedResults.Ok(tokens)
-            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { [nameof(request.CurrentPassword)] = ["The current password is not correct."] });
+            : TypedResults.ValidationProblem(new Dictionary<string, string[]> { [nameof(request.CurrentPassword)] = [T("The current password is not correct.")] });
     }
 
     private static async Task<Results<Ok<CurrentUserDto>, NotFound>> Me(

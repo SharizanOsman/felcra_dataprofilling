@@ -1,25 +1,25 @@
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-    <MudNavLink Href="farms" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Agriculture">Farms</MudNavLink>
-    <MudNavLink Href="animals" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Pets">Animals</MudNavLink>
-    <MudNavLink Href="census" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.FactCheck">Census</MudNavLink>
-    <MudNavLink Href="breeding" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Favorite">Breeding</MudNavLink>
-    <MudNavGroup Title="Analytics" Icon="@Icons.Material.Filled.Insights" Expanded="true">
-        <MudNavLink Href="analytics/growth" Icon="@Icons.Material.Filled.TrendingUp">Growth</MudNavLink>
-        <MudNavLink Href="analytics/lactation" Icon="@Icons.Material.Filled.WaterDrop">Lactation</MudNavLink>
-        <MudNavLink Href="analytics/ration" Icon="@Icons.Material.Filled.Grass">Ration planner</MudNavLink>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@T("Dashboard")</MudNavLink>
+    <MudNavLink Href="farms" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Agriculture">@T("Farms")</MudNavLink>
+    <MudNavLink Href="animals" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Pets">@T("Animals")</MudNavLink>
+    <MudNavLink Href="census" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.FactCheck">@T("Census")</MudNavLink>
+    <MudNavLink Href="breeding" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Favorite">@T("Breeding")</MudNavLink>
+    <MudNavGroup Title="@T("Analytics")" Icon="@Icons.Material.Filled.Insights" Expanded="true">
+        <MudNavLink Href="analytics/growth" Icon="@Icons.Material.Filled.TrendingUp">@T("Growth")</MudNavLink>
+        <MudNavLink Href="analytics/lactation" Icon="@Icons.Material.Filled.WaterDrop">@T("Lactation")</MudNavLink>
+        <MudNavLink Href="analytics/ration" Icon="@Icons.Material.Filled.Grass">@T("Ration planner")</MudNavLink>
     </MudNavGroup>
-    <MudNavLink Href="reports" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Summarize">Reports</MudNavLink>
-    <MudNavGroup Title="Master data" Icon="@Icons.Material.Filled.Tune" Expanded="true">
-        <MudNavLink Href="master-data/projects" Icon="@Icons.Material.Filled.Folder">Projects &amp; schemes</MudNavLink>
-        <MudNavLink Href="master-data/breeds" Icon="@Icons.Material.Filled.Pets">Breeds</MudNavLink>
-        <MudNavLink Href="master-data/treatments" Icon="@Icons.Material.Filled.Vaccines">Treatments &amp; vaccines</MudNavLink>
-        <MudNavLink Href="master-data/feeds" Icon="@Icons.Material.Filled.Grass">Feed ingredients</MudNavLink>
+    <MudNavLink Href="reports" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Summarize">@T("Reports")</MudNavLink>
+    <MudNavGroup Title="@T("Master data")" Icon="@Icons.Material.Filled.Tune" Expanded="true">
+        <MudNavLink Href="master-data/projects" Icon="@Icons.Material.Filled.Folder">@T("Projects & schemes")</MudNavLink>
+        <MudNavLink Href="master-data/breeds" Icon="@Icons.Material.Filled.Pets">@T("Breeds")</MudNavLink>
+        <MudNavLink Href="master-data/treatments" Icon="@Icons.Material.Filled.Vaccines">@T("Treatments & vaccines")</MudNavLink>
+        <MudNavLink Href="master-data/feeds" Icon="@Icons.Material.Filled.Grass">@T("Feed ingredients")</MudNavLink>
     </MudNavGroup>
     <AuthorizeView Roles="@Roles.HqAdmin">
-        <MudNavGroup Title="Administration" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true">
-            <MudNavLink Href="users" Icon="@Icons.Material.Filled.People">Users</MudNavLink>
-            <MudNavLink Href="audit-log" Icon="@Icons.Material.Filled.History">Audit log</MudNavLink>
+        <MudNavGroup Title="@T("Administration")" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true">
+            <MudNavLink Href="users" Icon="@Icons.Material.Filled.People">@T("Users")</MudNavLink>
+            <MudNavLink Href="audit-log" Icon="@Icons.Material.Filled.History">@T("Audit log")</MudNavLink>
         </MudNavGroup>
     </AuthorizeView>
 </MudNavMenu>
