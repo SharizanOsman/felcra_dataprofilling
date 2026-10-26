@@ -1,7 +1,8 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AspNetCoreVersion>10.0.12</AspNetCoreVersion>
+    <AspNetCoreVersion>10.0.13</AspNetCoreVersion>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup Label="ASP.NET Core / Blazor">
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetCoreVersion)" />
@@ -30,6 +31,8 @@
     <PackageVersion Include="PDFsharp-MigraDoc" Version="6.2.4" />
     <PackageVersion Include="MailKit" Version="4.18.0" />
     <PackageVersion Include="QRCoder" Version="1.8.0" />
+    <!-- Pinned above the vulnerable transitive 10.0.0 (GHSA-846f-f764-76mx). -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
