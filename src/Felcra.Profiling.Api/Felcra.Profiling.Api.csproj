@@ -23,6 +23,8 @@
   <ItemGroup>
     <!-- Bundled so PDFs look the same on Windows and the Linux server (SIL Open Font Licence, see Reports/Fonts/OFL.txt). -->
     <EmbeddedResource Include="Reports\Fonts\*.ttf" LogicalName="Fonts.%(Filename)%(Extension)" />
+    <!-- PDF page-header logo, rendered from docs/FFISB_logo_FELCRA_style.svg. -->
+    <EmbeddedResource Include="Reports\ffisb-logo.png" LogicalName="Brand.ffisb-logo.png" />
   </ItemGroup>
 
   <ItemGroup>

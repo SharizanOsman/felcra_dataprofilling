@@ -1,0 +1,59 @@
+@* Horizontal bar chart (one bar per row, e.g. per site), drawn with HTML so long labels wrap nicely.
+   An optional reference line (e.g. 100% capacity) is drawn across all rows. *@
+
+<div class="felcra-chart" role="img" aria-label="@AriaLabel" style="@Style">
+    @if (Items.Count == 0)
+    {
+        <div style="color:#757575;font-size:0.85rem">@T("No data yet.")</div>
+    }
+    @foreach (var item in Items)
+    {
+        <div style="display:flex;align-items:center;gap:8px;margin:5px 0;font-size:0.85rem">
+            <div style="width:@(LabelWidth)px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right" title="@item.Label">
+                @if (item.Href is not null)
+                {
+                    <a href="@item.Href" style="color:inherit">@item.Label</a>
+                }
+                else
+                {
+                    @item.Label
+                }
+            </div>
+            <div style="flex:1;position:relative;height:18px;background:#eef0f6;border-radius:3px">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:@Width(item.Value);background:@(item.Color ?? Color);border-radius:3px"
+                     title="@item.Label: @(item.Text ?? AxisScale.Format(item.Value))"></div>
+                @if (Reference is { } r && r <= _max)
+                {
+                    <div style="position:absolute;top:-3px;bottom:-3px;left:@Width(r);border-left:2px dashed #424242" title="@ReferenceLabel"></div>
+                }
+            </div>
+            <div style="width:@(ValueWidth)px;flex:none;font-weight:600">@(item.Text ?? AxisScale.Format(item.Value))</div>
+        </div>
+    }
+    @if (Reference is not null && ReferenceLabel is not null && Items.Count > 0)
+    {
+        <div style="font-size:0.75rem;color:#757575;margin-left:@(LabelWidth + 8)px">┆ @ReferenceLabel</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<HBarItem> Items { get; set; } = [];
+    [Parameter] public string Color { get; set; } = ChartColors.Primary;
+
+    /// <summary>The value at the right edge; defaults to the largest value (or the reference line).</summary>
+    [Parameter] public double? Max { get; set; }
+    [Parameter] public double? Reference { get; set; }
+    [Parameter] public string? ReferenceLabel { get; set; }
+    [Parameter] public int LabelWidth { get; set; } = 90;
+    [Parameter] public int ValueWidth { get; set; } = 56;
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = T("Bar chart");
+
+    private double _max = 1;
+
+    protected override void OnParametersSet() =>
+        _max = Max ?? Math.Max(Items.Select(i => i.Value).DefaultIfEmpty(0).Max(), Reference ?? 0) switch { <= 0 => 1, var m => m };
+
+    private string Width(double value) =>
+        ChartColors.Svg(Math.Clamp(value / _max, 0, 1) * 100) + "%";
+}

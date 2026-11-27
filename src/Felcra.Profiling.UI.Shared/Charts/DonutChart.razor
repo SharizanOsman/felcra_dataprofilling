@@ -1,0 +1,87 @@
+@* Donut chart drawn as SVG, with the total in the middle and a legend with percentages. *@
+@using static ChartColors
+
+<div class="felcra-chart" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;@Style">
+    <svg viewBox="0 0 200 200" role="img" aria-label="@AriaLabel" style="width:@(Size)px;max-width:100%;height:auto;flex:none">
+        @if (_total <= 0)
+        {
+            <circle cx="100" cy="100" r="@Svg(Radius)" fill="none" stroke="#e0e0e0" stroke-width="@Svg(Thickness)" />
+        }
+        else
+        {
+            var start = -Math.PI / 2;
+            foreach (var s in _segments)
+            {
+                var sweep = s.Value / _total * 2 * Math.PI;
+                if (sweep >= 2 * Math.PI - 1e-6)
+                {
+                    <circle cx="100" cy="100" r="@Svg(Radius)" fill="none" stroke="@s.Color" stroke-width="@Svg(Thickness)">
+                        <title>@s.Label: @AxisScale.Format(s.Value) (100%)</title>
+                    </circle>
+                }
+                else
+                {
+                    <path d="@Arc(start, start + sweep)" fill="none" stroke="@s.Color" stroke-width="@Svg(Thickness)">
+                        <title>@s.Label: @AxisScale.Format(s.Value) (@Percent(s.Value))</title>
+                    </path>
+                }
+                start += sweep;
+            }
+        }
+        @* Wrapped in <g>: Razor reserves a bare <text> tag. *@
+        @if (ShowTotal)
+        {
+            <g><text x="100" y="108" text-anchor="middle" font-size="30" font-weight="700" fill="var(--mud-palette-text-primary, #212121)">@AxisScale.Format(_total)</text></g>
+        }
+        @if (ShowTotal && CenterLabel is not null)
+        {
+            <g><text x="100" y="130" text-anchor="middle" font-size="13" fill="#616161">@CenterLabel</text></g>
+        }
+    </svg>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:0.85rem;min-width:120px;flex:1">
+        @foreach (var s in Segments)
+        {
+            <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:12px;height:12px;border-radius:3px;background:@s.Color;display:inline-block;flex:none"></span>
+                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="@s.Label">@s.Label</span>
+                <strong>@AxisScale.Format(s.Value)</strong>
+                @if (ShowTotal)
+                {
+                    <span style="color:#757575;width:3.2em;text-align:right">@(_total > 0 ? Percent(s.Value) : "–")</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const double Radius = 78, Thickness = 30;
+
+    [Parameter, EditorRequired] public IReadOnlyList<DonutSegment> Segments { get; set; } = [];
+    [Parameter] public string? CenterLabel { get; set; }
+
+    /// <summary>False when the slices overlap (e.g. a farm in several projects), so their sum is not a real total.</summary>
+    [Parameter] public bool ShowTotal { get; set; } = true;
+    [Parameter] public int Size { get; set; } = 170;
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = T("Donut chart");
+
+    private List<DonutSegment> _segments = [];
+    private double _total;
+
+    protected override void OnParametersSet()
+    {
+        _segments = Segments.Where(s => s.Value > 0).ToList();
+        _total = _segments.Sum(s => s.Value);
+    }
+
+    private string Percent(double value) => $"{100 * value / _total:0}%";
+
+    private static string Arc(double from, double to)
+    {
+        var (x1, y1) = (100 + Radius * Math.Cos(from), 100 + Radius * Math.Sin(from));
+        var (x2, y2) = (100 + Radius * Math.Cos(to), 100 + Radius * Math.Sin(to));
+        var large = to - from > Math.PI ? 1 : 0;
+        return $"M {Svg(x1)} {Svg(y1)} A {Svg(Radius)} {Svg(Radius)} 0 {large} 1 {Svg(x2)} {Svg(y2)}";
+    }
+}

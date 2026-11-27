@@ -3,6 +3,24 @@
 @inherits AdminPageBase
 @using Felcra.Profiling.Contracts.Analytics
 
+@* Programme summary band in the logo colours. *@
+<div class="brand-hero mb-4" data-testid="brand-hero">
+    <BrandLogo Size="64" />
+    <div class="brand-title">
+        <span class="brand-name" style="font-size:1.5rem">@Brand.Name</span>
+        <span class="brand-tagline" style="font-size:0.85rem">@Brand.Tagline</span>
+    </div>
+    @if (_sites is { } all)
+    {
+        <div class="brand-hero-stats">
+            <div class="brand-hero-stat"><strong data-testid="hero-sites">@all.Sites.Count</strong><span>@T("Sites")</span></div>
+            <div class="brand-hero-stat"><strong>@all.ByState.Count(s => s.Key != "")</strong><span>@T("States")</span></div>
+            <div class="brand-hero-stat"><strong>@all.ByProject.Count</strong><span>@T("Projects")</span></div>
+            <div class="brand-hero-stat"><strong>@all.Sites.Sum(s => s.ActiveAnimals)</strong><span>@T("Active head")</span></div>
+        </div>
+    }
+</div>
+
 <PageHeader Title="@T("Dashboard")" Subtitle="@T("Herd at a glance")" Error="@LoadError">
     <Actions>
         <FarmFilter Farms="_farms" Value="_farmId" ValueChanged="OnFarmChanged" />
@@ -23,7 +41,7 @@ else
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="@T("Pregnancy rate")" Value="@(d.PregnancyRatePercent is { } p ? $"{p:0.#}%" : "–")" Icon="@Icons.Material.Filled.Favorite" Href="breeding"
-                     Color="Color.Secondary" DetailWarning="@(d.BreedingFemalesWithoutRecords > 0)"
+                     Color="Color.Tertiary" DetailWarning="@(d.BreedingFemalesWithoutRecords > 0)"
                      Detail="@(d.BreedingFemalesWithoutRecords > 0 ? T("{0} breeding females have no records", d.BreedingFemalesWithoutRecords) : T("of breeding females"))" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
@@ -41,7 +59,7 @@ else
                      DetailWarning="@(d.ActiveAnimals > 0 && d.WeighedLast90Days < d.ActiveAnimals / 2)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="@T("Calves born (12 months)")" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Secondary"
+            <KpiCard Label="@T("Calves born (12 months)")" Value="@d.CalvesLast12Months.ToString()" Icon="@Icons.Material.Filled.ChildCare" Href="breeding" Color="Color.Tertiary"
                      Detail="@(T("Deaths: {0}", d.DeathsLast12Months) + (d.MortalityPercent is { } m && d.DeathsLast12Months > 0 ? " " + T("({0:0.#}% mortality)", m) : ""))"
                      DetailWarning="@(d.MortalityPercent > 3)" />
         </MudItem>
@@ -95,16 +113,185 @@ else
     </MudGrid>
 }
 
+@if (_sites is { } o)
+{
+    var sites = o.Sites;
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-8 mb-3" Wrap="Wrap.Wrap">
+        <MudText Typo="Typo.h5" Class="brand-section-title">@T("All sites in the programme")</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.caption">@T("Every farm you can see, whatever farm is chosen above.")</MudText>
+    </MudStack>
+
+    <MudGrid Spacing="3" data-testid="sites-overview">
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Site map")</MudText>
+                <FarmMap Farms="_mapPoints" Compact="true" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-3">@T("Herd composition, all sites")</MudText>
+                <DonutChart CenterLabel="@T("head")" AriaLabel="@T("Herd composition, all sites")" Segments="@([
+                    new DonutSegment(AnimalText.Category(AnimalCategory.Bull), sites.Sum(s => s.ByCategory.Bulls), ChartColors.Primary),
+                    new DonutSegment(AnimalText.Category(AnimalCategory.Dam), sites.Sum(s => s.ByCategory.Dams), ChartColors.Secondary),
+                    new DonutSegment(AnimalText.Category(AnimalCategory.MaleCalf), sites.Sum(s => s.ByCategory.MaleCalves), ChartColors.NavyLight),
+                    new DonutSegment(AnimalText.Category(AnimalCategory.FemaleCalf), sites.Sum(s => s.ByCategory.FemaleCalves), ChartColors.RedLight),
+                ])" />
+                <MudDivider Class="my-3" />
+                <MudSimpleTable Dense="true" Elevation="0">
+                    <tbody>
+                        <tr><td>@T("Calves born (12 months)")</td><td style="text-align:right"><strong>@sites.Sum(s => s.CalvesLast12Months)</strong></td></tr>
+                        <tr><td>@T("Deaths (12 months)")</td><td style="text-align:right"><strong>@sites.Sum(s => s.DeathsLast12Months)</strong></td></tr>
+                        <tr><td>@T("Treatments (30 days)")</td><td style="text-align:right"><strong>@sites.Sum(s => s.TreatmentsLast30Days)</strong></td></tr>
+                        <tr><td>@T("Planned capacity")</td><td style="text-align:right"><strong>@(sites.Sum(s => s.Capacity ?? 0) is > 0 and var cap ? cap.ToString() : "–")</strong></td></tr>
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Head per site")</MudText>
+                <BarChart Labels="@sites.Select(s => s.Code).ToList()" AriaLabel="@T("Head per site")"
+                          Series="@([
+                              new BarSeries(AnimalText.Category(AnimalCategory.Bull), ChartColors.Primary, sites.Select(s => (double)s.ByCategory.Bulls).ToList()),
+                              new BarSeries(AnimalText.Category(AnimalCategory.Dam), ChartColors.Secondary, sites.Select(s => (double)s.ByCategory.Dams).ToList()),
+                              new BarSeries(AnimalText.Category(AnimalCategory.MaleCalf), ChartColors.NavyLight, sites.Select(s => (double)s.ByCategory.MaleCalves).ToList()),
+                              new BarSeries(AnimalText.Category(AnimalCategory.FemaleCalf), ChartColors.RedLight, sites.Select(s => (double)s.ByCategory.FemaleCalves).ToList()),
+                          ])" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Capacity used per site")</MudText>
+                <HBarChart AriaLabel="@T("Capacity used per site")" Reference="100" ReferenceLabel="@T("100% of planned capacity")"
+                           Items="@CapacityItems(sites)" />
+                @if (sites.Any(s => s.Capacity is not > 0))
+                {
+                    <MudText Typo="Typo.caption" Class="mt-2" Style="display:block">
+                        @T("No capacity set: {0}", string.Join(", ", sites.Where(s => s.Capacity is not > 0).Select(s => s.Code)))
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Pregnancy rate per site")</MudText>
+                <HBarChart AriaLabel="@T("Pregnancy rate per site")" Max="100" Color="@ChartColors.Secondary"
+                           Items="@PregnancyItems(sites)" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-3">@T("Head by state")</MudText>
+                <DonutChart Size="140" CenterLabel="@T("head")" AriaLabel="@T("Head by state")"
+                            Segments="@GroupSegments(o.ByState, T("No state"))" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-3">@T("Head by project")</MudText>
+                @if (o.ByProject.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Default">@T("No farm is linked to a project yet.")</MudText>
+                }
+                else
+                {
+                    <DonutChart Size="140" ShowTotal="false" AriaLabel="@T("Head by project")"
+                                Segments="@GroupSegments(o.ByProject, "")" />
+                    <MudText Typo="Typo.caption" Class="mt-2" Style="display:block">@T("A farm in several projects counts in each.")</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Herd flow (last 12 months)")</MudText>
+                <BarChart Labels="@o.HerdFlow.Select(m => m.Month.ToString("MMM yy")).ToList()" AriaLabel="@T("Herd flow (last 12 months)")"
+                          Series="@([
+                              new BarSeries(T("Births"), ChartColors.Primary, o.HerdFlow.Select(m => (double)m.Births).ToList()),
+                              new BarSeries(T("Deaths"), ChartColors.Secondary, o.HerdFlow.Select(m => (double)m.Deaths).ToList()),
+                              new BarSeries(T("Sold"), ChartColors.RedLight, o.HerdFlow.Select(m => (double)m.Sold).ToList()),
+                              new BarSeries(T("Culled"), ChartColors.Muted, o.HerdFlow.Select(m => (double)m.Culled).ToList()),
+                          ])" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-3" Elevation="1" Style="height:100%">
+                <MudText Typo="Typo.h6" Class="mb-2">@T("Site league table")</MudText>
+                <MudSimpleTable Dense="true" Elevation="0" Style="overflow-x:auto" data-testid="site-table">
+                    <thead>
+                        <tr>
+                            <th>@T("Site")</th><th>@T("State")</th>
+                            <th style="text-align:right">@T("Head")</th>
+                            <th style="text-align:right">@T("Capacity")</th>
+                            <th style="text-align:right">@T("Pregnant")</th>
+                            <th style="text-align:right">@T("Calves")</th>
+                            <th style="text-align:right">@T("Deaths")</th>
+                            <th style="text-align:right">@T("Weighed (90 d)")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in sites.OrderByDescending(s => s.ActiveAnimals))
+                        {
+                            <tr>
+                                <td><a href="@($"farms/{s.FarmId}")" title="@s.Name" style="color:var(--mud-palette-primary)">@s.Code</a>@if (!s.IsActive) { <MudChip T="string" Size="Size.Small" Class="ml-1">@T("Inactive")</MudChip> }</td>
+                                <td>@s.State</td>
+                                <td style="text-align:right">@s.ActiveAnimals</td>
+                                <td style="text-align:right">@(s.Capacity is > 0 ? $"{100.0 * s.ActiveAnimals / s.Capacity:0}%" : "–")</td>
+                                <td style="text-align:right">@(s.PregnancyRatePercent is { } pr ? $"{pr:0.#}%" : "–")</td>
+                                <td style="text-align:right">@s.CalvesLast12Months</td>
+                                <td style="text-align:right">@s.DeathsLast12Months</td>
+                                <td style="text-align:right">@(s.ActiveAnimals > 0 ? $"{100.0 * s.WeighedLast90Days / s.ActiveAnimals:0}%" : "–")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
 @code {
     private List<FarmDto> _farms = [];
     private Guid? _farmId;
     private DashboardDto? _dashboard;
+    private SitesOverviewDto? _sites;
+    private List<FarmMapPointDto> _mapPoints = [];
 
     protected override async Task LoadAsync()
     {
-        if (_farms.Count == 0) _farms = await Api.GetAsync<List<FarmDto>>("api/farms");
-        _dashboard = await Api.GetAsync<DashboardDto>($"api/analytics/dashboard{FarmFilter.Query(_farmId)}");
+        var dashboard = Api.GetAsync<DashboardDto>($"api/analytics/dashboard{FarmFilter.Query(_farmId)}");
+        // The all-sites section ignores the farm filter, so it is loaded once.
+        if (_sites is null)
+        {
+            var farms = Api.GetAsync<List<FarmDto>>("api/farms");
+            var sites = Api.GetAsync<SitesOverviewDto>("api/analytics/sites");
+            _farms = await farms;
+            _sites = await sites;
+            _mapPoints = _sites.Sites.Select(s => new FarmMapPointDto(s.FarmId, s.Code, s.Name, s.State, s.Latitude, s.Longitude,
+                s.ActiveAnimals, s.Capacity, s.IsActive)).ToList();
+        }
+        _dashboard = await dashboard;
     }
+
+    private static List<HBarItem> CapacityItems(IEnumerable<SiteStatDto> sites) =>
+        sites.Where(s => s.Capacity is > 0).Select(s =>
+        {
+            var pct = 100.0 * s.ActiveAnimals / s.Capacity!.Value;
+            return new HBarItem(s.Code, pct, $"{pct:0}%", pct > 100 ? ChartColors.Warning : null, $"farms/{s.FarmId}");
+        }).ToList();
+
+    private static List<HBarItem> PregnancyItems(IEnumerable<SiteStatDto> sites) =>
+        sites.Where(s => s.PregnancyRatePercent is not null)
+            .Select(s => new HBarItem(s.Code, (double)s.PregnancyRatePercent!.Value, $"{s.PregnancyRatePercent:0.#}%", null, $"farms/{s.FarmId}"))
+            .ToList();
+
+    /// <summary>One slice per state or project, labelled with its number of sites.</summary>
+    private static List<DonutSegment> GroupSegments(IEnumerable<GroupStatDto> groups, string blankName) =>
+        groups.Select((g, i) => new DonutSegment(g.Key == "" ? blankName : $"{g.Key} ({g.Sites})", g.ActiveAnimals, ChartColors.Pick(i))).ToList();
 
     private async Task OnFarmChanged(Guid? farmId)
     {

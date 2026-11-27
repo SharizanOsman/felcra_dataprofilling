@@ -1,0 +1,74 @@
+/* FFISB LIVESTOCK 360 brand: logo tile, app bar title and the dashboard hero band. */
+.brand-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    box-sizing: border-box;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.brand-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.brand-title {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+}
+
+.brand-title .brand-name {
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.brand-title .brand-tagline {
+    font-size: 0.72rem;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.brand-hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    border-radius: 6px;
+    color: #fff;
+    background: linear-gradient(110deg, #2A347F 0%, #2A347F 62%, #E41E26 140%);
+    border-bottom: 4px solid #E41E26;
+}
+
+.brand-hero .brand-hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    margin-left: auto;
+}
+
+.brand-hero .brand-hero-stat strong {
+    display: block;
+    font-size: 1.6rem;
+    line-height: 1.1;
+}
+
+.brand-hero .brand-hero-stat span {
+    font-size: 0.75rem;
+    opacity: 0.85;
+}
+
+/* Section heading with the logo's red accent bar. */
+.brand-section-title {
+    border-left: 4px solid #E41E26;
+    padding-left: 10px;
+}

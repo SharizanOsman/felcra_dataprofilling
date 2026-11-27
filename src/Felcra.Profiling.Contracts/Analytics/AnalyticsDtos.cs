@@ -65,3 +65,36 @@ public sealed record DashboardDto(
     /// <summary>Deaths in 12 months as % of the herd (active animals plus those deaths).</summary>
     decimal? MortalityPercent,
     IReadOnlyList<WeeklyActivityDto> Activity);
+
+// ---- All sites (Home infographics) -------------------------------------------------------------
+
+/// <summary>One farm / site in the programme, for the map, charts and league table on Home.</summary>
+public sealed record SiteStatDto(
+    Guid FarmId,
+    string Code,
+    string Name,
+    string? State,
+    IReadOnlyList<string> ProjectCodes,
+    decimal? Latitude,
+    decimal? Longitude,
+    bool IsActive,
+    int ActiveAnimals,
+    int? Capacity,
+    CategoryCounts ByCategory,
+    decimal? PregnancyRatePercent,
+    int CalvesLast12Months,
+    int DeathsLast12Months,
+    int WeighedLast90Days,
+    int TreatmentsLast30Days);
+
+/// <summary>Sites and active head grouped by state or by project.</summary>
+public sealed record GroupStatDto(string Key, string Name, int Sites, int ActiveAnimals);
+
+/// <summary>Animals born and leaving the herd in one calendar month.</summary>
+public sealed record MonthlyHerdFlowDto(DateOnly Month, int Births, int Deaths, int Sold, int Culled);
+
+public sealed record SitesOverviewDto(
+    IReadOnlyList<SiteStatDto> Sites,
+    IReadOnlyList<GroupStatDto> ByState,
+    IReadOnlyList<GroupStatDto> ByProject,
+    IReadOnlyList<MonthlyHerdFlowDto> HerdFlow);

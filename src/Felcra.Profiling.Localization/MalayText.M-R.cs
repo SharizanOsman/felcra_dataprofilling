@@ -131,7 +131,6 @@ internal static partial class MalayText
         ("Nutrient composition (dry-matter basis) and price, used for least-cost rations", "Komposisi nutrien (asas bahan kering) dan harga, untuk catuan kos terendah"),
         ("Nutrients supplied", "Nutrien dibekalkan"),
         ("Observation", "Pemerhatian"),
-        ("Observation — FELCRA Field", "Pemerhatian — FELCRA Lapangan"),
         ("Observations", "Pemerhatian"),
         ("Observations ({0})", "Pemerhatian ({0})"),
         ("Observations in period", "Pemerhatian dalam tempoh"),
@@ -234,7 +233,6 @@ internal static partial class MalayText
         ("QR label", "Label QR"),
         ("QR labels", "Label QR"),
         ("Ration", "Catuan"),
-        ("Ration — FELCRA Field", "Catuan — FELCRA Lapangan"),
         ("Ration planner", "Perancang catuan"),
         ("Reason", "Sebab"),
         ("Reasons", "Sebab"),
@@ -274,5 +272,12 @@ internal static partial class MalayText
         ("Rows per page:", "Baris setiap halaman:"),
         ("Rules: aged 8 years or more · not pregnant 12 months after calving · empty at 2 checks in a row · low BCS. Animals without breeding records are not judged on fertility.", "Peraturan: berumur 8 tahun atau lebih · tidak bunting 12 bulan selepas beranak · kosong pada 2 pemeriksaan berturut-turut · BCS rendah. Haiwan tanpa rekod pembiakan tidak dinilai dari segi kesuburan."),
         ("Rules: aged 8 years or more · not pregnant 12 months after calving · empty at 2 pregnancy checks in a row · low body condition. ", "Peraturan: berumur 8 tahun atau lebih · tidak bunting 12 bulan selepas beranak · kosong pada 2 pemeriksaan kebuntingan berturut-turut · keadaan badan rendah. "),
+        // Home: all sites in the programme.
+        ("No capacity set: {0}", "Tiada kapasiti ditetapkan: {0}"),
+        ("No data yet.", "Belum ada data."),
+        ("No farm is linked to a project yet.", "Belum ada ladang dipautkan kepada projek."),
+        ("No state", "Tiada negeri"),
+        ("Planned capacity", "Kapasiti dirancang"),
+        ("Pregnancy rate per site", "Kadar kebuntingan setiap tapak"),
     ];
 }

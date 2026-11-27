@@ -16,8 +16,12 @@ internal static class AnalyticsEndpoints
         group.MapGet("/growth", Growth);
         group.MapGet("/lactation", Lactation);
         group.MapGet("/dashboard", Dashboard);
+        group.MapGet("/sites", Sites);
         return app;
     }
+
+    private static async Task<Ok<SitesOverviewDto>> Sites(AnalyticsQueries analytics, CancellationToken ct) =>
+        TypedResults.Ok(await analytics.SitesAsync(ct));
 
     private static async Task<Ok<GrowthAnalysisDto>> Growth(AnalyticsQueries analytics, CancellationToken ct, Guid? farmId = null) =>
         TypedResults.Ok(await analytics.GrowthAsync(farmId, ct));

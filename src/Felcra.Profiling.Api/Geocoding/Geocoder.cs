@@ -16,7 +16,7 @@ public sealed class GeocodingOptions
     public string BaseUrl { get; set; } = "https://nominatim.openstreetmap.org/";
 
     /// <summary>Identifies this application to the Nominatim operators, as their usage policy requires.</summary>
-    public string UserAgent { get; set; } = "FELCRA-Cattle-Profiling/1.0";
+    public string UserAgent { get; set; } = "FFISB-Livestock-360/1.0";
 
     /// <summary>Optional contact address sent with each request, so the operators can get in touch instead of blocking.</summary>
     public string? Email { get; set; }

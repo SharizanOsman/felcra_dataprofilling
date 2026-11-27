@@ -1,3 +1,4 @@
+using Felcra.Profiling.Contracts.Common;
 using Felcra.Profiling.Contracts.Census;
 using Felcra.Profiling.Domain.Animals;
 using MigraDoc.DocumentObjectModel;
@@ -9,10 +10,20 @@ namespace Felcra.Profiling.Api.Reports;
 /// <summary>PDF versions of the reports (MigraDoc, MIT licence).</summary>
 internal static class PdfReports
 {
-    private static readonly Color Green = Color.FromRgb(0x1b, 0x5e, 0x20);
-    private static readonly Color HeaderFill = Color.FromRgb(0xe8, 0xf0, 0xe8);
+    private static readonly Color Green = Color.FromRgb(0x2a, 0x34, 0x7f); // logo navy
+    private static readonly Color HeaderFill = Color.FromRgb(0xe6, 0xe8, 0xf3);
     private static readonly Color SelectedFill = Color.FromRgb(0xff, 0xf5, 0x9d);
     private static readonly Color Grey = Color.FromRgb(0x61, 0x61, 0x61);
+
+    /// <summary>The FFISB logo for the page header, as a MigraDoc "base64:" image source.</summary>
+    private static readonly Lazy<string> LogoSource = new(() =>
+    {
+        using var stream = typeof(PdfReports).Assembly.GetManifestResourceStream("Brand.ffisb-logo.png")
+                           ?? throw new InvalidOperationException("Embedded logo Brand.ffisb-logo.png is missing.");
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return "base64:" + Convert.ToBase64String(copy.ToArray());
+    });
 
     private sealed record Col(string Header, string Width, ParagraphAlignment Align = ParagraphAlignment.Left);
 
@@ -410,7 +421,7 @@ internal static class PdfReports
         ReportFonts.EnsureRegistered();
         var doc = new Document();
         doc.Info.Title = $"{scope.Title} — {scope.FarmLabel}";
-        doc.Info.Author = T("FELCRA Cattle Profiling");
+        doc.Info.Author = Brand.Name;
         var normal = doc.Styles[StyleNames.Normal]!;
         normal.Font.Name = ReportFonts.Family;
         normal.Font.Size = 10;
@@ -429,7 +440,11 @@ internal static class PdfReports
         var header = section.Headers.Primary.AddParagraph();
         header.Format.Font.Size = 8;
         header.Format.Font.Color = Grey;
-        header.AddFormattedText(T("FELCRA Cattle Profiling"), TextFormat.Bold);
+        var logo = header.AddImage(LogoSource.Value);
+        logo.Height = "0.7cm";
+        logo.LockAspectRatio = true;
+        header.AddText("  ");
+        header.AddFormattedText(Brand.Name, TextFormat.Bold).Font.Color = Green;
         header.AddText($"  ·  {scope.Title}  ·  {scope.FarmLabel}");
 
         var footer = section.Footers.Primary.AddParagraph();

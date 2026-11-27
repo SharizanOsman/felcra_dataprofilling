@@ -1,6 +1,6 @@
 # Deployment and operations runbook
 
-How to run FELCRA Cattle Profiling on a Linux VPS: first installation, updates, backups and restore,
+How to run FFISB LIVESTOCK 360 on a Linux VPS: first installation, updates, backups and restore,
 monitoring. Everything runs in Docker; the files are in [`deploy/`](../deploy).
 
 ```

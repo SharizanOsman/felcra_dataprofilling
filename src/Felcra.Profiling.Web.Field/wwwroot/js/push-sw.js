@@ -2,7 +2,7 @@
 self.addEventListener('push', event => {
     let data = {};
     try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data?.text() }; }
-    event.waitUntil(self.registration.showNotification(data.title || 'FELCRA Field', {
+    event.waitUntil(self.registration.showNotification(data.title || 'FFISB LIVESTOCK 360', {
         body: data.body || '',
         icon: 'icon-192.png',
         badge: 'icon-192.png',

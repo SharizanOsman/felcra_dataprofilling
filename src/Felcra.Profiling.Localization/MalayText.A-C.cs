@@ -94,6 +94,13 @@ internal static partial class MalayText
         ("305-day yield", "Hasil 305 hari"),
         ("60 days", "60 hari"),
         ("7 days", "7 hari"),
+        // Home: all sites in the programme.
+        ("100% of planned capacity", "100% kapasiti dirancang"),
+        ("A farm in several projects counts in each.", "Ladang dalam beberapa projek dikira dalam setiap projek."),
+        ("Active head", "Ekor aktif"),
+        ("All sites in the programme", "Semua tapak dalam program"),
+        ("Births", "Kelahiran"),
+        ("Capacity used per site", "Kapasiti digunakan setiap tapak"),
     ];
 
     private static (string, string)[] AtoC() =>
@@ -142,7 +149,6 @@ internal static partial class MalayText
         ("Already counted in this session; the entry will be updated.", "Sudah dikira dalam sesi ini; entri akan dikemas kini."),
         ("Analytics", "Analitik"),
         ("Animal", "Haiwan"),
-        ("Animal — FELCRA Field", "Haiwan — FELCRA Lapangan"),
         ("Animal (tag or animal no.)", "Haiwan (tag atau no. haiwan)"),
         ("animal {0} and its census entries", "haiwan {0} dan entri bancianya"),
         ("Animal added to the census.", "Haiwan ditambah ke bancian."),
@@ -218,7 +224,6 @@ internal static partial class MalayText
         ("Breed does not exist.", "Baka tidak wujud."),
         ("Breed updated.", "Baka dikemas kini."),
         ("Breeding", "Pembiakan"),
-        ("Breeding — FELCRA Field", "Pembiakan — FELCRA Lapangan"),
         ("Breeding ({0})", "Pembiakan ({0})"),
         ("Breeding events", "Peristiwa pembiakan"),
         ("Breeding events in period", "Peristiwa pembiakan dalam tempoh"),

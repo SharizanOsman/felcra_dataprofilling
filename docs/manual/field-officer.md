@@ -10,12 +10,12 @@ You need the address from your manager, e.g. `https://profiling.felcra.com.my/fi
 **Android (Chrome)**
 1. Open the address in **Chrome**.
 2. Tap **⋮ → Add to Home screen → Install**.
-3. Open *FELCRA Field* from the home screen from now on.
+3. Open *Livestock 360* from the home screen from now on.
 
 **iPhone (Safari, iOS 16.4 or later)**
 1. Open the address in **Safari**.
 2. Tap **Share (□↑) → Add to Home Screen → Add**.
-3. Open *FELCRA Field* from the home screen from now on (needed for notifications).
+3. Open *Livestock 360* from the home screen from now on (needed for notifications).
 
 ## 2. Sign in
 

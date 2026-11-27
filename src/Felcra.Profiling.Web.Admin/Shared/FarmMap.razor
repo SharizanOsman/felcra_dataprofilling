@@ -4,12 +4,15 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
-<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Wrap="Wrap.Wrap" Class="mb-2">
-    <div style="flex:1;min-width:240px">
-        <PlaceSearch Farms="Farms" OnSelected="ShowAsync" Placeholder="@T("Search farm, place or GPS (e.g. Pagoh, or 2.148, 102.771)")" />
-    </div>
-    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ZoomOutMap" OnClick="FitAsync" Class="mt-1">@T("Show all farms")</MudButton>
-</MudStack>
+@if (!Compact)
+{
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Wrap="Wrap.Wrap" Class="mb-2">
+        <div style="flex:1;min-width:240px">
+            <PlaceSearch Farms="Farms" OnSelected="ShowAsync" Placeholder="@T("Search farm, place or GPS (e.g. Pagoh, or 2.148, 102.771)")" />
+        </div>
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ZoomOutMap" OnClick="FitAsync" Class="mt-1">@T("Show all farms")</MudButton>
+    </MudStack>
+}
 
 @if (_place is { Latitude: { } lat, Longitude: { } lon })
 {
@@ -25,7 +28,7 @@
     </MudAlert>
 }
 
-<div @ref="_element" class="farm-map" data-testid="farm-map-canvas"></div>
+<div @ref="_element" class="farm-map @(Compact ? "compact" : null)" data-testid="farm-map-canvas"></div>
 
 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="3" Class="mt-2" AlignItems="AlignItems.Center">
     <MudText Typo="Typo.caption">@Summary</MudText>
@@ -36,7 +39,7 @@
         </MudText>
     }
     <MudSpacer />
-    <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Pin size = active head. Click a pin for details.")</MudText>
+    <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">@T("Pin size = active head. Click a pin for details.")</MudText>
 </MudStack>
 
 @code {
@@ -44,6 +47,9 @@
 
     /// <summary>Shown with a found place: start a new farm there.</summary>
     [Parameter] public EventCallback<PlaceResult> OnAddHere { get; set; }
+
+    /// <summary>A smaller map without the search row, e.g. on the dashboard.</summary>
+    [Parameter] public bool Compact { get; set; }
 
     private ElementReference _element;
     private IJSObjectReference? _module;

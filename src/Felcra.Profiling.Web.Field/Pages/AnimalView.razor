@@ -7,7 +7,7 @@
 @inject RecentAnimals Recent
 
 @* Target of the QR code on ear-tag labels. Works offline from the phone's copy of the farm data. *@
-<PageTitle>@T("Animal — FELCRA Field")</PageTitle>
+<PageTitle>@T("Animal") — @Brand.Name</PageTitle>
 
 @if (_error is not null)
 {
@@ -54,7 +54,7 @@ else
         <MudSpacer />
         @if (_historyFromCache)
         {
-            <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Offline — showing history as last downloaded")</MudText>
+            <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">@T("Offline — showing history as last downloaded")</MudText>
         }
     </MudStack>
     @if (_timeline.Count == 0)

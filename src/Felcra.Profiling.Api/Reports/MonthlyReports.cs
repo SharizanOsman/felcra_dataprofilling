@@ -1,3 +1,4 @@
+using Felcra.Profiling.Contracts.Common;
 using System.Net;
 using Felcra.Profiling.Contracts.Auth;
 using Felcra.Profiling.Contracts.Reports;
@@ -144,14 +145,14 @@ internal sealed class MonthlyReportJob(
                    string.Join("\n", lines.Select(l => "• " + l)) +
                    "\n\n" + T("Attached: {0}.", attachments) + "\n" + T("Excel versions and other periods are in the admin portal under {0}", reportsName) +
                    (link is null ? "." : $": {link}") +
-                   "\n\n" + T("This e-mail is sent automatically each month by FELCRA Cattle Profiling.");
+                   "\n\n" + T("This e-mail is sent automatically each month by {0}.", Brand.Name);
         var html = $"<p>{WebUtility.HtmlEncode(T("Dear {0},", name))}</p>" +
                    $"<p>{T("The cattle profiling reports for {0} — {1} — are attached.", $"<b>{month}</b>", WebUtility.HtmlEncode(d.Scope.FarmLabel))}</p>" +
                    "<ul>" + string.Concat(lines.Select(l => $"<li>{WebUtility.HtmlEncode(l)}</li>")) + "</ul>" +
                    $"<p>{WebUtility.HtmlEncode(T("Attached: {0}.", attachments))}<br>" +
                    T("Excel versions and other periods are in the admin portal under {0}",
                        link is null ? reportsName : $"<a href=\"{WebUtility.HtmlEncode(link)}\">{reportsName}</a>") + ".</p>" +
-                   $"<p style=\"color:#757575;font-size:12px\">{T("This e-mail is sent automatically each month by FELCRA Cattle Profiling.")}</p>";
+                   $"<p style=\"color:#757575;font-size:12px\">{T("This e-mail is sent automatically each month by {0}.", Brand.Name)}</p>";
 
         return new EmailMessage(to, name, T("Cattle profiling reports — {0} — {1}", month, d.Scope.FarmLabel), text, html, package.Files);
     }

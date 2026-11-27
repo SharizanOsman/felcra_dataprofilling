@@ -3,7 +3,7 @@
 @inject FieldData Data
 @inject NavigationManager Navigation
 
-<PageTitle>@T("Find animal — FELCRA Field")</PageTitle>
+<PageTitle>@T("Find animal") — @Brand.Name</PageTitle>
 
 @* Searches the phone's copy of the farm's animals, so it works offline. *@
 <MudTextField T="string" Value="_query" ValueChanged="SearchAsync" Label="@T("Tag number or animal no.")" Variant="Variant.Outlined"

@@ -221,4 +221,82 @@ internal sealed class AnalyticsQueries(AppDbContext db, BreedingQueries breeding
             animals.Count + deaths == 0 ? null : Math.Round(100m * deaths / (animals.Count + deaths), 1),
             activity);
     }
+
+    /// <summary>
+    /// Every site the user can see, side by side, for the Home infographics. Farm managers see only
+    /// their own farms (farm-scope query filter).
+    /// </summary>
+    public async Task<SitesOverviewDto> SitesAsync(CancellationToken ct)
+    {
+        var today = breeding.Today;
+        var yearAgo = today.AddDays(-365);
+
+        var farms = await db.Farms.AsNoTracking().OrderBy(f => f.Code)
+            .Select(f => new { f.Id, f.Code, f.Name, f.State, f.Latitude, f.Longitude, f.IsActive, f.Capacity })
+            .ToListAsync(ct);
+        var farmProjects = await (from fp in db.FarmProjects.AsNoTracking()
+                                  join p in db.Projects on fp.ProjectId equals p.Id
+                                  select new { fp.FarmId, p.Code, p.Name }).ToListAsync(ct);
+        // The join table has no farm-scope filter of its own: keep only the farms this user can see.
+        var visible = farms.Select(f => f.Id).ToHashSet();
+        farmProjects.RemoveAll(p => !visible.Contains(p.FarmId));
+        var active = await db.Animals.AsNoTracking().Where(a => a.Status == AnimalStatus.Active)
+            .Select(a => new { a.Id, a.FarmId, a.Category }).ToListAsync(ct);
+        var activeFarm = active.ToDictionary(a => a.Id, a => a.FarmId);
+
+        // Births and exits over the last 12 months, for the herd-flow chart and the per-site deaths.
+        var moves = await db.Animals.AsNoTracking()
+            .Where(a => (a.BirthDate != null && a.BirthDate >= yearAgo) || (a.StatusDate != null && a.StatusDate >= yearAgo))
+            .Select(a => new { a.FarmId, a.BirthDate, a.Status, a.StatusDate })
+            .ToListAsync(ct);
+
+        var weighedRecently = (await WeighingsAsync(null, ct))
+            .Where(w => w.Date >= today.AddDays(-90) && activeFarm.ContainsKey(w.AnimalId))
+            .Select(w => w.AnimalId).Distinct()
+            .GroupBy(id => activeFarm[id]).ToDictionary(g => g.Key, g => g.Count());
+        var treatments = await db.TreatmentRecords.AsNoTracking().Where(t => t.GivenOn >= today.AddDays(-30))
+            .GroupBy(t => t.FarmId).Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Count, ct);
+        var breedingByFarm = (await breeding.SummaryAsync(null, ct)).ToDictionary(s => s.FarmId);
+
+        bool Left(DateOnly? date) => date is { } d && d >= yearAgo && d <= today;
+        var sites = farms.Select(f =>
+        {
+            var herd = active.Where(a => a.FarmId == f.Id).ToList();
+            int Count(AnimalCategory c) => herd.Count(a => a.Category == c);
+            var summary = breedingByFarm.GetValueOrDefault(f.Id);
+            return new SiteStatDto(
+                f.Id, f.Code, f.Name, f.State,
+                farmProjects.Where(p => p.FarmId == f.Id).Select(p => p.Code).Order().ToList(),
+                f.Latitude, f.Longitude, f.IsActive, herd.Count, f.Capacity,
+                new CategoryCounts(Count(AnimalCategory.Bull), Count(AnimalCategory.Dam), Count(AnimalCategory.MaleCalf), Count(AnimalCategory.FemaleCalf)),
+                summary?.PregnancyRatePercent,
+                summary?.CalvesLast12Months ?? 0,
+                moves.Count(m => m.FarmId == f.Id && m.Status == AnimalStatus.Dead && Left(m.StatusDate)),
+                weighedRecently.GetValueOrDefault(f.Id),
+                treatments.GetValueOrDefault(f.Id));
+        }).ToList();
+
+        var byState = sites.GroupBy(s => string.IsNullOrWhiteSpace(s.State) ? "" : s.State.Trim())
+            .Select(g => new GroupStatDto(g.Key, g.Key, g.Count(), g.Sum(s => s.ActiveAnimals)))
+            .OrderByDescending(g => g.ActiveAnimals).ThenBy(g => g.Name).ToList();
+        var byProject = farmProjects.GroupBy(p => (p.Code, p.Name))
+            .Select(g =>
+            {
+                var ids = g.Select(p => p.FarmId).ToHashSet();
+                return new GroupStatDto(g.Key.Code, g.Key.Name, ids.Count, sites.Where(s => ids.Contains(s.FarmId)).Sum(s => s.ActiveAnimals));
+            })
+            .OrderByDescending(g => g.ActiveAnimals).ThenBy(g => g.Key).ToList();
+
+        // Twelve calendar months ending with the current one.
+        var firstMonth = new DateOnly(today.Year, today.Month, 1).AddMonths(-11);
+        bool In(DateOnly? date, DateOnly month) => date is { } d && d >= month && d < month.AddMonths(1);
+        var flow = Enumerable.Range(0, 12).Select(i => firstMonth.AddMonths(i)).Select(month => new MonthlyHerdFlowDto(
+            month,
+            moves.Count(m => In(m.BirthDate, month)),
+            moves.Count(m => m.Status == AnimalStatus.Dead && In(m.StatusDate, month)),
+            moves.Count(m => m.Status == AnimalStatus.Sold && In(m.StatusDate, month)),
+            moves.Count(m => m.Status == AnimalStatus.Culled && In(m.StatusDate, month)))).ToList();
+
+        return new SitesOverviewDto(sites, byState, byProject, flow);
+    }
 }

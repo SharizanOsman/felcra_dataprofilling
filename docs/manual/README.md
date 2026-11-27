@@ -1,6 +1,6 @@
-# FELCRA Cattle Profiling — user manual
+# FFISB LIVESTOCK 360 — user manual
 
-FELCRA Cattle Profiling records every animal on FELCRA cattle farms — weights, health, breeding — from the pen
+FFISB LIVESTOCK 360 records every animal on FELCRA cattle farms — weights, health, breeding — from the pen
 to HQ. It has two parts:
 
 | | **Field app** | **Admin portal** |

@@ -33,7 +33,7 @@
             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ActionColor(context.Action)">@T(context.Action)</MudChip>
         </MudTd>
         <MudTd DataLabel="@T("Record")">@EntityName(context.EntityType) <MudText
- Typo="Typo.caption" Color="Color.Secondary">@context.EntityId.ToString()[..8]</MudText></MudTd>
+ Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">@context.EntityId.ToString()[..8]</MudText></MudTd>
         <MudTd DataLabel="@T("Changes")" Style="max-width:520px">
             @foreach (var (field, change) in ParseChanges(context.Changes))
             {

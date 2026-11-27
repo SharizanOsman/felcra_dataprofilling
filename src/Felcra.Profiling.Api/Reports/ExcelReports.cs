@@ -1,3 +1,4 @@
+using Felcra.Profiling.Contracts.Common;
 using ClosedXML.Excel;
 using Felcra.Profiling.Domain.Animals;
 
@@ -6,7 +7,7 @@ namespace Felcra.Profiling.Api.Reports;
 /// <summary>Excel versions of the reports, for further analysis.</summary>
 internal static class ExcelReports
 {
-    private static readonly XLColor HeaderFill = XLColor.FromHtml("#E8F0E8");
+    private static readonly XLColor HeaderFill = XLColor.FromHtml("#E6E8F3");
     private static readonly XLColor SelectedFill = XLColor.FromHtml("#FFF59D");
 
     /// <summary>
@@ -222,7 +223,7 @@ internal static class ExcelReports
         sheet.Cell(2, 1).Value = scope.FarmLabel + (scope.Period is null ? "" : $" · {scope.Period}");
         var row = 3;
         if (subtitle is not null) sheet.Cell(row++, 1).Value = subtitle;
-        sheet.Cell(row, 1).Value = T("Generated {0} by FELCRA Cattle Profiling", ReportText.Generated(scope.GeneratedAt));
+        sheet.Cell(row, 1).Value = T("Generated {0} by {1}", ReportText.Generated(scope.GeneratedAt), Brand.Name);
 
         sheet.Cell(row, 1).Style.Font.FontColor = XLColor.Gray;
         return row + 2;

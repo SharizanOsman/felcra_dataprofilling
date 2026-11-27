@@ -1,11 +1,15 @@
 @inject AuthClient Auth
 @inject NavigationManager Navigation
 
-<MudCard Elevation="3" Class="pa-4" Style="width: 100%; max-width: 420px;">
+<MudCard Elevation="3" Class="pa-4" Style="width: 100%; max-width: 420px; border-top: 5px solid var(--mud-palette-secondary);">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.h5">@Title</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
+            <div class="d-flex flex-column align-center" style="text-align:center">
+                <img src="_content/Felcra.Profiling.UI.Shared/ffisb-logo.svg" alt="FFISB" style="width:120px;height:auto" class="mb-3" />
+                <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight:700;letter-spacing:0.04em">@Title</MudText>
+                <MudText Typo="Typo.caption" Style="display:block">@Brand.Tagline</MudText>
+                <MudText Typo="Typo.body2" Style="color:var(--mud-palette-text-secondary)" Class="mt-2">@Subtitle</MudText>
+            </div>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>

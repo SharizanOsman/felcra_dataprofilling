@@ -109,6 +109,38 @@ public class AnalyticsTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Sites_overview_compares_every_farm()
+    {
+        var (hq, farmId) = await NewFarmAsync();
+        var dam = await AnimalAsync(hq, farmId, AnimalCategory.Dam, 2000);
+        await AnimalAsync(hq, farmId, AnimalCategory.Bull, 1500);
+        await WeighAsync(hq, dam.Id, 380);
+
+        var overview = await hq.GetFromJsonAsync<SitesOverviewDto>("/api/analytics/sites");
+        var site = Assert.Single(overview!.Sites, s => s.FarmId == farmId);
+        Assert.Equal((2, 100, 1, 1, 1), (site.ActiveAnimals, site.Capacity, site.ByCategory.Dams, site.ByCategory.Bulls, site.WeighedLast90Days));
+        Assert.Contains(overview.Sites, s => s.Code == "PAGOH");
+        Assert.Equal(12, overview.HerdFlow.Count);
+        Assert.Equal(new DateOnly(Today.Year, Today.Month, 1), overview.HerdFlow[^1].Month);
+
+        // The sites add up to the all-farms dashboard.
+        var dashboard = await hq.GetFromJsonAsync<DashboardDto>("/api/analytics/dashboard");
+        overview = await hq.GetFromJsonAsync<SitesOverviewDto>("/api/analytics/sites");
+        Assert.Equal(dashboard!.ActiveAnimals, overview!.Sites.Sum(s => s.ActiveAnimals));
+        Assert.Equal(overview.Sites.Sum(s => s.ActiveAnimals), overview.ByState.Sum(g => g.ActiveAnimals));
+    }
+
+    [Fact]
+    public async Task Managers_see_only_their_sites()
+    {
+        var manager = await factory.CreateAuthenticatedClientAsync(ApiFactory.ManagerEmail);
+        var overview = await manager.GetFromJsonAsync<SitesOverviewDto>("/api/analytics/sites");
+        var site = Assert.Single(overview!.Sites);
+        Assert.Equal("PAGOH", site.Code);
+        Assert.All(overview.ByProject, p => Assert.Equal(1, p.Sites));
+    }
+
+    [Fact]
     public async Task Sync_pull_carries_feed_ingredients_for_offline_rations()
     {
         var hq = await factory.CreateAuthenticatedClientAsync(ApiFactory.AdminEmail);

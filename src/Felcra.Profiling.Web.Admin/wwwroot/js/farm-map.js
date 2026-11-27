@@ -81,7 +81,7 @@ export function createMap(element, dotnet, options) {
             for (const f of farms) {
                 const marker = L.circleMarker([f.lat, f.lon], {
                     radius: f.radius, weight: 2, color: '#ffffff',
-                    fillColor: '#2E7D32', fillOpacity: f.active ? 0.85 : 0.35,
+                    fillColor: '#E41E26', fillOpacity: f.active ? 0.85 : 0.35,
                 });
                 marker.bindTooltip(f.code, { permanent: true, direction: 'right', offset: [f.radius, 0], className: 'farm-map-label' });
                 marker.bindPopup(() => popup(`${f.name} (${f.code})`, f.lines, f.link === false ? null

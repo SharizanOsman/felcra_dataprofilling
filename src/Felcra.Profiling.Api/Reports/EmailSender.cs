@@ -13,7 +13,7 @@ public sealed class EmailOptions
 {
     public const string Section = "Email";
 
-    /// <summary>Sender, e.g. "FELCRA Cattle Profiling &lt;no-reply@felcra.com.my&gt;".</summary>
+    /// <summary>Sender, e.g. "FFISB LIVESTOCK 360 &lt;no-reply@felcra.com.my&gt;".</summary>
     public string? From { get; set; }
 
     public string? PickupDirectory { get; set; }

@@ -59,7 +59,7 @@
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: #2A347F;
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -169,11 +169,11 @@ code {
 }
 
 .farm-map-pin span {
-    background: #C62828;
+    background: #E41E26;
 }
 
 .farm-map-place span {
-    background: #1565C0;
+    background: #2A347F;
 }
 
 @media print {

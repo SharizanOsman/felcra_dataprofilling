@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = $"{Roles.FarmManager},{Roles.FieldOfficer}")]
 @inherits RecordPageBase
 
-<PageTitle>@T("Breeding — FELCRA Field")</PageTitle>
+<PageTitle>@T("Breeding") — @Brand.Name</PageTitle>
 
 @if (LoadError is not null)
 {

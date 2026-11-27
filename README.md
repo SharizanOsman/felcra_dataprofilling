@@ -1,4 +1,4 @@
-# FELCRA Cattle Breeding Data Profiling System
+# FFISB LIVESTOCK 360 — Integrated Livestock Data Management System
 
 Digital recording and analytics for FELCRA cattle breeding farms: an **admin web portal** for HQ and farm managers
 and an installable, offline-capable **field PWA** for officers at the pen, backed by an ASP.NET Core API and PostgreSQL.
@@ -177,7 +177,7 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Breeding:PregnancyCheckAfterDays` | Days after service when a pregnancy check becomes due (default 45) |
 | `Breeding:CullOpenDays` / `CullAgeYears` / `CullConsecutiveOpenChecks` | Culling rules (defaults 365 days, 8 years, 2 checks — from the Pagoh report) |
 | `Breeding:LowBcs` | BCS below this is flagged (default 2.0 for a 1–5 scale; use 4 for 1–9) |
-| `Email:From` | Sender of report e-mails, e.g. `FELCRA Cattle Profiling <no-reply@felcra.com.my>` |
+| `Email:From` | Sender of report e-mails, e.g. `FFISB LIVESTOCK 360 <no-reply@felcra.com.my>` |
 | `Email:Smtp:Host` / `Port` / `UserName` / `Password` | SMTP server for outgoing e-mail (port 587 with STARTTLS by default) |
 | `Email:PickupDirectory` | Write e-mails as `.eml` files here instead of sending them (development: `App_Data/mail`) |
 | `Reports:Monthly:Enabled` | Send last month's reports by e-mail each month (off by default; on in development) |

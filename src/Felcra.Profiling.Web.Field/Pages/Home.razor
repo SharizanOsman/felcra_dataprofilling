@@ -5,7 +5,7 @@
 @inject SyncService Sync
 @inject FieldData Data
 
-<PageTitle>@T("FELCRA Field")</PageTitle>
+<PageTitle>@Brand.Name</PageTitle>
 
 <AuthorizeView>
     <MudText Typo="Typo.h6" Class="mb-3">@T("Hello, {0}", context.User.FindFirst(AppClaimTypes.FullName)?.Value)</MudText>

@@ -1,13 +1,13 @@
 {
-  "name": "FELCRA Cattle Profiling — Field",
-  "short_name": "FELCRA Field",
+  "name": "FFISB LIVESTOCK 360 — Field",
+  "short_name": "Livestock 360",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#1B5E20",
+  "theme_color": "#2A347F",
   "prefer_related_applications": false,
   "icons": [
     { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },

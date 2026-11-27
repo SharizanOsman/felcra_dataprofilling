@@ -1,0 +1,10 @@
+@* The FFISB logo on a white rounded tile, so it reads on the navy app bar and on white pages alike. *@
+<span class="brand-logo @Class" style="width:@(Size)px;height:@(Size)px;padding:@(Math.Max(2, Size / 10))px;border-radius:@(Math.Max(4, Size / 6))px">
+    <img src="_content/Felcra.Profiling.UI.Shared/ffisb-logo.svg" alt="FFISB" />
+</span>
+
+@code {
+    /// <summary>Tile width and height in pixels.</summary>
+    [Parameter] public int Size { get; set; } = 36;
+    [Parameter] public string? Class { get; set; }
+}
