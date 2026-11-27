@@ -21,6 +21,7 @@ monitoring. Everything runs in Docker; the files are in [`deploy/`](../deploy).
 ## 1. Server preparation (once)
 
 Ubuntu 24.04 LTS, 2 vCPU / 4 GB RAM / 40 GB disk is enough for the pilot (one farm, tens of users).
+On Hostinger, see [section 12](#12-hosting-on-a-hostinger-vps) first.
 
 ```bash
 # Updates and a firewall: only SSH and web traffic.
@@ -40,7 +41,7 @@ mkdir -p /srv/felcra/backups/production /srv/felcra/backups/staging
 
 Use SSH keys only (`PasswordAuthentication no` in `/etc/ssh/sshd_config`).
 
-**DNS:** point `profiling.felcra.com.my` (and `staging.profiling.felcra.com.my`) to the server's IP address
+**DNS:** point `ffisblivestock360.com` (and `staging.ffisblivestock360.com`) to the server's IP address
 before starting the proxy, so Let's Encrypt can issue the certificates.
 
 ## 2. Reverse proxy (once)
@@ -50,7 +51,7 @@ cd /srv/felcra/app/deploy/proxy
 docker network create felcra-web
 cp sites/production.caddy.example sites/production.caddy   # set the domain
 cp sites/staging.caddy.example sites/staging.caddy         # optional
-ACME_EMAIL=it@felcra.com.my docker compose -p felcra-proxy up -d
+ACME_EMAIL=it@ffisblivestock360.com docker compose -p felcra-proxy up -d
 ```
 
 Put `ACME_EMAIL=...` in `deploy/proxy/.env` so later restarts pick it up.
@@ -84,7 +85,7 @@ cd /srv/felcra/app/deploy
 
 The script takes a backup (when a database already exists), pulls the image, starts the stack (database
 migrations run automatically at start-up) and waits until the API reports healthy. Then open
-`https://profiling.felcra.com.my/admin/`.
+`https://ffisblivestock360.com/admin/`.
 
 > On the very first start the log shows one "Failed executing DbCommand … __ef_migrations_history" error:
 > that is the database being checked before its first migration and is expected.
@@ -217,3 +218,77 @@ uploads. If port 8080 is taken on the server, set `APP_PORT=<free port>` in the 
 Common causes: the app container is not published to the host (nginx route without `compose.override.yml`); the app
 exits at start because a setting is missing (`JWT_SIGNING_KEY` shorter than 32 characters, wrong
 `POSTGRES_PASSWORD` after the database was first created — see the log); `proxy_pass` points to another port.
+
+## 12. Hosting on a Hostinger VPS
+
+Hostinger's Web/Shared and Cloud hosting plans run PHP sites only: they cannot run .NET, PostgreSQL or
+Docker. Use a **Hostinger VPS**; after the hPanel steps below, sections 1–7 apply unchanged.
+
+### In hPanel
+
+| Setting | Choice |
+|---|---|
+| Plan | **KVM 2** (2 vCPU, 8 GB RAM) or larger. KVM 1 is too small to build the image on the server |
+| Data centre | The one closest to Malaysia that is offered (e.g. Singapore) |
+| Operating system | **Ubuntu 24.04**. The "Ubuntu 24.04 with Docker" template also works; then skip the Docker install in section 1 |
+| SSH key | Add your public key (`ssh-keygen -t ed25519`, then the contents of `~/.ssh/id_ed25519.pub`) and avoid password logins |
+| VPS firewall | If enabled, allow only 22/tcp, 80/tcp, 443/tcp and 443/udp. `ufw` on the server (section 1) does the same |
+| Backups | Turn on the weekly VPS backup or take snapshots. This is in addition to the nightly backups and off-site copy (section 5), not instead of them |
+
+The VPS starts with only `root`. Create a normal user before section 1 and work as that user:
+
+```bash
+ssh root@<vps-ip>
+adduser felcra && usermod -aG sudo felcra
+rsync -a ~/.ssh /home/felcra/ && chown -R felcra:felcra /home/felcra/.ssh
+exit
+ssh felcra@<vps-ip>
+```
+
+### DNS
+
+The production address is `https://ffisblivestock360.com`. The site root opens the admin app (`/admin/`), and
+officers use `/field/`.
+
+Before starting the proxy (section 2), open hPanel → **Domains** → `ffisblivestock360.com` →
+**DNS / Nameservers**. The domain must use Hostinger's nameservers. Add these records:
+
+| Type | Name | Points to |
+|---|---|---|
+| A | `@` | VPS IP address |
+| A | `www` | VPS IP address. `production.caddy.example` redirects it to the main address |
+| A | `staging` | VPS IP address (only if a staging stack runs on the same VPS) |
+
+Delete any existing `A`, `AAAA` or `CNAME` records for `@` and `www` that Hostinger created for domain parking or
+its website builder. An `AAAA` record that points elsewhere is the usual reason Let's Encrypt fails.
+
+Check with `nslookup ffisblivestock360.com` and `nslookup www.ffisblivestock360.com`. Both must return the VPS IP
+before Let's Encrypt can issue the certificates; DNS changes can take a few hours to show.
+
+### Getting the application image
+
+- **From GitHub Container Registry (preferred).** Every push to `main` publishes `:main` and every `v*` tag
+  publishes a version (section 4). Set `APP_IMAGE=ghcr.io/sharizanosman/felcra-profiling` (all lowercase). For a
+  private repository, create a GitHub personal access token with `repo` and `read:packages`, use it as the password
+  for `git clone`, and run `docker login ghcr.io -u <github-user>` with the same token.
+- **Built on the VPS.** If no published image is available:
+
+  ```bash
+  cd /srv/felcra/app && docker build -t felcra-profiling:local .   # about 5–10 minutes on KVM 2
+  # production.env: APP_IMAGE=felcra-profiling, APP_TAG=local
+  SKIP_PULL=1 deploy/deploy.sh production
+  ```
+
+  To update, run `git pull`, then rebuild and deploy with the same commands.
+
+### E-mail through Hostinger
+
+To send the monthly report e-mail from a Hostinger mailbox, set the following in `production.env`:
+
+- `SMTP_HOST=smtp.hostinger.com`
+- `SMTP_PORT=465`
+- `SMTP_USER` and `SMTP_PASSWORD`: the full mailbox address and its password
+- `EMAIL_FROM`: the same address
+- `MONTHLY_REPORTS=true`
+
+The API works out the TLS mode from the port, so 465 and 587 both work.

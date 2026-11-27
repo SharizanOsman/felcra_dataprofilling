@@ -1,5 +1,5 @@
 # Copy to staging.caddy and set the domain.
-staging.profiling.felcra.com.my {
+staging.ffisblivestock360.com {
 	import felcra
 	reverse_proxy felcra-staging-app:8080
 }

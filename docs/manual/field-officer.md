@@ -5,7 +5,7 @@ It works **without internet**: records are kept on the phone and sent when there
 
 ## 1. Install the app (once)
 
-You need the address from your manager, e.g. `https://profiling.felcra.com.my/field/`.
+You need the address from your manager, e.g. `https://ffisblivestock360.com/field/`.
 
 **Android (Chrome)**
 1. Open the address in **Chrome**.

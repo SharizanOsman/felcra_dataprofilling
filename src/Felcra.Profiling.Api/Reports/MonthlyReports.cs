@@ -21,7 +21,7 @@ public sealed class MonthlyReportOptions
     /// <summary>Hour of that day (Malaysia time, 0–23) from which they are sent.</summary>
     public int Hour { get; set; } = 7;
 
-    /// <summary>Portal address used for links in the e-mail, e.g. https://profiling.felcra.com.my.</summary>
+    /// <summary>Portal address used for links in the e-mail, e.g. https://ffisblivestock360.com.</summary>
     public string? PortalUrl { get; set; }
 }
 

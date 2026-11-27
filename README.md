@@ -177,14 +177,14 @@ Uploaded photos are stored under `src/Felcra.Profiling.Api/App_Data/uploads` in 
 | `Breeding:PregnancyCheckAfterDays` | Days after service when a pregnancy check becomes due (default 45) |
 | `Breeding:CullOpenDays` / `CullAgeYears` / `CullConsecutiveOpenChecks` | Culling rules (defaults 365 days, 8 years, 2 checks — from the Pagoh report) |
 | `Breeding:LowBcs` | BCS below this is flagged (default 2.0 for a 1–5 scale; use 4 for 1–9) |
-| `Email:From` | Sender of report e-mails, e.g. `FFISB LIVESTOCK 360 <no-reply@felcra.com.my>` |
+| `Email:From` | Sender of report e-mails, e.g. `FFISB LIVESTOCK 360 <no-reply@ffisblivestock360.com>` |
 | `Email:Smtp:Host` / `Port` / `UserName` / `Password` | SMTP server for outgoing e-mail (port 587 with STARTTLS by default) |
 | `Email:PickupDirectory` | Write e-mails as `.eml` files here instead of sending them (development: `App_Data/mail`) |
 | `Reports:Monthly:Enabled` | Send last month's reports by e-mail each month (off by default; on in development) |
 | `Reports:Monthly:DayOfMonth` / `Hour` | When to send them, Malaysia time (default day 1, 07:00) |
 | `Reports:Monthly:PortalUrl` | Portal address for links in the e-mail |
 | `Push:PublicKey` / `PrivateKey` | Web Push (VAPID) key pair for task notifications; generate with `dotnet Felcra.Profiling.Api.dll vapid-keys`. Notifications are off without them |
-| `Push:Subject` | Contact sent to push services, e.g. `mailto:it@felcra.com.my` |
+| `Push:Subject` | Contact sent to push services, e.g. `mailto:it@ffisblivestock360.com` |
 | `Push:Hour` | Hour (Malaysia time) from which the daily task notification is sent (default 7) |
 | `Geocoding:Enabled` | Place search on the farm map (default on). Off: farms are still placed by clicking the map or typing GPS coordinates |
 | `Geocoding:BaseUrl` / `UserAgent` / `Email` | Nominatim server for place search (default the public OpenStreetMap one, max. one request a second), the User-Agent sent with each request, and an optional contact e-mail its operators can use |

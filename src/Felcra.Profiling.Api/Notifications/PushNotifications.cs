@@ -22,7 +22,7 @@ public sealed class PushOptions
     public string? PublicKey { get; set; }
     public string? PrivateKey { get; set; }
 
-    /// <summary>Contact for push services, e.g. "mailto:it@felcra.com.my".</summary>
+    /// <summary>Contact for push services, e.g. "mailto:it@ffisblivestock360.com".</summary>
     public string Subject { get; set; } = "mailto:admin@felcra.local";
 
     /// <summary>Hour (Malaysia time, 0–23) from which each day's task notification is sent.</summary>
